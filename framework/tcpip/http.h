@@ -1,0 +1,1345 @@
+/*******************************************************************************
+  HTTP Headers for Microchip TCP/IP Stack
+
+  Company:
+    Microchip Technology Inc.
+    
+  File Name:
+    http.h
+
+  Summary:
+    The HTTP web server module and its associated MPFS2 file system module allow
+    the board to act as a web server.
+    
+  Description:
+    The HTTP web server module and its associated MPFS2 file system module allow 
+    the board to act as a web server. This facilitates an easy method to view 
+    status information and control applications using any standard web browser.
+*******************************************************************************/
+//DOM-IGNORE-BEGIN
+/*******************************************************************************
+Copyright (c) 2012 released Microchip Technology Inc.  All rights reserved.
+
+Microchip licenses to you the right to use, modify, copy and distribute
+Software only when embedded on a Microchip microcontroller or digital signal
+controller that is integrated into your product or third party product
+(pursuant to the sublicense terms in the accompanying license agreement).
+
+You should refer to the license agreement accompanying this Software for
+additional information regarding your rights and obligations.
+
+SOFTWARE AND DOCUMENTATION ARE PROVIDED AS IS WITHOUT WARRANTY OF ANY KIND,
+EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF
+MERCHANTABILITY, TITLE, NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE.
+IN NO EVENT SHALL MICROCHIP OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER
+CONTRACT, NEGLIGENCE, STRICT LIABILITY, CONTRIBUTION, BREACH OF WARRANTY, OR
+OTHER LEGAL EQUITABLE THEORY ANY DIRECT OR INDIRECT DAMAGES OR EXPENSES
+INCLUDING BUT NOT LIMITED TO ANY INCIDENTAL, SPECIAL, INDIRECT, PUNITIVE OR
+CONSEQUENTIAL DAMAGES, LOST PROFITS OR LOST DATA, COST OF PROCUREMENT OF
+SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
+(INCLUDING BUT NOT LIMITED TO ANY DEFENSE THEREOF), OR OTHER SIMILAR COSTS.
+*******************************************************************************/
+//DOM-IGNORE-END
+
+#ifndef __HTTP_H_
+#define __HTTP_H_
+
+#if defined (HARMONY_FS)
+#include "system/fs/sys_fs.h"
+#else
+#include "tcpip/src/system/fs/sys_fs.h"
+#endif
+
+
+/****************************************************************************
+  Section:
+    Commands and Server Responses
+ */
+
+//Supported Commands and Server Response Codes
+typedef enum
+{
+    HTTP_GET = 0u,               // GET command is being processed
+    HTTP_POST,                   // POST command is being processed
+    HTTP_BAD_REQUEST,            // 400 Bad Request will be returned
+    HTTP_UNAUTHORIZED,           // 401 Unauthorized will be returned
+    HTTP_NOT_FOUND,              // 404 Not Found will be returned
+    HTTP_OVERFLOW,               // 414 Request-URI Too Long will be returned
+    HTTP_INTERNAL_SERVER_ERROR,  // 500 Internal Server Error will be returned
+    HTTP_NOT_IMPLEMENTED,        // 501 Not Implemented (not a GET or POST command)
+    HTTP_REDIRECT,               // 302 Redirect will be returned
+    HTTP_SSL_REQUIRED,           // 403 Forbidden is returned, indicating SSL is required
+
+    HTTP_MPFS_FORM,              // Show the MPFS Upload form
+    HTTP_MPFS_UP,                // An MPFS Upload is being processed
+    HTTP_MPFS_OK,                // An MPFS Upload was successful
+    HTTP_MPFS_ERROR,             // An MPFS Upload was not a valid image
+
+} HTTP_STATUS;
+
+/****************************************************************************
+  Section:
+    HTTP Definitions
+ */
+
+
+// Result states for execution callbacks
+typedef enum
+{
+    HTTP_IO_DONE = 0u,  // Finished with procedure
+    HTTP_IO_NEED_DATA,  // More data needed to continue, call again later
+    HTTP_IO_WAITING     // Waiting for asynchronous process to complete, call again later
+
+} HTTP_IO_RESULT;
+
+// Result states for HTTPPostReadName and HTTPPostReadValue
+typedef enum
+{
+    HTTP_READ_OK = 0u,      // Read was successful
+    HTTP_READ_TRUNCATED,    // Buffer overflow prevented by truncating value
+    HTTP_READ_INCOMPLETE    // Entire object is not yet in the buffer.  Try again later.
+
+} HTTP_READ_STATUS;
+
+// File type definitions
+typedef enum
+{
+    HTTP_TXT = 0u,      // File is a text document
+    HTTP_HTM,           // File is HTML (extension .htm)
+    HTTP_HTML,          // File is HTML (extension .html)
+    HTTP_CGI,           // File is HTML (extension .cgi)
+    HTTP_XML,           // File is XML (extension .xml)
+    HTTP_CSS,           // File is stylesheet (extension .css)
+    HTTP_GIF,           // File is GIF image (extension .gif)
+    HTTP_PNG,           // File is PNG image (extension .png)
+    HTTP_JPG,           // File is JPG image (extension .jpg)
+    HTTP_JAVA,          // File is java (extension .java)
+    HTTP_WAV,           // File is audio (extension .wav)
+    HTTP_UNKNOWN        // File type is unknown
+
+} HTTP_FILE_TYPE;
+
+// HTTP connection identifier, handle of a HTTP connection
+typedef const void*     HTTP_CONN_HANDLE;
+
+// HTTP module configuration flags
+typedef enum
+{
+    HTTP_MODULE_FLAG_ADJUST_SKT_FIFOS    = 0x01, // adjust corresponding socket FIFO at run time
+                                                 // improves throughput when the socket buffers are small
+    HTTP_MODULE_FLAG_NO_DELAY            = 0x02, // create the http sockets with NO-DELAY option
+                                                 // it will flush data as soon as possible
+}HTTP_MODULE_FLAGS;
+
+// HTTP module dynamic configuration data
+typedef struct
+{
+    uint16_t    nConnections;   // number of http connections
+    uint16_t    dataLen;        // size of the data buffer for reading cookie and GET/POST arguments (bytes)
+    uint16_t    sktTxBuffSize;  // size of TX buffer for the associatted socket; leave 0 for default
+    uint16_t    sktRxBuffSize;  // size of RX buffer for the associatted socket; leave 0 for default
+    uint16_t    configFlags;    // a HTTP_MODULE_FLAGS value.
+
+} HTTP_MODULE_CONFIG;
+
+/****************************************************************************
+  Section:
+    Function Prototypes
+ */
+
+/*****************************************************************************
+  Function:
+    uint8_t* TCPIP_HTTP_URLDecode(uint8_t* cData)
+
+  Summary:
+    Parses a string from URL encoding to plain-text.
+
+  Description:
+    Parses a string from URL encoding to plain-text.  The following
+    conversions are made: ‘=’ to ‘\0’, ‘&’ to ‘\0’, ‘+’ to ‘ ‘, and
+    “%xx” to a single hex byte.
+
+    After completion, the data has been decoded and a null terminator
+    signifies the end of a name or value.  A second null terminator (or a
+    null name parameter) indicates the end of all the data.
+
+  Precondition:
+    The data parameter is null terminated and has at least one extra
+    byte free.
+
+  Parameters:
+    cData - The string which is to be decoded in place.
+
+  Returns:
+    A pointer to the last null terminator in data, which is also the
+    first free byte for new data.
+
+  Example:
+   code>
+  </code>
+
+  Remarks:
+    This function is called by the stack to parse GET arguments and
+    cookie data.  User applications can use this function to decode POST
+    data, but first need to verify that the string is null-terminated.
+ */
+uint8_t*  TCPIP_HTTP_URLDecode(uint8_t* cData);
+
+
+/*****************************************************************************
+  Function:
+    const uint8_t* TCPIP_HTTP_ArgGet(const uint8_t* cData, const uint8_t* cArg)
+
+  Summary:
+    Locates a form field value in a given data array.
+
+  Description:
+    Searches through a data array to find the value associated with a
+    given argument.  It can be used to find form field values in data
+    received over GET or POST.
+
+    The end of data is assumed to be reached when a null name parameter is
+    encountered.  This requires the string to have an even number of
+    null-terminated strings, followed by an additional null terminator.
+
+  Precondition:
+    The data array has a valid series of null terminated name/value pairs.
+
+  Parameters:
+    data - the buffer to search
+    arg - the name of the argument to find
+
+  Returns:
+    A pointer to the argument value, or NULL if not found.
+
+  Example:
+  <code>
+    void HTTPPrint_cookiename(HTTP_CONN_HANDLE connHandle)
+    {
+        const uint8_t *ptr;
+        TCP_SOCKET sktHTTP;
+
+        ptr = TCPIP_HTTP_ArgGet(TCPIP_HTTP_CurrentConnectionDataBufferGet(connHandle), (const uint8_t*)"name");
+        sktHTTP = TCPIP_HTTP_CurrentConnectionSocketGet(connHandle);
+        if(ptr)
+            TCPIP_TCP_StringPut(sktHTTP, ptr);
+        else
+            TCPIP_TCP_StringPut(sktHTTP, (const uint8_t*)"not set");
+    }
+  </code>
+
+  Remarks:
+    None.
+ */
+const uint8_t*      TCPIP_HTTP_ArgGet(const uint8_t* cData, const uint8_t* cArg);
+
+
+/*****************************************************************************
+  Function:
+    void TCPIP_HTTP_FileInclude(HTTP_CONN_HANDLE connHandle, const uint8_t* cFile)
+
+  Summary:
+    Writes a file byte-for-byte to the currently loaded TCP socket.
+
+  Description:
+    Allows an entire file to be included as a dynamic variable, providing
+    a basic templating system for HTML web pages.  This reduces unneeded
+    duplication of visual elements such as headers, menus, etc.
+
+    When pHttpCon->callbackPos is 0, the file is opened and as many bytes
+    as possible are written.  The current position is then saved to
+    pHttpCon->callbackPos and the file is closed.  On subsequent calls,
+    reading begins at the saved location and continues.  Once the end of
+    the input file is reached, pHttpCon->callbackPos is set back to 0 to
+    indicate completion.
+
+  Precondition:
+    None
+
+  Parameters:
+    cFile - the name of the file to be sent
+
+  Returns:
+    None
+
+  Example:
+  <code>
+  </code>
+
+  Remarks:
+    Users should not call this function directly, but should instead add
+    dynamic variables in the form of ~inc:filename.ext~ in their HTML code
+    to include (for example) the file "filename.ext" at that specified
+    location.  The MPFS2 Generator utility will handle the rest.
+ */
+void  TCPIP_HTTP_FileInclude(HTTP_CONN_HANDLE connHandle, const uint8_t* cFile);
+
+
+/*****************************************************************************
+  Function:
+    HTTP_READ_STATUS TCPIP_HTTP_PostNameRead(HTTP_CONN_HANDLE connHandle, uint8_t* cData, uint16_t wLen)
+
+  Summary:
+    Reads a name from a URL encoded string in the TCP buffer.
+
+  Description:
+    Reads a name from a URL encoded string in the TCP buffer.  This function
+    is meant to be called from an HTTPExecutePost callback to facilitate
+    easier parsing of incoming data.  This function also prevents buffer
+    overflows by forcing the programmer to indicate how many bytes are
+    expected.  At least 2 extra bytes are needed in cData over the maximum
+    length of data expected to be read.
+
+    This function will read until the next '=' character, which indicates the
+    end of a name parameter.  It assumes that the front of the buffer is
+    the beginning of the name paramter to be read.
+
+    This function properly updates pHttpCon->byteCount by decrementing it
+    by the number of bytes read.  It also removes the delimiting '=' from
+    the buffer.
+
+  Precondition:
+    Front of TCP buffer is the beginning of a name parameter, and the rest of
+    the TCP buffer contains a URL-encoded string with a name parameter
+    terminated by a '=' character.
+
+  Parameters:
+    connHandle  - HTTP connection handle
+    cData - where to store the name once it is read
+    wLen - how many bytes can be written to cData
+
+  Return Values:
+    HTTP_READ_OK - name was successfully read
+    HTTP_READ_TRUNCTATED - entire name could not fit in the buffer, so the
+                            value was truncated and data has been lost
+    HTTP_READ_INCOMPLETE - entire name was not yet in the buffer, so call
+                            this function again later to retrieve
+
+  Example:
+  <code>
+  </code>
+
+  Remarks:
+    None
+ */
+HTTP_READ_STATUS    TCPIP_HTTP_PostNameRead(HTTP_CONN_HANDLE connHandle, uint8_t* cData, uint16_t wLen);
+
+
+/*****************************************************************************
+  Function:
+    HTTP_READ_STATUS TCPIP_HTTP_PostValueRead(HTTP_CONN_HANDLE connHandle, uint8_t* cData, uint16_t wLen)
+
+  Summary:
+    Reads a value from a URL encoded string in the TCP buffer.
+
+  Description:
+    Reads a value from a URL encoded string in the TCP buffer.  This function
+    is meant to be called from an HTTPExecutePost callback to facilitate
+    easier parsing of incoming data.  This function also prevents buffer
+    overflows by forcing the programmer to indicate how many bytes are
+    expected.  At least 2 extra bytes are needed in cData above the maximum
+    length of data expected to be read.
+
+    This function will read until the next '&' character, which indicates the
+    end of a value parameter.  It assumes that the front of the buffer is
+    the beginning of the value paramter to be read.  If pHttpCon->byteCount
+    indicates that all expected bytes are in the buffer, it assumes that
+    all remaining data is the value and acts accordingly.
+
+    This function properly updates pHttpCon->byteCount by decrementing it
+    by the number of bytes read.  The terminating '&' character is also
+    removed from the buffer.
+
+  Precondition:
+    Front of TCP buffer is the beginning of a name parameter, and the rest of
+    the TCP buffer contains a URL-encoded string with a name parameter
+    terminated by a '=' character.
+
+  Parameters:
+    connHandle  - HTTP connection handle
+    cData - where to store the value once it is read
+    wLen - how many bytes can be written to cData
+
+  Return Values:
+    HTTP_READ_OK - value was successfully read
+    HTTP_READ_TRUNCTATED - entire value could not fit in the buffer, so the
+                            value was truncated and data has been lost
+    HTTP_READ_INCOMPLETE - entire value was not yet in the buffer, so call
+                            this function again later to retrieve
+
+  Example:
+  <code>
+  </code>
+
+  Remarks:
+    None
+ */
+HTTP_READ_STATUS  TCPIP_HTTP_PostValueRead(HTTP_CONN_HANDLE connHandle, uint8_t* cData, uint16_t wLen);
+
+
+/*****************************************************************************
+  Function:
+    FILE_HANDLE  TCPIP_HTTP_CurrentConnectionFileGet(HTTP_CONN_HANDLE connHandle)
+
+  Summary:
+    Get handle to current connection's file.
+
+  Description:
+    Get handle to current connection's file.
+
+  Precondition:
+    None.
+
+  Parameters:
+    connHandle  - HTTP connection handle
+
+  Return Values:
+    Handle to File System file belonging to the connection defined by connHandle
+
+  Example:
+  <code>
+    uint8_t filename[20];
+
+    // Load the file name
+    // Make sure uint8_t filename[] above is large enough for your longest name
+    MPFSGetFilename(TCPIP_HTTP_CurrentConnectionFileGet(connHandle), filename, 20);
+  </code>
+
+  Remarks:
+    None.
+ */
+#if defined (HARMONY_FS)
+SYS_FS_HANDLE  TCPIP_HTTP_CurrentConnectionFileGet(HTTP_CONN_HANDLE connHandle);
+#else
+FILE_HANDLE  TCPIP_HTTP_CurrentConnectionFileGet(HTTP_CONN_HANDLE connHandle);
+#endif
+
+/*****************************************************************************
+  Function:
+    int  TCPIP_HTTP_CurrentConnectionPostSmGet(HTTP_CONN_HANDLE connHandle)
+
+  Summary:
+    Get the POST state machine state.
+
+  Description:
+    Get the POST state machine state for connection defined by connHandle
+
+  Precondition:
+    None
+
+  Parameters:
+    connHandle  - HTTP connection handle
+
+  Return Values:
+    POST state machine state.
+
+  Example:
+  <code>
+    switch(TCPIP_HTTP_CurrentConnectionPostSmGet(connHandle))
+    {
+        // Find the name
+        case SM_POST_LCD_READ_NAME:
+         .
+         .
+         .
+        // Found the value, so store the LCD and return
+        case SM_POST_LCD_READ_VALUE:
+         .
+         .
+         .
+    }
+  </code>
+
+  Remarks:
+    None
+ */
+int  TCPIP_HTTP_CurrentConnectionPostSmGet(HTTP_CONN_HANDLE connHandle);
+
+
+/*****************************************************************************
+  Function:
+    void  TCPIP_HTTP_CurrentConnectionPostSmSet(HTTP_CONN_HANDLE connHandle, int state)
+
+  Summary:
+    Set the POST state machine state.
+
+  Description:
+    Set the POST state machine state for connection defined by connHandle
+
+  Precondition:
+    None.
+
+  Parameters:
+    connHandle  - HTTP connection handle
+    state - Integer state for POST state machine
+
+  Return Values:
+    None.
+
+  Example:
+  <code>
+    uint8_t* httpDataBuff;
+    switch(TCPIP_HTTP_CurrentConnectionPostSmGet(connHandle))
+    {
+        // Find the name
+        case SM_POST_LCD_READ_NAME:
+
+            // Read a name
+            if(TCPIP_HTTP_PostNameRead(connHandle, httpDataBuff, HTTP_MAX_DATA_LEN) == HTTP_READ_INCOMPLETE)
+                return HTTP_IO_NEED_DATA;
+
+            TCPIP_HTTP_CurrentConnectionPostSmSet(connHandle, SM_POST_LCD_READ_VALUE);
+            // No break...continue reading value
+
+        // Found the value, so store the LCD and return
+        case SM_POST_LCD_READ_VALUE:
+         .
+         .
+         .
+    }
+  </code>
+
+  Remarks:
+    None
+ */
+void  TCPIP_HTTP_CurrentConnectionPostSmSet(HTTP_CONN_HANDLE connHandle, int state);
+
+
+/*****************************************************************************
+  Function:
+    uint8_t*  TCPIP_HTTP_CurrentConnectionDataBufferGet(HTTP_CONN_HANDLE connHandle)
+
+  Summary:
+    Returns pointer to connection general purpose data buffer.
+
+  Description:
+    Returns pointer to connection general purpose data buffer.
+
+  Precondition:
+    None.
+
+  Parameters:
+    connHandle  - HTTP connection handle
+
+  Return Values:
+    Pointer to the connection's general purpose data buffer
+
+  Example:
+  <code>
+    void HTTPPrint_cookiename(HTTP_CONN_HANDLE connHandle)
+    {
+        const uint8_t *ptr;
+        TCP_SOCKET sktHTTP;
+
+        ptr = TCPIP_HTTP_ArgGet(TCPIP_HTTP_CurrentConnectionDataBufferGet(connHandle), (const uint8_t*)"name");
+        sktHTTP = TCPIP_HTTP_CurrentConnectionSocketGet(connHandle);
+        if(ptr)
+            TCPIP_TCP_StringPut(sktHTTP, ptr);
+        else
+            TCPIP_TCP_StringPut(sktHTTP, (const uint8_t*)"not set");
+    }
+  </code>
+
+  Remarks:
+    None.
+ */
+uint8_t*  TCPIP_HTTP_CurrentConnectionDataBufferGet(HTTP_CONN_HANDLE connHandle);
+
+
+/*****************************************************************************
+  Function:
+    uint32_t  TCPIP_HTTP_CurrentConnectionCallbackPosGet(HTTP_CONN_HANDLE connHandle)
+
+  Summary:
+    Returns the callback position indicator.
+
+  Description:
+    Returns the callback position indicator for connection defined by connHandle.
+
+  Precondition:
+    None.
+
+  Parameters:
+    connHandle  - HTTP connection handle
+
+  Return Values:
+     Callback position indicator for connection defined by connHandle.
+
+  Example:
+  <code>
+    uint32_t callbackPos;
+    callbackPos = TCPIP_HTTP_CurrentConnectionCallbackPosGet(connHandle);
+    if(callbackPos == 0x00u)
+        callbackPos = (uint32_t)DDNSClient.Host.szRAM;
+    callbackPos = (uint32_t)TCPIP_TCP_StringPut(TCPIP_HTTP_CurrentConnectionSocketGet(connHandle), (uint8_t*)callbackPos);
+    if(*(uint8_t*)callbackPos == '\0')
+        callbackPos = 0x00;
+    TCPIP_HTTP_CurrentConnectionCallbackPosSet(connHandle, callbackPos);
+  </code>
+
+  Remarks:
+    None.
+ */
+uint32_t  TCPIP_HTTP_CurrentConnectionCallbackPosGet(HTTP_CONN_HANDLE connHandle);
+
+
+/*****************************************************************************
+  Function:
+    void  TCPIP_HTTP_CurrentConnectionCallbackPosSet(HTTP_CONN_HANDLE connHandle, uint32_t)
+
+  Summary:
+    Sets the callback position indicator.
+
+  Description:
+    Sets the callback position indicator for connection defined by connHandle.
+
+  Precondition:
+    None.
+
+  Parameters:
+    connHandle  - HTTP connection handle
+
+  Return Values:
+    None.
+
+  Example:
+  <code>
+    void HTTPPrint_builddate(HTTP_CONN_HANDLE connHandle)
+    {
+        TCP_SOCKET sktHTTP;
+        sktHTTP = TCPIP_HTTP_CurrentConnectionSocketGet(connHandle);
+
+        TCPIP_HTTP_CurrentConnectionCallbackPosSet(connHandle, 0x01);
+        if(TCPIP_TCP_PutIsReady(sktHTTP) < strlen((const char*)__DATE__" "__TIME__))
+        { // Don't have room to output build date and time
+            return;
+        }
+        TCPIP_HTTP_CurrentConnectionCallbackPosSet(connHandle, 0x00);
+        TCPIP_TCP_StringPut(sktHTTP, (const void*)__DATE__" "__TIME__);
+    }
+  </code>
+
+  Remarks:
+    None.
+ */
+void  TCPIP_HTTP_CurrentConnectionCallbackPosSet(HTTP_CONN_HANDLE connHandle, uint32_t);
+
+
+/*****************************************************************************
+  Function:
+    void TCPIP_HTTP_CurrentConnectionStatusSet(HTTP_CONN_HANDLE connHandle, HTTP_STATUS stat)
+
+  Summary:
+    Sets HTTP status.
+
+  Description:
+    Sets HTTP status to value in enumeration HTTP_STATUS.
+
+  Precondition:
+    None.
+
+  Parameters:
+    connHandle  - HTTP connection handle
+
+  Return Values:
+    None.
+
+  Example:
+  <code>
+    byteCount = TCPIP_HTTP_CurrentConnectionByteCountGet(connHandle);
+    sktHTTP = TCPIP_HTTP_CurrentConnectionSocketGet(connHandle);
+    if(byteCount > TCPIP_TCP_GetIsReady(sktHTTP) + TCPIP_TCP_FifoRxFreeGet(sktHTTP))
+    {   // Configuration Failure
+        // 302 Redirect will be returned
+        TCPIP_HTTP_CurrentConnectionStatusSet(connHandle, HTTP_REDIRECT);
+    }
+  </code>
+
+  Remarks:
+    None.
+ */
+void  TCPIP_HTTP_CurrentConnectionStatusSet(HTTP_CONN_HANDLE connHandle, HTTP_STATUS stat);
+
+
+/*****************************************************************************
+  Function:
+    void TCPIP_HTTP_CurrentConnectionHasArgsSet(HTTP_CONN_HANDLE connHandle, bool args)
+
+  Summary:
+    Sets whether there are get or cookie arguments
+
+  Description:
+    Sets whether there are get or cookie arguments
+
+  Precondition:
+    None.
+
+  Parameters:
+    connHandle  - HTTP connection handle
+    args        - boolean if there arguments or not
+
+  Return Values:
+    None.
+
+  Example:
+  <code>
+    else if(!memcmp(filename, "cookies.htm", 11))
+    { // If it's the LED updater file
+        TCPIP_HTTP_CurrentConnectionHasArgsSet(connHandle, true);
+    }
+  </code>
+
+  Remarks:
+    None.
+ */
+void                TCPIP_HTTP_CurrentConnectionHasArgsSet(HTTP_CONN_HANDLE connHandle, bool args);
+
+
+/*****************************************************************************
+  Function:
+    uint32_t TCPIP_HTTP_CurrentConnectionByteCountGet(HTTP_CONN_HANDLE connHandle)
+
+  Summary:
+    Returns how many bytes have been read so far
+
+  Description:
+    Returns how many bytes have been read so far
+
+  Precondition:
+    None.
+
+  Parameters:
+    connHandle  - HTTP connection handle
+
+  Return Values:
+    Current connection byte count, how many bytes have been read so far.
+
+  Example:
+  <code>
+    switch(TCPIP_HTTP_CurrentConnectionPostSmGet(connHandle))
+    {
+        case SM_CFG_SNMP_READ_NAME:
+            // If all parameters have been read, end
+            if(TCPIP_HTTP_CurrentConnectionByteCountGet(connHandle) == 0u)
+            {
+                return HTTP_IO_DONE;
+            }
+         .
+         .
+         .
+    }
+  </code>
+
+  Remarks:
+    None.
+ */
+uint32_t  TCPIP_HTTP_CurrentConnectionByteCountGet(HTTP_CONN_HANDLE connHandle);
+
+
+/*****************************************************************************
+  Function:
+    void  TCPIP_HTTP_CurrentConnectionByteCountSet(HTTP_CONN_HANDLE connHandle, uint32_t byteCount)
+
+  Summary:
+    Sets how many bytes have been read so far
+
+  Description:
+    Sets how many bytes have been read so far
+
+  Precondition:
+
+  Parameters:
+    connHandle  - HTTP connection handle
+    byteCount   - byte count to be set
+
+  Return Values:
+    None.
+
+  Example:
+  <code>
+  </code>
+
+  Remarks:
+    None.
+ */
+void  TCPIP_HTTP_CurrentConnectionByteCountSet(HTTP_CONN_HANDLE connHandle, uint32_t byteCount);
+
+
+/*****************************************************************************
+  Function:
+    void  TCPIP_HTTP_CurrentConnectionByteCountDec(HTTP_CONN_HANDLE connHandle, uint32_t byteCount)
+
+  Summary:
+    Decrements byte count.
+
+  Description:
+    Decrements byte count.
+
+  Precondition:
+    None.
+
+  Parameters:
+    connHandle  - HTTP connection handle
+    byteCount   - byte count reduction
+
+  Return Values:
+    None
+
+  Example:
+  <code>
+  </code>
+
+  Remarks:
+    None.
+ */
+void  TCPIP_HTTP_CurrentConnectionByteCountDec(HTTP_CONN_HANDLE connHandle, uint32_t byteCount);
+
+
+/*****************************************************************************
+  Function:
+    TCP_SOCKET  TCPIP_HTTP_CurrentConnectionSocketGet(HTTP_CONN_HANDLE connHandle)
+
+  Summary:
+    Get the socket for the current connection.
+
+  Description:
+    Get the socket for the current connection.
+
+  Precondition:
+    None
+
+  Parameters:
+    connHandle  - HTTP connection handle
+
+  Return Values:
+    TCP_SOCKET for connection defined by connHandle.
+
+  Example:
+  <code>
+    uint32_t byteCount;
+    TCP_SOCKET sktHTTP;
+
+    byteCount = TCPIP_HTTP_CurrentConnectionByteCountGet(connHandle);
+    sktHTTP = TCPIP_HTTP_CurrentConnectionSocketGet(connHandle);
+    if(byteCount > TCPIP_TCP_GetIsReady(sktHTTP) + TCPIP_TCP_FifoRxFreeGet(sktHTTP))
+    {   // Configuration Failure
+        TCPIP_HTTP_CurrentConnectionStatusSet(connHandle, HTTP_REDIRECT);
+        return HTTP_IO_DONE;
+    }
+  </code>
+
+  Remarks:
+    None.
+ */
+TCP_SOCKET  TCPIP_HTTP_CurrentConnectionSocketGet(HTTP_CONN_HANDLE connHandle);
+
+/*****************************************************************************
+  Function:
+    uint8_t   TCPIP_HTTP_CurrentConnectionIsAuthorizedGet(HTTP_CONN_HANDLE connHandle)
+
+  Summary:
+    Get the authorized state for the current connection.
+
+  Description:
+    Get the authorization status for the current connection.
+
+  Precondition:
+    None
+
+  Parameters:
+    connHandle  - HTTP connection handle
+
+  Return Values:
+    a uint8_t representing the authorization status
+
+  Example:
+  <code>
+    uint8_t isAuth;
+
+    isAuth = TCPIP_HTTP_CurrentConnectionIsAuthorizedGet(connHandle);
+  </code>
+
+  Remarks:
+    None.
+ */
+uint8_t   TCPIP_HTTP_CurrentConnectionIsAuthorizedGet(HTTP_CONN_HANDLE connHandle);
+
+
+/*****************************************************************************
+  Function:
+    void   TCPIP_HTTP_CurrentConnectionIsAuthorizedSet(HTTP_CONN_HANDLE connHandle, uint8_t auth)
+
+  Summary:
+    Sets the authorized state for the current connection.
+
+  Description:
+    Sets the authorization status for the current connection.
+
+  Precondition:
+    None
+
+  Parameters:
+    connHandle  - HTTP connection handle
+    auth        - new authorization state
+
+  Return Values:
+    None
+
+  Example:
+  <code>
+    uint8_t auth = 0x80;
+
+    TCPIP_HTTP_CurrentConnectionIsAuthorizedSet(connHandle, auth);
+  </code>
+
+  Remarks:
+    None.
+ */
+void   TCPIP_HTTP_CurrentConnectionIsAuthorizedSet(HTTP_CONN_HANDLE connHandle, uint8_t auth);
+
+
+/*****************************************************************************
+  Function:
+    void    TCPIP_HTTP_CurrentConnectionUserDataSet(HTTP_CONN_HANDLE connHandle, const void* uData)
+
+  Summary:
+    Sets the user data parameter for the current connection.
+
+  Description:
+    Sets the user data value for the current connection.
+
+  Precondition:
+    None
+
+  Parameters:
+    connHandle  - HTTP connection handle
+    uData       - user supplied data
+
+  Return Values:
+    None.
+
+  Example:
+  <code>
+    uint32_t myConnData;
+
+    TCPIP_HTTP_CurrentConnectionUserDataSet(connHandle, (const void*)myConnData);
+  </code>
+
+  Remarks:
+    None.
+ */
+void    TCPIP_HTTP_CurrentConnectionUserDataSet(HTTP_CONN_HANDLE connHandle, const void* uData);
+
+
+/*****************************************************************************
+  Function:
+    const void*    TCPIP_HTTP_CurrentConnectionUserDataGet(HTTP_CONN_HANDLE connHandle)
+
+  Summary:
+    Gets the user data parameter for the current connection.
+
+  Description:
+    Returns the value of the user parameter for the current connection.
+
+  Precondition:
+    None
+
+  Parameters:
+    connHandle  - HTTP connection handle
+
+  Return Values:
+    User data that's stored as part of the connection.
+
+  Example:
+  <code>
+    uint32_t myConnData;
+
+    myConnData = (uint32_t)TCPIP_HTTP_CurrentConnectionUserDataGet(connHandle);
+  </code>
+
+  Remarks:
+    None.
+ */
+const void*    TCPIP_HTTP_CurrentConnectionUserDataGet(HTTP_CONN_HANDLE connHandle);
+
+
+/*****************************************************************************
+  Function:
+    int    TCPIP_HTTP_ActiveConnectionCountGet(void);
+
+  Summary:
+    Gets the number of active connections.
+
+  Description:
+    Returns the number of active conenctions at the current time.
+   
+  Precondition:
+    None
+
+  Parameters:
+    None.
+
+  Return Values:
+    The number of active connections.
+
+  Example:
+  <code>
+    int nConns;
+
+    nConns = TCPIP_HTTP_ActiveConnectionCountGet();
+  </code>
+
+  Remarks:
+    The value returned by this function is informational only.
+    The number of active connections changes dynamically.
+
+ */
+int    TCPIP_HTTP_ActiveConnectionCountGet(void);
+
+
+/*****************************************************************************
+  Function:
+    HTTP_READ_STATUS HTTPReadPostPair(HTTP_CONN_HANDLE connHandle, uint8_t* cData, uint16_t wLen)
+
+  Summary:
+    Reads a name and value pair from a URL encoded string in the TCP buffer.
+
+  Description:
+    Reads a name and value pair from a URL encoded string in the TCP buffer.
+    This function is meant to be called from an HTTPExecutePost callback to
+    facilitate easier parsing of incoming data.  This function also prevents
+    buffer overflows by forcing the programmer to indicate how many bytes are
+    expected.  At least 2 extra bytes are needed in cData over the maximum
+    length of data expected to be read.
+
+    This function will read until the next '&' character, which indicates the
+    end of a value parameter.  It assumes that the front of the buffer is
+    the beginning of the name paramter to be read.
+
+    This function properly updates curHTTP.byteCount by decrementing it
+    by the number of bytes read.  It also removes the delimiting '&' from
+    the buffer.
+
+    Once complete, two strings will exist in the cData buffer.  The first is
+    the parameter name that was read, while the second is the associated
+    value.
+
+  Precondition:
+    Front of TCP buffer is the beginning of a name parameter, and the rest of
+    the TCP buffer contains a URL-encoded string with a name parameter
+    terminated by a '=' character and a value parameter terminated by a '&'.
+
+  Parameters:
+    connHandle  - HTTP connection handle
+    cData - where to store the name and value strings once they are read
+    wLen - how many bytes can be written to cData
+
+  Return Values:
+    HTTP_READ_OK - name and value were successfully read
+    HTTP_READ_TRUNCTATED - entire name and value could not fit in the buffer,
+                            so input was truncated and data has been lost
+    HTTP_READ_INCOMPLETE - entire name and value was not yet in the buffer,
+                            so call this function again later to retrieve
+
+  Remarks:
+    This function is aliased to TCPIP_HTTP_PostValueRead, since they effectively
+    perform the same task.  The name is provided only for completeness.
+ */
+#define HTTPReadPostPair(connHandle, cData, wLen) TCPIP_HTTP_PostValueRead(connHandle, cData, wLen)
+
+
+/****************************************************************************
+  Section:
+    User-Implemented Callback Function Prototypes
+ */
+
+/*****************************************************************************
+  Function:
+    HTTP_IO_RESULT HTTPExecuteGet(HTTP_CONN_HANDLE connHandle)
+
+  Summary:
+    Processes GET form field variables and cookies.
+
+  Description:
+    This function is implemented by the application developer in
+    CustomHTTPApp.c.  Its purpose is to parse the data received from
+    URL parameters (GET method forms) and cookies and perform any
+    application-specific tasks in response to these inputs.  Any
+    required authentication has already been validated.
+
+    When this function is called, curHTTP.data contains sequential
+    name/value pairs of strings representing the data received.  In this
+    format, TCPIP_HTTP_ArgGet can be used to search for
+    specific variables in the input.  If data buffer space associated
+    with this connection is required, curHTTP.data may be overwritten
+    here once the application is done with the values.  Any data placed
+    there will be available to future callbacks for this connection,
+    including HTTPExecutePost and any HTTPPrint_varname dynamic
+    substitutions.
+
+    This function may also issue redirections by setting curHTTP.data
+    to the destination file name or URL, and curHTTP.httpStatus to
+    HTTP_REDIRECT.
+
+    Finally, this function may set cookies.  Set curHTTP.data to a series
+    of name/value string pairs (in the same format in which parameters
+    arrive) and then set curHTTP.hasArgs equal to the number of cookie
+    name/value pairs.  The cookies will be transmitted to the browser,
+    and any future requests will have those values available in
+    curHTTP.data.
+
+  Precondition:
+    None
+
+  Parameters:
+    connHandle  - HTTP connection handle
+
+  Return Values:
+    HTTP_IO_DONE - application is done processing
+    HTTP_IO_NEED_DATA - this value may not be returned because more data
+                        will not become available
+    HTTP_IO_WAITING - the application is waiting for an asynchronous
+                      process to complete, and this function should be
+                      called again later
+
+  Remarks:
+    This function is only called if variables are received via URL
+    parameters or Cookie arguments.  This function may NOT write to the
+    TCP buffer.
+
+    This function may service multiple HTTP requests simultaneously.
+    Exercise caution when using global or static variables inside this
+    routine.  Use curHTTP.callbackPos or curHTTP.data for storage associated
+    with individual requests.
+ */
+HTTP_IO_RESULT HTTPExecuteGet(HTTP_CONN_HANDLE connHandle);
+
+/*****************************************************************************
+  Function:
+    HTTP_IO_RESULT HTTPExecutePost(HTTP_CONN_HANDLE connHandle)
+
+  Summary:
+    Processes POST form variables and data.
+
+  Description:
+    This function is implemented by the application developer in
+    CustomHTTPApp.c.  Its purpose is to parse the data received from
+    POST forms and perform any application-specific tasks in response
+    to these inputs.  Any required authentication has already been
+    validated before this function is called.
+
+    When this function is called, POST data will be waiting in the
+    TCP buffer.  curHTTP.byteCount will indicate the number of bytes
+    remaining to be received before the browser request is complete.
+
+    Since data is still in the TCP buffer, the application must call
+    TCPIP_TCP_Get or TCPIP_TCP_ArrayGet in order to retrieve bytes.  When this is done,
+    curHTTP.byteCount MUST be updated to reflect how many bytes now
+    remain.  The functions TCPIP_TCP_Find, TCPFindString, and TCPIP_TCP_ArrayFind
+    may be helpful to locate data in the TCP buffer.
+
+    In general, data submitted from web forms via POST is URL encoded.
+    The TCPIP_HTTP_URLDecode function can be used to decode this information
+    back to a standard string if required.  If data buffer space
+    associated with this connection is required, curHTTP.data may be
+    overwritten here once the application is done with the values.
+    Any data placed there will be available to future callbacks for
+    this connection,  including HTTPExecutePost and any
+    HTTPPrint_varname dynamic substitutions.
+
+    Whenever a POST form is processed it is recommended to issue a
+    redirect back to the browser, either to a status page or to
+    the same form page that was posted.  This prevents accidental
+    duplicate submissions (by clicking refresh or back/forward) and
+    avoids browser warnings about "resubmitting form data".  Redirects
+    may be issued to the browser by setting curHTTP.data to the
+    destination file or URL, and curHTTP.httpStatus to HTTP_REDIRECT.
+
+    Finally, this function may set cookies.  Set curHTTP.data to a series
+    of name/value string pairs (in the same format in which parameters
+    arrive) and then set curHTTP.hasArgs equal to the number of cookie
+    name/value pairs.  The cookies will be transmitted to the browser,
+    and any future requests will have those values available in
+    curHTTP.data.
+
+  Precondition:
+    None
+
+  Parameters:
+    connHandle  - HTTP connection handle
+
+  Return Values:
+    HTTP_IO_DONE - application is done processing
+    HTTP_IO_NEED_DATA - more data is needed to continue, and this
+                        function should be called again later
+    HTTP_IO_WAITING - the application is waiting for an asynchronous
+                      process to complete, and this function should
+                      be called again later
+
+  Remarks:
+    This function is only called when the request method is POST, and is
+    only used when HTTP_USE_POST is defined.  This method may NOT write
+    to the TCP buffer.
+
+    This function may service multiple HTTP requests simultaneously.
+    Exercise caution when using global or static variables inside this
+    routine.  Use curHTTP.callbackPos or curHTTP.data for storage associated
+    with individual requests.
+ */
+HTTP_IO_RESULT HTTPExecutePost(HTTP_CONN_HANDLE connHandle);
+
+/*****************************************************************************
+  Function:
+    uint8_t HTTPNeedsAuth(HTTP_CONN_HANDLE connHandle, uint8_t* cFile)
+
+  Summary:
+    Determines if a given file name requires authentication
+
+  Description:
+    This function is implemented by the application developer in
+    CustomHTTPApp.c.  Its function is to determine if a file being
+    requested requires authentication to view.  The user name and password,
+    if supplied, will arrive later with the request headers, and will be
+    processed at that time.
+
+    Return values 0x80 - 0xff indicate that authentication is not required,
+    while values from 0x00 to 0x79 indicate that a user name and password
+    are required before proceeding.  While most applications will only use a
+    single value to grant access and another to require authorization, the
+    range allows multiple "realms" or sets of pages to be protected, with
+    different credential requirements for each.
+
+    The return value of this function is saved as curHTTP.isAuthorized, and
+    will be available to future callbacks, including HTTPCheckAuth and any
+    of the HTTPExecuteGet, HTTPExecutePost, or HTTPPrint_varname callbacks.
+
+  Precondition:
+    None
+
+  Parameters:
+    connHandle  - HTTP connection handle
+    cFile - the name of the file being requested
+
+  Return Values:
+    <= 0x79 - valid authentication is required
+    >= 0x80 - access is granted for this connection
+
+  Remarks:
+    This function may NOT write to the TCP buffer.
+ */
+uint8_t HTTPNeedsAuth(HTTP_CONN_HANDLE connHandle, uint8_t* cFile);
+
+/*****************************************************************************
+  Function:
+    uint8_t HTTPCheckAuth(HTTP_CONN_HANDLE connHandle, uint8_t* cUser, uint8_t* cPass)
+
+  Summary:
+    Performs validation on a specific user name and password.
+
+  Description:
+    This function is implemented by the application developer in
+    CustomHTTPApp.c.  Its function is to determine if the user name and
+    password supplied by the client are acceptable for this resource.
+
+    The value of curHTTP.isAuthorized will be set to the previous return
+    value of HTTPRequiresAuthorization.  This callback function can check
+    this value to determine if only specific user names or passwords will
+    be accepted for this resource.
+
+    Return values 0x80 - 0xff indicate that the credentials were accepted,
+    while values from 0x00 to 0x79 indicate that authorization failed.
+    While most applications will only use a single value to grant access,
+    flexibility is provided to store multiple values in order to
+    indicate which user (or user's group) logged in.
+
+    The return value of this function is saved as curHTTP.isAuthorized, and
+    will be available to future callbacks, including any of the
+    HTTPExecuteGet, HTTPExecutePost, or HTTPPrint_varname callbacks.
+
+  Precondition:
+    None
+
+  Parameters:
+    connHandle  - HTTP connection handle
+    cUser - the user name supplied by the client
+    cPass - the password supplied by the client
+
+  Return Values:
+    <= 0x79 - the credentials were rejected
+    >= 0x80 - access is granted for this connection
+
+  Remarks:
+    This function is only called when an Authorization header is
+    encountered.
+
+    This function may NOT write to the TCP buffer.
+ */
+uint8_t HTTPCheckAuth(HTTP_CONN_HANDLE connHandle, uint8_t* cUser, uint8_t* cPass);
+
+/*****************************************************************************
+  Function:
+    void HTTPPrint_varname(HTTP_CONN_HANDLE connHandle)
+    void HTTPPrint_varname(HTTP_CONN_HANDLE connHandle, uint16_t wParam1)
+    void HTTPPrint_varname(HTTP_CONN_HANDLE connHandle, uint16_t wParam1, uint16_t wParam2, ...)
+
+  Summary:
+    Inserts dynamic content into a web page
+
+  Description:
+    Functions in this style are implemented by the application developer in
+    CustomHTTPApp.c.  These functions generate dynamic content to be
+    inserted into web pages and other files returned by the HTTP server.
+
+    Functions of this type are called when a dynamic variable is located
+    in a web page.  (ie, ~varname~ )  The name between the tilde '~'
+    characters is appended to the base function name.  In this example, the
+    callback would be named HTTPPrint_varname.
+
+    The function prototype is located in your project's http_print.h, which
+    is automatically generated by the MPFS2 Utility.  The prototype will
+    have uint16_t parameters included for each parameter passed in the dynamic
+    variable.  For example, the variable "~myArray(2,6)~" will generate the
+    prototype "void HTTPPrint_varname(uint16_t, uint16_t);".
+
+    When called, this function should write its output directly to the TCP
+    socket using any combination of TCPIP_TCP_PutIsReady, TCPIP_TCP_Put, TCPIP_TCP_ArrayPut,
+    TCPIP_TCP_StringPut, TCPIP_TCP_ArrayPut, and TCPIP_TCP_StringPut.
+
+    Before calling, the HTTP server guarantees that at least
+    HTTP_MIN_CALLBACK_FREE bytes (defaults to 16 bytes) are free in the
+    output buffer.  If the function is writing less than this amount, it
+    should simply write the data to the socket and return.
+
+    In situations where a function needs to write more this amount, it
+    must manage its output state using curHTTP.callbackPos.  This value
+    will be set to zero before the function is called.  If the function is
+    managing its output state, it must set this to a non-zero value before
+    returning.  Typically this is used to track how many bytes have been
+    written, or how many remain to be written.  If curHTTP.callbackPos is
+    non-zero, the function will be called again when more buffer space is
+    available.  Once the callback completes, set this value back to zero
+    to resume normal servicing of the request.
+
+  Precondition:
+    None
+
+  Parameters:
+    connHandle  - HTTP connection handle
+    wParam1 - first parameter passed in the dynamic variable (if any)
+    wParam2 - second parameter passed in the dynamic variable (if any)
+    ... - additional parameters as necessary
+
+  Returns:
+    None
+
+  Remarks:
+    This function may service multiple HTTP requests simultaneously,
+    especially when managing its output state.  Exercise caution when using
+    global or static variables inside this routine.  Use curHTTP.callbackPos
+    or curHTTP.data for storage associated with individual requests.
+ */
+void HTTPPrint_varname(HTTP_CONN_HANDLE connHandle,  uint16_t wParam1, uint16_t wParam2, ...);
+
+
+#endif  // __HTTP_H_
+

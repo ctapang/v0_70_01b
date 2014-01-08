@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE module SYSTEM "ispmodule.dtd">
+
+<!-- MPLAB Harmony Board Support Package Files -->
+<module name="pic32mz_sk" displayname="pic32mz_sk">
+	<component name="Required Files">
+		<includes>
+			<include logicalpath="/bsp/pic32mz_sk" name="bsp/sk_pic32_mz/bsp_config.h"/>
+		</includes>
+		<files>
+			<file logicalpath="/bsp/pic32mz_sk" name="bsp/sk_pic32_mz/bsp_sys_init.c"/>
+		</files>
+		<paths>
+            <path name="bsp/sk_pic32_mz"/>
+        </paths>
+	</component>
+</module>
+

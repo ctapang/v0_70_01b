@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE module SYSTEM "ispmodule.dtd">
+
+<module name="drv_spi" displayname="Serial Peripheral Interface (SPI) Driver Module">
+    <component name="Required Files" logicalpath="/framework/driver/spi">
+        <includes>
+            <include logicalpath="" name="/framework/driver/spi/drv_spi.h"/>
+            <include logicalpath="" name="/framework/driver/spi/drv_spi_mapping.h"/>
+            <include logicalpath="" name="/framework/driver/spi/drv_spi_static.h"/>
+            <include logicalpath="" name="/framework/driver/spi/drv_spi_static_multi.h"/>
+            <include logicalpath="src" name="/framework/driver/spi/src/drv_spi_local.h"/>
+            <include logicalpath="src" name="/framework/driver/spi/src/drv_spi_variant_mapping.h"/>
+        </includes>
+        <files>
+            <file logicalpath="src/dynamic" name="/framework/driver/spi/src/dynamic/drv_spi_dynamic.c"/>
+        </files>
+    </component>
+</module>

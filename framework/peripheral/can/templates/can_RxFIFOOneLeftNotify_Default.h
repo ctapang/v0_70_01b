@@ -1,0 +1,104 @@
+/*******************************************************************************
+  CAN Peripheral Library Template Implementation
+
+  File Name:
+    can_RxFIFOOneLeftNotify_Default.h
+
+  Summary:
+    CAN PLIB Template Implementation
+
+  Description:
+    This header file contains template implementations
+    For Feature : RxFIFOOneLeftNotify
+    and its Variant : Default
+    For following APIs :
+        PLIB_CAN_RxFIFOOneLeftNotify
+        PLIB_CAN_ExistsRxFIFOOneLeftNotify
+
+*******************************************************************************/
+
+//DOM-IGNORE-BEGIN
+/*******************************************************************************
+Copyright (c) 2012 released Microchip Technology Inc.  All rights reserved.
+
+Microchip licenses to you the right to use, modify, copy and distribute
+Software only when embedded on a Microchip microcontroller or digital signal
+controller that is integrated into your product or third party product
+(pursuant to the sublicense terms in the accompanying license agreement).
+
+You should refer to the license agreement accompanying this Software for
+additional information regarding your rights and obligations.
+
+SOFTWARE AND DOCUMENTATION ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND,
+EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION, ANY WARRANTY OF
+MERCHANTABILITY, TITLE, NON-INFRINGEMENT AND FITNESS FOR A PARTICULAR PURPOSE.
+IN NO EVENT SHALL MICROCHIP OR ITS LICENSORS BE LIABLE OR OBLIGATED UNDER
+CONTRACT, NEGLIGENCE, STRICT LIABILITY, CONTRIBUTION, BREACH OF WARRANTY, OR
+OTHER LEGAL EQUITABLE THEORY ANY DIRECT OR INDIRECT DAMAGES OR EXPENSES
+INCLUDING BUT NOT LIMITED TO ANY INCIDENTAL, SPECIAL, INDIRECT, PUNITIVE OR
+CONSEQUENTIAL DAMAGES, LOST PROFITS OR LOST DATA, COST OF PROCUREMENT OF
+SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
+(INCLUDING BUT NOT LIMITED TO ANY DEFENSE THEREOF), OR OTHER SIMILAR COSTS.
+*******************************************************************************/
+
+//DOM-IGNORE-END
+
+#ifndef _CAN_RXFIFOONELEFTNOTIFY_DEFAULT_H
+#define _CAN_RXFIFOONELEFTNOTIFY_DEFAULT_H
+
+//******************************************************************************
+/* Routines available for accessing VREGS, MASKS, POS, LEN are 
+
+  VREGs: 
+    _CAN_RX_FIFO_ONE_NOTIFY_VREG(index)
+
+  MASKs: 
+    _CAN_RX_FIFO_ONE_NOTIFY_MASK(index)
+
+  POSs: 
+    _CAN_RX_FIFO_ONE_NOTIFY_POS(index)
+
+  LENs: 
+    _CAN_RX_FIFO_ONE_NOTIFY_LEN(index)
+
+*/
+
+
+//******************************************************************************
+/* Function :  CAN_RxFIFOOneLeftNotify_Default
+
+  Summary:
+    Implements Default variant of PLIB_CAN_RxFIFOOneLeftNotify 
+
+  Description:
+    This template implements the Default variant of the PLIB_CAN_RxFIFOOneLeftNotify function.
+*/
+
+PLIB_TEMPLATE void CAN_RxFIFOOneLeftNotify_Default( CAN_MODULE_ID index )
+{
+    /* TODO  */
+}
+
+
+//******************************************************************************
+/* Function :  CAN_ExistsRxFIFOOneLeftNotify_Default
+
+  Summary:
+    Implements Default variant of PLIB_CAN_ExistsRxFIFOOneLeftNotify
+
+  Description:
+    This template implements the Default variant of the PLIB_CAN_ExistsRxFIFOOneLeftNotify function.
+*/
+
+PLIB_TEMPLATE bool CAN_ExistsRxFIFOOneLeftNotify_Default( CAN_MODULE_ID index )
+{
+    return true;
+}
+
+
+#endif /*_CAN_RXFIFOONELEFTNOTIFY_DEFAULT_H*/
+
+/******************************************************************************
+ End of File
+*/
+

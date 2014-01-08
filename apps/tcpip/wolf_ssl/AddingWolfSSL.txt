@@ -1,0 +1,28 @@
+How to incorporate Wolf SSL into your project:
+
+Add in the following defines:
+- MICROCHIP_PIC32
+- MICROCHIP_TCPIP
+- MICROCHIP_MPLAB_HARMONY
+
+Optionally you can add the following to help with debugging.
+
+- DEBUG_CYASSL
+
+Add in the following directories to the build:
+
+Include Files:
+- third_party\tcpip\cyassl-2.8.0\cyassl
+
+Source files
+- third_party\tcpip\cyassl-2.8.0\ctaocrypt\src
+- third_party\tcpip\cyassl-2.8.0\src
+
+Add the following to the include path
+- ../../../../../third_party/tcpip/cyassl-2.8.0
+- ../../../../../framework/tcpip/src
+
+Disable the following files from the build
+- cryptocrypt\src\*.i  (these will be fp_mul, fp_sqr etc)
+- cryptocrypt\src\misc.c
+

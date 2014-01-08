@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE module SYSTEM "ispmodule.dtd">
+
+<!-- Harmony OS Abstraction Layer Module File -->
+<module name="osal" displayname="OS Abstraction Layer Module">
+    <component name="Required Files">
+        <includes  logicalpath="/framework/osal">
+            <include name="framework/osal/osal.h"/>
+        </includes>
+        <files>
+            <file name="framework/osal/osal.c"/>
+        </files>
+    </component>
+    <configurations exclusive="true">
+        <configuration name="None">
+            <component name="Required Files">
+                <includes  logicalpath="/framework/osal">
+                    <include name="framework/osal/osal_impl_none.h"/>
+                </includes>
+				<code dataobject="osal_use_rtos_none_sysconf_h">
+				#define OSAL_USE_NONE
+				</code>
+            </component>
+        </configuration>
+        <configuration name="Basic">
+            <component name="Required Files">
+                <includes  logicalpath="/framework/osal">
+                    <include name="framework/osal/osal_impl_basic.h"/>
+                </includes>
+                <files>
+                    <file name="framework/osal/osal.c"/>
+                </files>
+				
+				<code dataobject="osal_use_rtos_basic_sysconf_h">
+				#define OSAL_USE_BASIC
+				</code>
+				
+            </component>
+        </configuration>
+        <configuration name="FreeRTOS">
+            <component name="Required Files">
+                <includes  logicalpath="/framework/osal">
+                    <include name="framework/osal/osal_freertos.h"/>
+                </includes>
+                <files>
+                    <file name="framework/osal/osal_freertos.c"/>
+                </files>
+				
+				<code dataobject="osal_use_rtos_sysconf_h">
+				#define OSAL_USE_RTOS
+				#define OSAL_MAX_PRIORITIES     10
+				#define OSAL_DAEMON_STACK_SIZE 1024
+				</code>
+				
+            </component>
+        </configuration>
+        <configuration name="OPENRTOS">
+            <component name="Required Files">
+                <includes  logicalpath="/framework/osal">
+                    <include name="framework/osal/osal_openrtos.h"/>
+                </includes>
+                <files>
+                    <file name="framework/osal/osal_openrtos.c"/>
+                </files>
+				
+				<code dataobject="osal_use_rtos_sysconf_h">
+				#define OSAL_USE_RTOS
+				#define OSAL_MAX_PRIORITIES     10
+				#define OSAL_DAEMON_STACK_SIZE 1024
+				</code>
+				
+            </component>
+        </configuration>        
+    </configurations>
+</module>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE module SYSTEM "ispmodule.dtd">
+
+<module name="drv_ethmac" displayname="Ethernet MAC Driver"  logicalpath="ethmac
+">
+    <component name="Required Files">
+        <includes >
+            <include name="framework/driver/ethmac/drv_ethmac.h"/>
+            <include name="framework/driver/ethmac/drv_ethernet_flags.h"/>
+            <include name="framework/driver/ethmac/src/drv_ethmac_local.h" logicalpath="src"/>
+        </includes>
+    </component>
+    <configurations exclusive="true">
+        <configuration name="Dynamic">
+            <component name="dynamic_implementation" logicalpath="src/dynamic">
+                <includes>
+                    <include name="framework/driver/ethmac/src/dynamic/drv_ethmac_lib.h"/>
+                    <include name="framework/driver/ethmac/src/dynamic/_eth_dcpt_lists.h"/>
+                </includes>
+                <files>
+                    <file name="framework/driver/ethmac/src/dynamic/drv_ethmac.c"/>
+                    <file name="framework/driver/ethmac/src/dynamic/drv_ethmac_lib.c"/>
+                </files>
+            </component>
+        </configuration>
+    </configurations>
+</module>

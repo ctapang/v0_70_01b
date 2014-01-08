@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE module SYSTEM "ispmodule.dtd">
+
+<module name="drv_ethphy" displayname="Ethernet PHY Interface Driver Module">
+    <component name="Dynamic Phy Driver Files" logicalpath="/framework/driver/ethphy">
+        <includes>
+            <include logicalpath="" name="/framework/driver/ethphy/drv_ethphy.h"/>
+            <include logicalpath="src" name="/framework/driver/ethphy/src/drv_ethphy_local.h"/>
+            <include logicalpath="src/dynamic" name="/framework/driver/ethphy/src/dynamic/drv_extphy.h"/>
+            <include logicalpath="src/dynamic" name="/framework/driver/ethphy/src/dynamic/drv_extphy_regs.h"/>
+            <include logicalpath="src/dynamic" name="/framework/driver/ethphy/src/dynamic/drv_ethphy_port_mappings.h"/>
+        </includes>
+        <files>
+            <file logicalpath="src/dynamic" name="/framework/driver/ethphy/src/dynamic/drv_ethphy.c"/>           
+        </files>
+    </component>
+	<component name="DP83640" logicalpath="/framework/driver/ethphy">
+        <includes>
+            <include logicalpath="src/dynamic" name="/framework/driver/ethphy/src/dynamic/drv_extphy_dp83640.h"/>            
+        </includes>
+        <files>
+            <file logicalpath="src/dynamic" name="/framework/driver/ethphy/src/dynamic/drv_extphy_dp83640.c"/>            
+        </files>
+    </component>
+	<component name="DP83848" logicalpath="/framework/driver/ethphy">
+        <includes>
+            <include logicalpath="src/dynamic" name="/framework/driver/ethphy/src/dynamic/drv_extphy_dp83848.h"/>            
+        </includes>
+        <files>
+            <file logicalpath="src/dynamic" name="/framework/driver/ethphy/src/dynamic/drv_extphy_dp83848.c"/>            
+        </files>
+    </component>
+	<component name="IP101gr" logicalpath="/framework/driver/ethphy">
+        <includes>
+            <include logicalpath="src/dynamic" name="/framework/driver/ethphy/src/dynamic/drv_extphy_ip101gr.h"/>            
+        </includes>
+        <files>
+            <file logicalpath="src/dynamic" name="/framework/driver/ethphy/src/dynamic/drv_extphy_ip101gr.c"/>            
+        </files>
+    </component>
+	<component name="Lan8700" logicalpath="/framework/driver/ethphy">
+        <includes>
+            <include logicalpath="src/dynamic" name="/framework/driver/ethphy/src/dynamic/drv_extphy_smsc8700.h"/>            
+        </includes>
+        <files>
+            <file logicalpath="src/dynamic" name="/framework/driver/ethphy/src/dynamic/drv_extphy_smsc8700.c"/>            
+        </files>
+    </component>
+	<component name="Lan8720" logicalpath="/framework/driver/ethphy">
+        <includes>
+            <include logicalpath="src/dynamic" name="/framework/driver/ethphy/src/dynamic/drv_extphy_smsc8720.h"/>            
+        </includes>
+        <files>
+            <file logicalpath="src/dynamic" name="/framework/driver/ethphy/src/dynamic/drv_extphy_smsc8720.c"/>            
+        </files>
+    </component>
+	<component name="Lan8740" logicalpath="/framework/driver/ethphy">
+        <includes>
+            <include logicalpath="src/dynamic" name="/framework/driver/ethphy/src/dynamic/drv_extphy_smsc8740.h"/>            
+        </includes>
+        <files>
+            <file logicalpath="src/dynamic" name="/framework/driver/ethphy/src/dynamic/drv_extphy_smsc8740.c"/>            
+        </files>
+    </component>
+	
+</module>

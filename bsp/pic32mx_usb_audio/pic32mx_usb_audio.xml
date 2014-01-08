@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE module SYSTEM "ispmodule.dtd">
+
+<!-- MPLAB Harmony Board Support Package Files -->
+<module name="pic32mx_usb_audio" displayname="pic32mx_usb_audio">
+	<component name="Required Files">
+		<includes>
+			<include logicalpath="/bsp/pic32mx_usb_audio" name="bsp/pic32mx_usb_audio/bsp_config.h"/>
+		</includes>
+		<files>
+			<file logicalpath="/bsp/pic32mx_usb_audio" name="bsp/pic32mx_usb_audio/bsp_sys_init.c"/>
+			<file logicalpath="/bsp/pic32mx_usb_audio" name="bsp/pic32mx_usb_audio/config_performance.c"/>
+		</files>
+		<paths>
+            <path name="bsp/pic32mx_usb_audio"/>
+        </paths>
+	</component>
+</module>
+	

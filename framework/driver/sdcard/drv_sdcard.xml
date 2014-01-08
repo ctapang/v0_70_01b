@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE module SYSTEM "ispmodule.dtd">
+
+
+<module name="drv_sdcard" displayname="SD Card Driver Module">
+  <component name="Dynamic" logicalpath="/framework/driver/sdcard">
+    <includes>
+	  <include logicalpath="" name="/framework/driver/sdcard/drv_sdcard.h"/>
+	  <include logicalpath="" name="/framework/driver/sdcard/drv_sdcard_mapping.h"/>
+	  <include logicalpath="src" name="/framework/driver/sdcard/src/drv_sdcard_local.h"/>
+	  <include logicalpath="src" name="/framework/driver/sdcard/src/drv_sdcard_variant_mapping.h"/>
+	</includes>
+	<files>
+	  <file logicalpath="src/dynamic" name="/framework/driver/sdcard/src/dynamic/drv_sdcard_dynamic.c"/>          
+	</files>
+  </component>
+</module>
+
+

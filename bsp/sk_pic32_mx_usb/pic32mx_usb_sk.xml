@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE module SYSTEM "ispmodule.dtd">
+
+<!-- MPLAB Harmony Board Support Package Files -->
+<module name="pic32mx_usb_sk" displayname="pic32mx_usb_sk">
+	<component name="Required Files">
+		<includes>
+			<include logicalpath="/bsp/sk_pic32_mx_usb" name="bsp/sk_pic32_mx_usb/bsp_config.h"/>
+		</includes>
+		<files>
+			<file logicalpath="/bsp/sk_pic32_mx_usb" name="bsp/sk_pic32_mx_usb/bsp_sys_init.c"/>
+			<file logicalpath="/bsp/sk_pic32_mx_usb" name="bsp/sk_pic32_mx_usb/config_performance.c"/>
+		</files>
+		<paths>
+            <path name="bsp/sk_pic32_mx_usb"/>
+        </paths>
+	</component>
+</module>

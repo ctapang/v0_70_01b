@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE module SYSTEM "ispmodule.dtd">
+
+<module name="drv_gfx_s1d13517" displayname="S1D13517 Graphics Controler Driver Module">
+    <component name="Required Files">
+        <includes>
+<include  logicalpath="/framework/driver/gfx" name="/framework/driver/gfx/drv_gfx_display.h"/>
+<include logicalpath="/framework/driver/gfx/gfx_s1d13517" name="/framework/driver/gfx/gfx_s1d13517/drv_gfx_s1d13517.h"/>
+        </includes>
+        <files>
+            <file logicalpath="/framework/driver/gfx/gfx_s1d13517/src" name="/framework/driver/gfx/gfx_s1d13517/src/drv_gfx_s1d13517.c"/>
+        </files>
+    </component>
+</module>

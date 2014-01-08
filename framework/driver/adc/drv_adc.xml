@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE module SYSTEM "ispmodule.dtd">
+
+<module name="drv_adc" displayname="ADC Driver">
+  <component name="Dynamic" logicalpath="/framework/driver/adc">
+    <includes>
+      <include logicalpath="" name="framework/driver/adc/drv_adc.h"/>
+      <include logicalpath="" name="framework/driver/adc/drv_adc_mapping.h"/>
+      <include logicalpath="src" name="framework/driver/adc/src/drv_adc_local.h"/>
+      <include logicalpath="src" name="/framework/driver/nvm/src/drv_nvm_media_local.h"/>
+      <include logicalpath="src" name="framework/driver/adc/src/drv_adc_variant_mapping.h"/>
+    </includes>
+    <files>
+      <file name="framework/driver/adc/src/drv_adc.c"/>
+    </files>
+  </component>
+</module>

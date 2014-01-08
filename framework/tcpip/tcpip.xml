@@ -1,0 +1,467 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE component SYSTEM "ispmodule.dtd">
+
+<component name="tcpip">
+		<component name="Announce">
+			<includes>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/tcpip_announce_manager.h"/>
+			</includes>
+			<files>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/tcpip_announce.c"/>
+			</files>
+			<paths>				
+			</paths>		
+		</component>
+		<component name="Berkeley">
+			<includes>
+				<include logicalpath="/framework/tcpip" name="framework/tcpip/berkeley_api.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/berkeley_manager.h"/>				
+			</includes>
+			<files>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/berkeley_api.c"/>
+			</files>
+			 <paths>				
+			</paths>
+		</component>
+		<component name="Command">
+			<includes>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/tcpip_commands_manager.h"/>			
+			</includes>
+			<files>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/tcpip_commands.c"/>
+			</files>
+			 <paths>				
+			</paths>
+		</component>
+		<component name="Crypto">
+			<includes>
+				<include logicalpath="/framework/tcpip/src/crypto" name="framework/tcpip/src/crypto/aes.h"/>
+				<include logicalpath="/framework/tcpip/src/crypto" name="framework/tcpip/src/crypto/aes_cbc.h"/>
+				<include logicalpath="/framework/tcpip/src/crypto" name="framework/tcpip/src/crypto/aes_cfb.h"/>
+				<include logicalpath="/framework/tcpip/src/crypto" name="framework/tcpip/src/crypto/aes_ctr.h"/>
+				<include logicalpath="/framework/tcpip/src/crypto" name="framework/tcpip/src/crypto/aes_ecb.h"/>
+				<include logicalpath="/framework/tcpip/src/crypto" name="framework/tcpip/src/crypto/aes_ecb_pic32.h"/>
+				<include logicalpath="/framework/tcpip/src/crypto" name="framework/tcpip/src/crypto/aes_ofb.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/arcfour.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/rsa.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/rsa_manager.h"/>		
+			</includes>
+			<files>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/rsa.c"/>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/arcfour.c"/>				
+			</files>
+			<libraries>
+				  <library name="/framework/tcpip/src/crypto/aes_pic32mx.a" partprefix=""/>
+			</libraries>
+
+			 <paths>				
+			</paths>
+		</component>
+		<component name="DHCP Client">
+			<includes>
+				<include logicalpath="/framework/tcpip" name="framework/tcpip/dhcp.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/dhcp_manager.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/dhcp_private.h"/>
+			</includes>
+			<files>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/dhcp.c"/>
+			</files>
+			 <paths>				
+			</paths>
+		</component>
+		<component name="DHCP Server">
+			<includes>
+				<include logicalpath="/framework/tcpip" name="framework/tcpip/dhcps.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/dhcps_manager.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/dhcps_private.h"/>
+			</includes>
+			<files>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/dhcps.c"/>
+			</files>
+			 <paths>				
+			</paths>
+		</component>
+		<component name="DNS Client">
+			<includes>
+				<include logicalpath="/framework/tcpip" name="framework/tcpip/dns.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/dns_manager.h"/>
+			</includes>
+			<files>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/dns.c"/>
+			</files>
+			 <paths>				
+			</paths>
+		</component>
+		<component name="DNS Server">
+			<includes>
+			</includes>
+			<files>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/dnss.c"/>
+			</files>
+			 <paths>				
+			</paths>
+		</component>
+		<component name="Dynamic DNS">
+			<includes>
+				<include logicalpath="/framework/tcpip" name="framework/tcpip/ddns.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/ddns_manager.h"/>
+			</includes>
+			<files>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/ddns.c"/>
+			</files>
+			 <paths>				
+			</paths>
+		</component>
+		<component name="FTP">
+			<includes>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/ftp_manager.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/ftp_private.h"/>
+				<include logicalpath="/framework/tcpip" name="framework/tcpip/ftp.h"/>
+			</includes>
+			<files>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/ftp.c"/>
+			</files>
+			 <paths>				
+			</paths>
+		</component>
+		<component name="HTTP">
+			<includes>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/http_manager.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/http_private.h"/>
+				<include logicalpath="/framework/tcpip" name="framework/tcpip/http.h"/>
+			</includes>
+			<files>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/http.c"/>
+			</files>
+			 <paths>				
+			</paths>
+		</component>
+		<component name="ICMP Server">
+			<includes>
+				<include logicalpath="/framework/tcpip" name="framework/tcpip/icmp.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/icmp_manager.h"/>
+			</includes>
+			<files>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/icmp.c"/>
+			</files>
+			 <paths>				
+			</paths>
+		</component>
+		<component name="IPV4">
+			<includes>
+				<include logicalpath="/framework/tcpip" name="framework/tcpip/arp.h"/>
+				<include logicalpath="/framework/tcpip" name="framework/tcpip/ipv4.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/arp_manager.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/arp_private.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/ipv4_manager.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/ipv4_private.h"/>	
+			</includes>
+			<files>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/arp.c"/>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/ipv4.c"/>
+			</files>
+			<paths>				
+			</paths>
+		</component>
+		<component name="IPV6">
+			<includes>
+				<include logicalpath="/framework/tcpip" name="framework/tcpip/ipv6.h"/>
+				<include logicalpath="/framework/tcpip" name="framework/tcpip/ndp.h"/>
+				<include logicalpath="/framework/tcpip" name="framework/tcpip/icmpv6.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/ipv6_manager.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/ipv6_private.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/ndp_manager.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/ndp_private.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/icmpv6_manager.h"/>
+			</includes>
+			<files>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/ipv6.c"/>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/ndp.c"/>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/icmpv6.c"/>
+			</files>
+			 <paths>				
+			</paths>
+		</component>
+		<component name="Iperf">
+			<includes>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/iperf.h"/>	
+			</includes>
+			<files>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/iperf.c"/>
+			</files>
+			 <paths>				
+			</paths>
+		</component>
+
+		<component name="Module Required Files">
+			<includes>
+				<include logicalpath="/framework/tcpip" name="framework/tcpip/tcpip.h"/>
+				<include logicalpath="/framework/tcpip" name="framework/tcpip/tcpip_mac.h"/>
+				<include logicalpath="/framework/tcpip" name="framework/tcpip/tcpip_manager.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/tcpip_helpers.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/tcpip_types.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/tcpip_private.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/tcpip_notify.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/tcpip_module_manager.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/tcpip_manager_control.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/tcpip_mac_private.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/tcpip_mac_object.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/tcpip_helpers_private.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/tcpip_heap_alloc.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/tcpip_events.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/tcpip_config_private.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/oahash.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/link_list.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/hash_fnv.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/tcpip_packet.h"/>
+			</includes>
+			<files>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/hash_fnv.c"/>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/oahash.c"/>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/tcpip_heap_alloc.c"/>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/tcpip_helpers.c"/>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/tcpip_mac_object.c"/>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/tcpip_manager.c"/>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/tcpip_notify.c"/>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/tcpip_helper_c32.S"/>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/tcpip_packet.c" />
+			</files>
+			 <paths>				
+			</paths>
+		</component>
+		<component name="NBNS">
+			<includes>
+				<include logicalpath="/framework/tcpip" name="framework/tcpip/nbns.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/nbns_manager.h"/>	
+			</includes>
+			<files>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/nbns.c"/>
+			</files>
+			 <paths>				
+			</paths>
+		</component>
+		<component name="Reboot Server">
+			<includes>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/tcpip_reboot_manager.h"/>
+			</includes>
+			<files>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/tcpip_reboot.c"/>
+			</files>
+			 <paths>
+			</paths>
+		</component>
+		<component name="SMTP Client">
+			<includes>
+				<include logicalpath="/framework/tcpip" name="framework/tcpip/smtp.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/smtp_manager.h"/>
+			</includes>
+			<files>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/smtp.c"/>
+			</files>
+			 <paths>				
+			</paths>
+		</component>
+		<component name="SNTP Client">
+			<includes>
+				<include logicalpath="/framework/tcpip" name="framework/tcpip/sntp.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/sntp_manager.h"/>
+			</includes>
+			<files>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/sntp.c"/>
+			</files>
+			 <paths>				
+			</paths>
+		</component>
+		<component name="SNMP">
+			<includes>
+				<include logicalpath="/framework/tcpip" name="framework/tcpip/snmp.h"/>
+				<include logicalpath="/framework/tcpip" name="framework/tcpip/snmpv3.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/snmpv3_private.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/snmp_private.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/snmp_manager.h"/>
+			</includes>
+			<files>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/snmp.c"/>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/snmpv3.c"/>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/snmpv3_usm.c"/>
+			</files>
+			 <paths>				
+			</paths>
+		</component>
+
+		<component name="SSL">
+			<includes>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/ssl_manager.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/ssl_private.h"/>
+				<include logicalpath="/framework/tcpip" name="framework/tcpip/ssl.h"/>
+			</includes>
+			<files>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/ssl.c"/>
+			</files>
+			 <paths>				
+			</paths>
+		</component>
+		<component name="TCP">
+			<includes>
+				<include logicalpath="/framework/tcpip" name="framework/tcpip/tcp.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/tcp_manager.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/tcp_private.h"/>
+			</includes>
+			<files>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/tcp.c"/>
+			</files>
+		   <paths>				
+			</paths>		
+		</component>
+
+		<component name= "Tcpip_Common">
+			<includes>
+				<include logicalpath="/framework/tcpip/src/common" name="framework/tcpip/src/common/big_int.h"/>
+				<include logicalpath="/framework/tcpip/src/common" name="framework/tcpip/src/common/hashes.h"/>
+				<include logicalpath="/framework/tcpip/src/common" name="framework/tcpip/src/common/helpers.h"/>
+				<include logicalpath="/framework/tcpip/src/common" name="framework/tcpip/src/common/lfsr.h"/>
+			</includes>
+			<files>
+				<file logicalpath="/framework/tcpip/src/common" name="framework/tcpip/src/common/big_int_helper_c32.S"/>
+				<file logicalpath="/framework/tcpip/src/common" name="framework/tcpip/src/common/big_int.c"/>
+				<file logicalpath="/framework/tcpip/src/common" name="framework/tcpip/src/common/hashes.c"/>
+				<file logicalpath="/framework/tcpip/src/common" name="framework/tcpip/src/common/helpers.c"/>
+				<file logicalpath="/framework/tcpip/src/common" name="framework/tcpip/src/common/lfsr.c"/>
+			</files>
+			 <paths>				
+			</paths>
+		</component>
+		<component name= "Tcpip_System">
+			<includes>
+				<include logicalpath="/framework/tcpip/src/system" name="framework/tcpip/src/system/errno.h"/>
+				<include logicalpath="/framework/tcpip/src/system" name="framework/tcpip/src/system/system_userio_private.h"/>
+				<include logicalpath="/framework/tcpip/src/system" name="framework/tcpip/src/system/system_userio.h"/>
+				<include logicalpath="/framework/tcpip/src/system" name="framework/tcpip/src/system/system_services_private.h"/>
+				<include logicalpath="/framework/tcpip/src/system" name="framework/tcpip/src/system/system_services.h"/>
+				<include logicalpath="/framework/tcpip/src/system" name="framework/tcpip/src/system/system_random_private.h"/>
+				<include logicalpath="/framework/tcpip/src/system" name="framework/tcpip/src/system/system_random.h"/>
+				<include logicalpath="/framework/tcpip/src/system" name="framework/tcpip/src/system/system_debug_private.h"/>
+				<include logicalpath="/framework/tcpip/src/system" name="framework/tcpip/src/system/system_debug.h"/>
+				<include logicalpath="/framework/tcpip/src/system" name="framework/tcpip/src/system/system_mapping.h"/>
+				<include logicalpath="/framework/tcpip/src/system" name="framework/tcpip/src/system/system_command.h"/>
+				<include logicalpath="/framework/tcpip/src/system" name="framework/tcpip/src/system/pic32mz_ports.h"/>
+			</includes>
+			<files>
+				<file logicalpath="/framework/tcpip/src/system" name="framework/tcpip/src/system/cache.S"/>
+				<file logicalpath="/framework/tcpip/src/system" name="framework/tcpip/src/system/disable-L1-cache.S"/>
+				<file logicalpath="/framework/tcpip/src/system" name="framework/tcpip/src/system/system_userio.c"/>
+				<file logicalpath="/framework/tcpip/src/system" name="framework/tcpip/src/system/system_services.c"/>
+				<file logicalpath="/framework/tcpip/src/system" name="framework/tcpip/src/system/system_random.c"/>
+				<file logicalpath="/framework/tcpip/src/system" name="framework/tcpip/src/system/system_debug.c"/>
+				<file logicalpath="/framework/tcpip/src/system" name="framework/tcpip/src/system/system_command.c"/>
+				<file logicalpath="/framework/tcpip/src/system" name="framework/tcpip/src/system/pic32mz_ports.c"/>
+			</files>
+			 <paths>				
+			</paths>
+		</component>
+		<component name="Telnet Server">
+			<includes>
+				<include logicalpath="/framework/tcpip" name="framework/tcpip/telnet.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/telnet_manager.h"/>
+			</includes>
+			<files>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/telnet.c"/>
+			</files>
+			 <paths>				
+			</paths>
+		</component>
+		<component name="UDP">
+			<includes>
+				<include logicalpath="/framework/tcpip" name="framework/tcpip/udp.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/udp_manager.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/udp_private.h"/>
+			</includes>
+			<files>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/udp.c"/>
+			</files>
+			 <paths>				
+			</paths>
+		</component>
+		<component name="WiFi-Drv">
+			<includes>
+				<include logicalpath="/framework/driver/wifi/mrf24w" 	 name="/framework/driver/wifi/mrf24w/drv_wifi.h"/>
+				<include logicalpath="/framework/driver/wifi/mrf24w/src" 	 name="/framework/driver/wifi/mrf24w/src/drv_wifi_commands.h"/>
+				<include logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_config_data.h"/>
+				<include logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_debug_output.h"/>
+				<include logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_easy_config.h"/>
+				<include logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_eint.h"/>
+				<include logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_mac.h"/>
+				<include logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_mgmt_msg.h"/>
+				<include logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_priv.h"/>
+				<include logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_private.h"/>
+				<include logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_raw.h"/>
+				<include logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_spi.h"/>	
+			</includes>
+			<files>
+				<file logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_com.c"/>
+				<file logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_commands.c"/>
+				<file logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_config_data.c"/>
+				<file logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_connect.c"/>	
+				<file logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_connection_algorithm.c"/>
+				<file logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_connection_manager.c"/>
+				<file logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_connection_profile.c"/>
+				<file logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_debug_output.c"/>
+				<file logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_easy_config.c"/>
+				<file logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_eint.c"/>
+				<file logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_event_handler.c"/>
+				<file logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_events.c"/>
+				<file logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_gpio.c"/>
+				<file logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_init.c"/>
+				<file logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_mac.c"/>
+				<file logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_mac_pic32.c"/>
+				<file logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_mgmt_msg.c"/>
+				<file logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_param_msg.c"/>
+				<file logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_pbkdf2.c"/>
+				<file logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_power_save.c"/>
+				<file logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_raw.c"/>
+				<file logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_scan.c"/>
+				<file logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_spi.c"/>
+				<file logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_spi_init.c"/>
+				<file logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_test_multicast.c"/>
+				<file logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_test_udpserver.c"/>
+				<file logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_tx_power.c"/>
+				<file logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_update_firmware_common.c"/>
+				<file logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_update_firmware_tcpclient.c"/>
+				<file logicalpath="/framework/driver/wifi/mrf24w/src" name="/framework/driver/wifi/mrf24w/src/drv_wifi_update_firmware_uart.c"/>				
+			</files>
+			<paths>				
+			</paths>
+		</component>
+		<component name="ZeroConfLinkLocal">
+			<includes>
+				<include logicalpath="/framework/tcpip" name="framework/tcpip/zero_conf_link_local.h"/>			
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/zero_conf_link_local_private.h"/>			
+			</includes>
+			<files>			
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/zero_conf_link_local.c"/>
+			</files>
+			<paths>				
+			</paths>
+		</component>
+		<component name="ZeroConfMulticastDns">
+			<includes>
+				<include logicalpath="/framework/tcpip" name="framework/tcpip/zero_conf_multicast_dns.h"/>
+			</includes>
+			<files>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/zero_conf_multicast_dns.c"/>
+			</files>
+			<paths>				
+			</paths>
+		</component>
+		<component name="ZeroConfRequiredFiles">
+			<includes>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/zero_conf_helper.h"/>
+				<include logicalpath="/framework/tcpip/src" name="framework/tcpip/src/zero_conf_manager.h"/>
+			</includes>
+			<files>
+				<file logicalpath="/framework/tcpip/src" name="framework/tcpip/src/zero_conf_helper.c"/>
+			</files>
+			<paths>				
+			</paths>
+		</component>
+</component>

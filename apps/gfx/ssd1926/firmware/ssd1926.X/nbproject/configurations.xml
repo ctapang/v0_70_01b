@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configurationDescriptor version="62">
+  <logicalFolder name="root" displayName="root" projectFiles="true">
+    <logicalFolder name="HeaderFiles"
+                   displayName="Header Files"
+                   projectFiles="true">
+      <logicalFolder name="system_config"
+                     displayName="system_config"
+                     projectFiles="true">
+        <logicalFolder name="pic32mxusbsk_pictailssd_qvga"
+                       displayName="pic32mxusbsk_pictailssd_qvga"
+                       projectFiles="true">
+          <itemPath>../src/system_config/pic32mxusbsk_pictailssd_qvga/system_config.h</itemPath>
+        </logicalFolder>
+      </logicalFolder>
+      <itemPath>../src/FSconfig.h</itemPath>
+      <itemPath>../src/SSD1926_JPEG.h</itemPath>
+      <itemPath>../src/SSD1926_SDCard.h</itemPath>
+      <itemPath>../src/app.h</itemPath>
+      <itemPath>../../../../../framework/driver/gfx/gfx_ssd1926/drv_gfx_ssd1926.h</itemPath>
+      <itemPath>../src/legacy_MDD/FSIO.h</itemPath>
+    </logicalFolder>
+    <logicalFolder name="LibraryFiles"
+                   displayName="Library Files"
+                   projectFiles="true">
+    </logicalFolder>
+    <logicalFolder name="LinkerScript"
+                   displayName="Linker Files"
+                   projectFiles="true">
+    </logicalFolder>
+    <logicalFolder name="ObjectFiles"
+                   displayName="Object Files"
+                   projectFiles="true">
+    </logicalFolder>
+    <logicalFolder name="SourceFiles"
+                   displayName="Source Files"
+                   projectFiles="true">
+      <logicalFolder name="f1" displayName="app" projectFiles="true">
+        <logicalFolder name="system_config"
+                       displayName="system_config"
+                       projectFiles="true">
+          <logicalFolder name="pic32mxusbsk_pictailssd_qvga"
+                         displayName="pic32mxusbsk_pictailssd_qvga"
+                         projectFiles="true">
+            <itemPath>../src/system_config/pic32mxusbsk_pictailssd_qvga/system_config.c</itemPath>
+            <itemPath>../src/system_config/pic32mxusbsk_pictailssd_qvga/system_init.c</itemPath>
+            <itemPath>../src/system_config/pic32mxusbsk_pictailssd_qvga/system_int.c</itemPath>
+            <itemPath>../src/system_config/pic32mxusbsk_pictailssd_qvga/system_tasks.c</itemPath>
+          </logicalFolder>
+        </logicalFolder>
+        <itemPath>../src/app.c</itemPath>
+        <itemPath>../src/main.c</itemPath>
+      </logicalFolder>
+      <logicalFolder name="f2" displayName="bsp" projectFiles="true">
+        <logicalFolder name="sk_pic32_mx_usb"
+                       displayName="sk_pic32_mx_usb"
+                       projectFiles="true">
+          <itemPath>../../../../../bsp/sk_pic32_mx_usb/config_performance.c</itemPath>
+        </logicalFolder>
+      </logicalFolder>
+      <logicalFolder name="f3" displayName="framework" projectFiles="true">
+        <logicalFolder name="f1" displayName="driver" projectFiles="true">
+          <itemPath>../src/SSD1926_JPEG.c</itemPath>
+          <itemPath>../src/SSD1926_SDCard.c</itemPath>
+          <itemPath>../../../../../framework/driver/gfx/gfx_ssd1926/src/drv_gfx_ssd1926.c</itemPath>
+          <itemPath>../../../../../framework/driver/pmp/src/dynamic/drv_pmp_dynamic.c</itemPath>
+          <itemPath>../src/TCON_SSD1289.c</itemPath>
+          <itemPath>../../../../../framework/driver/tmr/src/dynamic/drv_tmr_dynamic.c</itemPath>
+          <itemPath>../../../../../framework/gfx/src/common_legacy/TCON_SSD1289.c</itemPath>
+        </logicalFolder>
+        <logicalFolder name="f2" displayName="gfx" projectFiles="true">
+          <logicalFolder name="f1" displayName="gol" projectFiles="true">
+          </logicalFolder>
+          <logicalFolder name="f2" displayName="primitive" projectFiles="true">
+            <itemPath>../../../../../framework/gfx/src/gfx_primitive.c</itemPath>
+          </logicalFolder>
+        </logicalFolder>
+        <logicalFolder name="f3" displayName="peripheral" projectFiles="true">
+          <itemPath>../../../../../framework/peripheral/int/src/plib_int_pic32.c</itemPath>
+          <itemPath>../../../../../framework/peripheral/tmr/src/plib_tmr_pic32.c</itemPath>
+        </logicalFolder>
+        <logicalFolder name="f4" displayName="system" projectFiles="true">
+          <itemPath>../../../../../framework/system/int/src/sys_int_pic32.c</itemPath>
+          <itemPath>../../../../../framework/system/tmr/src/sys_tmr.c</itemPath>
+          <itemPath>../../../../../framework/system/common/sys_queue.c</itemPath>
+          <itemPath>../../../../../framework/system/clk/src/sys_clk.c</itemPath>
+          <itemPath>../../../../../framework/system/clk/src/sys_clk_pic32.c</itemPath>
+        </logicalFolder>
+      </logicalFolder>
+      <logicalFolder name="MDD" displayName="mdd" projectFiles="true">
+        <itemPath>../src/legacy_MDD/FSIO.c</itemPath>
+      </logicalFolder>
+    </logicalFolder>
+    <logicalFolder name="ExternalFiles"
+                   displayName="Important Files"
+                   projectFiles="false">
+      <itemPath>Makefile</itemPath>
+    </logicalFolder>
+    <logicalFolder name="OtherFiles" displayName="Other Files" projectFiles="false">
+      <itemPath>../Getting Started - Loading a precompiled demo.htm</itemPath>
+      <itemPath>../Getting Started - Running the Graphics SSD1926 JPEG and SD Card Demo.htm</itemPath>
+    </logicalFolder>
+  </logicalFolder>
+  <sourceRootList>
+    <Elem>../../../../../framework/driver/gfx/gfx_ssd1926</Elem>
+    <Elem>../src/legacy_MDD</Elem>
+    <Elem>../../../../../framework/gfx/src</Elem>
+    <Elem>../src/system_config</Elem>
+    <Elem>../../../../../../../../isp_root_port/framework/system/tmr/src</Elem>
+    <Elem>../../../../../../../../isp_root_port/framework/system/common</Elem>
+    <Elem>../../../../../../../../isp_root_port/framework/driver/tmr/src/dynamic</Elem>
+    <Elem>../../../../../../../../isp_root_port/framework/system/clk/src</Elem>
+    <Elem>../../../../../../../../isp_root_port/framework/peripheral/tmr/src</Elem>
+    <Elem>../../../../../bsp/pic32_sk/pic32mx_usb_sk</Elem>
+    <Elem>../../../../../framework/driver/tmr/src/dynamic</Elem>
+    <Elem>../../../../../framework/peripheral/tmr/src</Elem>
+    <Elem>../../../../../framework/system/tmr/src</Elem>
+    <Elem>../../../../../framework/system/common</Elem>
+    <Elem>../../../../../framework/system/clk/src</Elem>
+    <Elem>../../../../../bsp/sk_pic32_mx_usb</Elem>
+  </sourceRootList>
+  <projectmakefile>Makefile</projectmakefile>
+  <confs>
+    <conf name="pic32mxusbsk_pictailssd_qvga" type="2">
+      <toolsSet>
+        <developmentServer>localhost</developmentServer>
+        <targetDevice>PIC32MX795F512L</targetDevice>
+        <targetHeader></targetHeader>
+        <targetPluginBoard></targetPluginBoard>
+        <platformTool>SKDEPIC32PlatformTool</platformTool>
+        <languageToolchain>XC32</languageToolchain>
+        <languageToolchainVersion>1.30</languageToolchainVersion>
+        <platform>3</platform>
+      </toolsSet>
+      <compileType>
+        <linkerTool>
+          <linkerLibItems>
+          </linkerLibItems>
+        </linkerTool>
+        <loading>
+          <useAlternateLoadableFile>false</useAlternateLoadableFile>
+          <alternateLoadableFile></alternateLoadableFile>
+        </loading>
+      </compileType>
+      <makeCustomizationType>
+        <makeCustomizationPreStepEnabled>false</makeCustomizationPreStepEnabled>
+        <makeCustomizationPreStep></makeCustomizationPreStep>
+        <makeCustomizationPostStepEnabled>false</makeCustomizationPostStepEnabled>
+        <makeCustomizationPostStep></makeCustomizationPostStep>
+        <makeCustomizationPutChecksumInUserID>false</makeCustomizationPutChecksumInUserID>
+        <makeCustomizationEnableLongLines>false</makeCustomizationEnableLongLines>
+        <makeCustomizationNormalizeHexFile>false</makeCustomizationNormalizeHexFile>
+      </makeCustomizationType>
+      <item path="../src/TCON_SSD1289.c" ex="true" overriding="false">
+        <C32>
+        </C32>
+        <C32-AS>
+        </C32-AS>
+        <C32-LD>
+        </C32-LD>
+        <C32CPP>
+        </C32CPP>
+        <C32Global>
+        </C32Global>
+      </item>
+      <C32>
+        <property key="additional-warnings" value="false"/>
+        <property key="enable-app-io" value="false"/>
+        <property key="enable-omit-frame-pointer" value="false"/>
+        <property key="enable-symbols" value="true"/>
+        <property key="enable-unroll-loops" value="false"/>
+        <property key="exclude-floating-point" value="false"/>
+        <property key="extra-include-directories"
+                  value="..\..\..\..\..\framework;..\src\system_config\pic32mxusbsk_pictailssd_qvga;..\src\system_config;..\src;..\..\..\..\..\"/>
+        <property key="generate-16-bit-code" value="false"/>
+        <property key="isolate-each-function" value="false"/>
+        <property key="make-warnings-into-errors" value="false"/>
+        <property key="optimization-level" value=""/>
+        <property key="place-data-into-section" value="false"/>
+        <property key="post-instruction-scheduling" value="default"/>
+        <property key="pre-instruction-scheduling" value="default"/>
+        <property key="preprocessor-macros"
+                  value="INLINE_API=&quot;static inline&quot;;INLINE=&quot;static inline&quot;"/>
+        <property key="strict-ansi" value="false"/>
+        <property key="support-ansi" value="false"/>
+        <property key="use-cci" value="false"/>
+        <property key="use-indirect-calls" value="false"/>
+      </C32>
+      <C32-AS>
+      </C32-AS>
+      <C32-LD>
+        <property key="additional-options-use-response-files" value="false"/>
+        <property key="enable-check-sections" value="false"/>
+        <property key="exclude-floating-point-library" value="false"/>
+        <property key="exclude-standard-libraries" value="false"/>
+        <property key="extra-lib-directories" value=""/>
+        <property key="generate-16-bit-code" value="false"/>
+        <property key="generate-cross-reference-file" value="false"/>
+        <property key="heap-size" value=""/>
+        <property key="input-libraries" value=""/>
+        <property key="linker-symbols" value=""/>
+        <property key="map-file" value="${DISTDIR}/${PROJECTNAME}.${IMAGE_TYPE}.map"/>
+        <property key="no-startup-files" value="false"/>
+        <property key="oXC32ld-extra-opts" value=""/>
+        <property key="optimization-level" value=""/>
+        <property key="preprocessor-macros" value=""/>
+        <property key="remove-unused-sections" value="false"/>
+        <property key="report-memory-usage" value="false"/>
+        <property key="stack-size" value=""/>
+        <property key="symbol-stripping" value=""/>
+        <property key="trace-symbols" value=""/>
+        <property key="warn-section-align" value="false"/>
+      </C32-LD>
+      <C32CPP>
+        <property key="additional-warnings" value="false"/>
+        <property key="check-new" value="false"/>
+        <property key="eh-specs" value="true"/>
+        <property key="enable-app-io" value="false"/>
+        <property key="enable-omit-frame-pointer" value="false"/>
+        <property key="enable-symbols" value="true"/>
+        <property key="enable-unroll-loops" value="false"/>
+        <property key="exceptions" value="true"/>
+        <property key="exclude-floating-point" value="false"/>
+        <property key="extra-include-directories" value=""/>
+        <property key="generate-16-bit-code" value="false"/>
+        <property key="isolate-each-function" value="false"/>
+        <property key="make-warnings-into-errors" value="false"/>
+        <property key="optimization-level" value=""/>
+        <property key="place-data-into-section" value="false"/>
+        <property key="post-instruction-scheduling" value="default"/>
+        <property key="pre-instruction-scheduling" value="default"/>
+        <property key="preprocessor-macros" value=""/>
+        <property key="rtti" value="true"/>
+        <property key="strict-ansi" value="false"/>
+        <property key="use-cci" value="false"/>
+        <property key="use-iar" value="false"/>
+        <property key="use-indirect-calls" value="false"/>
+      </C32CPP>
+      <C32Global>
+        <property key="legacy-libc" value="false"/>
+        <property key="save-temps" value="false"/>
+        <property key="wpo-lto" value="false"/>
+      </C32Global>
+      <SKDEPIC32PlatformTool>
+        <property key="whatToProgram" value="all"/>
+      </SKDEPIC32PlatformTool>
+    </conf>
+  </confs>
+</configurationDescriptor>

@@ -1,0 +1,451 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE module SYSTEM "ispmodule.dtd">
+
+<module name="system">
+	<component name="clk">
+		<includes>
+			<include logicalpath="framework/system/clk" name="framework/system/system.h"/>
+			<include logicalpath="framework/system/clk" name="framework/system/clk/sys_clk.h"/>
+            <include logicalpath="framework/system/clk" name="framework/system/clk/sys_clk_mapping.h"/>
+			<include logicalpath="framework/system/clk/src" name="framework/system/clk/src/sys_clk_internal.h"/>
+            <include logicalpath="framework/system/clk/src" name="framework/system/clk/src/sys_clk_local.h"/>
+            <include logicalpath="framework/system/clk/src" name="framework/system/clk/src/sys_clk_lookup_pic32.h"/>
+            <include logicalpath="framework/system/clk/src" name="framework/system/clk/src/sys_clk_variant_mapping.h"/>
+		</includes>
+		<files>
+			<file logicalpath="framework/system/clk/src" name="framework/system/clk/src/sys_clk.c"/>
+            <file logicalpath="framework/system/clk/src" name="framework/system/clk/src/sys_clk_pic32.c"/>
+		</files>
+		<paths>
+			<path name="framework/system/"/>
+        </paths>
+	</component>
+	
+	<component name="common">
+		<includes>
+			<include logicalpath="framework/system/common" name="framework/system/system.h"/>
+			<include logicalpath="framework/system/common" name="framework/system/common/sys_buffer.h"/>
+            <include logicalpath="framework/system/common" name="framework/system/common/sys_common.h"/>
+            <include logicalpath="framework/system/common" name="framework/system/common/sys_module.h"/>
+            <include logicalpath="framework/system/common" name="framework/system/common/sys_queue.h"/>
+		</includes>
+		<files>
+			<file logicalpath="framework/system/common" name="framework/system/common/sys_buffer.c"/>
+			<file logicalpath="framework/system/common" name="framework/system/common/sys_queue.c"/>
+		</files>
+		<paths>
+			<path name="framework/system/"/>
+        </paths>
+	</component>
+	
+	<component name="devcon">
+		<includes>
+			<include logicalpath="framework/system/devcon" name="framework/system/system.h"/>
+			<include logicalpath="framework/system/devcon" name="framework/system/devcon/sys_devcon.h"/>
+            <include logicalpath="framework/system/devcon/config" name="framework/system/devcon/config/sys_devcon_config.h"/>
+            <include logicalpath="framework/system/devcon/config" name="framework/system/devcon/config/sys_devcon_config_template.h"/>
+            <include logicalpath="framework/system/devcon/src" name="framework/system/devcon/src/sys_devcon_local.h"/>
+		</includes>
+		<files>
+			<file logicalpath="framework/system/devcon/src" name="framework/system/devcon/src/sys_devcon.c"/>
+		</files>
+		<paths>
+			<path name="framework/system/"/>
+        </paths>
+	</component>
+	
+	
+	<component name="fs">
+		<includes>
+			<include logicalpath="framework/system/fs" name="framework/system/system.h"/>
+			<include logicalpath="framework/system/fs" name="framework/system/fs/sys_fs.h"/>
+            <include logicalpath="framework/system/fs" name="framework/system/fs/sys_fs_media_manager.h"/>
+            <include logicalpath="framework/system/fs/fat_fs/src/file_system" name="framework/system/fs/fat_fs/src/file_system/ff.h"/>
+            <include logicalpath="framework/system/fs/fat_fs/src/file_system" name="framework/system/fs/fat_fs/src/file_system/ffconf.h"/>
+			<include logicalpath="framework/system/fs/mpfs" name="framework/system/fs/mpfs/mpfs.h"/>
+			<include logicalpath="framework/system/fs/mpfs/src" name="framework/system/fs/mpfs/src/mpfs_local.h"/>
+            <include logicalpath="framework/system/fs/fat_fs/src/hardware_access" name="framework/system/fs/fat_fs/src/hardware_access/diskio.h"/>
+            <include logicalpath="framework/system/fs/src" name="framework/system/fs/src/sys_fs_local.h"/>
+            <include logicalpath="framework/system/fs/src" name="framework/system/fs/src/sys_fs_media_manager_local.h"/>
+		</includes>
+		<files>
+			<file logicalpath="framework/system/fs/fat_fs/src/file_system" name="framework/system/fs/fat_fs/src/file_system/ff.c"/>
+			<file logicalpath="framework/system/fs/mpfs/src" name="framework/system/fs/mpfs/src/mpfs.c"/>
+            <file logicalpath="framework/system/fs/fat_fs/src/hardware_access" name="framework/system/fs/fat_fs/src/hardware_access/diskio.c"/>
+            <file logicalpath="framework/system/fs/src/dynamic" name="framework/system/fs/src/dynamic/sys_fs.c"/>
+            <file logicalpath="framework/system/fs/src/dynamic" name="framework/system/fs/src/dynamic/sys_fs_media_manager.c"/>
+		</files>
+
+		<paths>
+			<path name="framework/system/"/>
+		</paths>
+		<code dataobject="fs_switch_case_app_c">
+        case APP_MOUNT_DISK:
+            if(SYS_FS_Mount("/dev/mmcblka1", "/mnt/myDrive", FAT, 0, NULL) != 0)
+            {
+                /* The disk could not be mounted. Try
+                 * mounting again untill success. */
+
+                appData.state = APP_MOUNT_DISK;
+            }
+            else
+            {
+                /* Mount was successful. Open a file . */
+
+                appData.state = APP_OPEN_FILE;
+            }
+			break;
+        case APP_OPEN_FILE:
+            appData.fileHandle = SYS_FS_FileOpen("/mnt/myDrive/FILE1.txt",
+                    (SYS_FS_FILE_OPEN_READ));
+            if(appData.fileHandle == SYS_FS_HANDLE_INVALID)
+            {
+                /* Could not open the file. Error out*/
+                appData.state = APP_ERROR;
+            }	
+			else
+			{
+				appData.state = APP_READ_WRITE_TO_FILE;
+			}
+			break;
+        case APP_READ_WRITE_TO_FILE:
+            if(SYS_FS_FileRead((void *)appData.data, 512, appData.fileHandle) == -1)
+            {
+                /* There was an error while reading the file.
+                 * Close the file and error out. */
+
+                SYS_FS_FileClose(appData.fileHandle);
+                appData.state = APP_ERROR;
+            }
+			else
+			{
+				appData.state = APP_CLOSE_FILE;
+			}
+			break;
+        case APP_CLOSE_FILE:
+            /* Close both files */
+            SYS_FS_FileClose(appData.fileHandle);
+             /* The test was successful. Lets idle. */
+            appData.state = APP_IDLE;
+            break;
+
+        case APP_IDLE:
+            /* The application comes here when the demo
+             * has completed successfully. Switch on
+             * green LED. */
+            BSP_SwitchONSuccessLED();
+            break;
+        case APP_ERROR:
+            /* The application comes here when the demo
+             * has failed. Switch on the red LED.*/
+            BSP_SwitchONFailureLED();
+            break;
+		</code>
+		<code dataobject="fs_includes_app_h">
+#include "system/int/sys_int.h"
+#include "system/ports/sys_ports.h"
+#include "system/fs/fat_fs/src/file_system/ff.h"
+#include "system/fs/sys_fs.h"
+#include "driver/sdcard/drv_sdcard.h"
+#include "driver/spi/drv_spi.h"
+		</code>
+		<code dataobject="fs_enum_states_app_h">
+	/* The app mounts the disk */
+	APP_MOUNT_DISK = 0,
+
+	/* The app unmounts the disk */
+	APP_UNMOUNT_DISK,
+
+	/* The app mounts the disk again */
+	APP_MOUNT_DISK_AGAIN,
+
+	/* The app opens the file */
+	APP_OPEN_FILE,
+
+	/* The app reads from a file and writes to another file */
+	APP_READ_WRITE_TO_FILE,
+
+	/* The app closes the file*/
+	APP_CLOSE_FILE,
+
+	/* The app closes the file and idles */
+	APP_IDLE,
+
+	/* An app error has occurred */
+	APP_ERROR
+		</code>
+		<code dataobject="fs_app_data_app_h">
+    /* SYS_FS File handle for 1st file */
+    SYS_FS_HANDLE      fileHandle;
+
+    /* SYS_FS File handle for 2nd file */
+    SYS_FS_HANDLE      fileHandle1;
+   
+    /* Application data buffer */
+    uint8_t                 data[1024];
+
+    uint32_t            nBytesWritten;
+
+    uint32_t            nBytesRead;
+		</code>
+		<code dataobject="fs_drv_obj_app_h">
+    /* SPI Driver Object  */
+    SYS_MODULE_OBJ              drvSPIObject;
+
+    /* SDCARD Media Driver Object */
+    SYS_MODULE_OBJ              drvSDCARDObject;
+		</code>
+		<code dataobject="fs_drv_init_sys_init">
+const DRV_SPI_INIT drvSPIInit =
+{
+    .moduleInit.sys.powerState = SYS_MODULE_POWER_RUN_FULL,
+    .spiId = SPI_ID_1,
+    .spiMode = DRV_SPI_MODE_MASTER,
+    .spiProtocolType = DRV_SPI_PROTOCOL_TYPE_STANDARD,
+    .commWidth = SPI_COMMUNICATION_WIDTH_8BITS,
+    .baudRate = 10000,
+    .bufferType  = DRV_SPI_BUFFER_TYPE_STANDARD,
+    .rxInterruptMode = 0,
+    .txInterruptMode = 0,
+    .clockMode = DRV_SPI_CLOCK_MODE_IDLE_LOW_EDGE_FALL,
+    //.clockMode = DRV_SPI_CLOCK_MODE_IDLE_HIGH_EDGE_FALL,
+    .inputSamplePhase = SPI_INPUT_SAMPLING_PHASE_AT_END,
+    .txInterruptSource = INT_SOURCE_SPI_1_TRANSMIT,
+    .rxInterruptSource = INT_SOURCE_SPI_1_RECEIVE,
+    .errInterruptSource = INT_SOURCE_SPI_1_ERROR,
+};
+
+const DRV_SDCARD_INIT drvSDCARDInit =
+{
+    .writeProtectPort = PORT_CHANNEL_F,
+    .writeProtectBitPosition = PORTS_BIT_POS_1,
+    .cardDetectPort = PORT_CHANNEL_F,
+    .cardDetectBitPosition = PORTS_BIT_POS_0,
+    .chipSelectPort = PORT_CHANNEL_B,
+    .chipSelectBitPosition = PORTS_BIT_POS_1,
+    //.sdcardSpeedHz = 13000000,    // for faster cards
+    .sdcardSpeedHz = 1000000,    // for not so fast cards
+    .spiId = SPI_ID_1,
+};
+	</code>
+		<code dataobject="fs_sys_init_sys_init">
+const SYS_FS_REGISTRATION_TABLE sysFSInit [ SYS_FS_MAX_FILE_SYSTEM_TYPE ] =
+{
+    {
+        .nativeFileSystemType = FAT,
+        .nativeFileSystemFunctions = &amp;FatFsFunctions
+    }
+
+};
+		</code>
+		<code dataobject="fs_init_seq_sys_init">
+    /* Set up cache and wait states for
+     * maximum performance. */
+    SYSTEMConfigPerformance(80000000);
+    /* Initializethe interrupt system  */
+    SYS_INT_Initialize();
+
+     /* set priority for SPI interrupt source */
+    SYS_INT_VectorPrioritySet(INT_VECTOR_SPI1, INT_PRIORITY_LEVEL3);
+
+    /* set sub-priority for SPI interrupt source */
+    SYS_INT_VectorSubprioritySet(INT_VECTOR_SPI1, INT_SUBPRIORITY_LEVEL3);
+
+    /* Initialize the global interrupts */
+    SYS_INT_Enable();
+
+    /* Initialize the SPI driver */
+    appDrvObjects.drvSPIObject = DRV_SPI_Initialize(DRV_SPI_INDEX_0,
+            (SYS_MODULE_INIT *)&amp;drvSPIInit);
+
+    /* Initialize the SDCARD driver*/
+    appDrvObjects.drvSDCARDObject = DRV_SDCARD_Initialize(DRV_SDCARD_INDEX_0,
+            (SYS_MODULE_INIT *)&amp;drvSDCARDInit);
+
+    /* Initialize the SYS_FS Layer */
+    SYS_FS_Initialize( (const void *) sysFSInit );
+	
+		</code>
+		<code dataobject="fs_interrupt_sys_int">
+void __ISR ( _SPI1_VECTOR,ipl4 ) _InterruptHandler_SPI_stub ( void )
+{
+    DRV_SPI_Tasks((SYS_MODULE_OBJ)appDrvObjects.drvSPIObject);
+}
+		</code>		
+		<code dataobject="fs_sys_tasks_sys_task">
+    /* Task routine for sys_fs */
+    SYS_FS_Tasks();
+
+    /* Call the SDCARD Task */
+    DRV_SDCARD_Tasks(appDrvObjects.drvSDCARDObject);
+		</code>		
+		<code dataobject="fs_macros_sys_conf">
+// *****************************************************************************
+// *****************************************************************************
+// Section: SPI Driver Configuration
+// *****************************************************************************
+// *****************************************************************************
+
+
+/* Number of driver instances */
+#define DRV_SPI_INSTANCES_NUMBER                    		1
+
+/* Number of client to be supported */
+#define DRV_SPI_CLIENTS_NUMBER                      		1
+
+/* Driver will work in polling mode */
+#define DRV_SPI_INTERRUPT_MODE                      true
+
+#define DRV_SPI_PORTS_REMAP_USAGE                   false
+
+#define DRV_SPI_BUFFER_SIZE                         64
+
+#define DRV_SPI_FRAME_SYNC_PULSE_DIRECTION          SPI_FRAME_PULSE_DIRECTION_INPUT
+
+#define DRV_SPI_FRAME_SYNC_PULSE_POLARITY           SPI_FRAME_PULSE_POLARITY_ACTIVE_HIGH
+
+#define DRV_SPI_FRAME_SYNC_PULSE_EDGE               SPI_FRAME_PULSE_EDGE_COINCIDES_FIRST_BIT_CLOCK
+
+#define DRV_SPI_PERIPHERAL_ID                       SPI_ID_1
+
+// *****************************************************************************
+// *****************************************************************************
+// Section: SDCARD Driver Configuration
+// *****************************************************************************
+// *****************************************************************************
+#define DRV_SDCARD_INSTANCES_NUMBER                             1
+#define DRV_SDCARD_CLIENTS_NUMBER                               1
+#define DRV_SDCARD_INDEX_MAX                                    1
+#define DRV_SDCARD_INDEX                                        DRV_SDCARD_INDEX_0
+#define DRV_SDCARD_QUEUE_POOL_SIZE                              10
+/* Defines if the card detect logic as designed in hardware */
+#define DRV_SDCARD_CD_LOGIC_ACTIVE_LOW
+
+// *****************************************************************************
+// *****************************************************************************
+// Section: Media Manager Configuration
+// *****************************************************************************
+// *****************************************************************************
+/* Max Number of media used in the demo */
+#define SYS_FS_MEDIA_NUMBER 1
+/* Max Number of volumes to be allocated  */
+#define SYS_FS_VOLUME_NUMBER    1
+
+
+		</code>		
+		<code dataobject="fs_clock_macros_sys_conf">
+#define SYS_CLK_ClockFrequencyGet( CLK_PERIPHERAL )     80000000
+
+
+// *****************************************************************************
+// *****************************************************************************
+// Section: SYS FS Configuration
+// *****************************************************************************
+// *****************************************************************************
+
+/* Max Number of file system to be supported for the demo */
+#define SYS_FS_MAX_FILE_SYSTEM_TYPE     1
+
+/* Max Number of files that will be opened at a time */
+#define SYS_FS_MAX_FILES    2
+
+// *****************************************************************************
+// *****************************************************************************
+// Section: LED Configuration for success and failure
+// *****************************************************************************
+// *****************************************************************************
+
+#define BSP_SwitchONSuccessLED()            BSP_SwitchONLED(LED_5)
+
+#define BSP_SwitchONFailureLED()            BSP_SwitchONLED(LED_6)
+
+
+		</code>
+	</component>
+	
+	<component name="init">
+		<includes>
+			<include logicalpath="framework/system/int" name="framework/system/system.h"/>
+			<include logicalpath="framework/system/init" name="framework/system/init/sys_init.h"/>
+		</includes>
+		<paths>
+			<path name="framework/system/"/>
+		</paths>	
+	</component>
+	
+	<component name="int">
+		<includes>
+			<include logicalpath="framework/system/int" name="framework/system/system.h"/>
+			<include logicalpath="framework/system/int" name="framework/system/int/sys_int.h"/>
+            <include logicalpath="framework/system/int" name="framework/system/int/sys_int_mapping.h"/>
+            <include logicalpath="framework/system/int/src" name="framework/system/int/src/sys_int_private.h"/>
+		</includes>
+		<files>
+            <file logicalpath="framework/system/int/src" name="framework/system/int/src/sys_int_pic32.c"/>
+		</files>
+		<paths>
+			<path name="framework/system/"/>
+		</paths>	
+	</component>
+	
+	<component name="msg">
+		<includes>
+			<include logicalpath="framework/system/msg" name="framework/system/system.h"/>
+			<include logicalpath="framework/system/msg" name="framework/system/msg/sys_msg.h"/>
+            <include logicalpath="framework/system/msg/src" name="framework/system/msg/src/sys_msg_local.h"/>
+			<include logicalpath="framework/system/msg/config" name="framework/system/msg/config/sys_msg_config.h"/>
+		</includes>
+		<files>
+			<file logicalpath="framework/system/msg/src" name="framework/system/msg/src/sys_msg.c"/>
+		</files>
+		<paths>
+			<path name="framework/system/"/>
+		</paths>	
+	</component>
+	
+	<component name="ports">
+		<includes>
+			<include logicalpath="framework/system/ports" name="framework/system/system.h"/>
+			<include logicalpath="framework/system/ports" name="framework/system/ports/sys_ports.h"/>
+		</includes>
+		<files>
+			<file logicalpath="framework/system/ports/src" name="framework/system/ports/src/sys_ports.c"/>
+		</files>
+		<paths>
+			<path name="framework/system/"/>
+		</paths>	
+	</component>
+	
+	
+	<component name="tmr">
+		<includes>
+			<include logicalpath="framework/system/tmr" name="framework/system/system.h"/>
+			<include logicalpath="framework/system/tmr" name="framework/system/tmr/sys_tmr.h"/>
+            <include logicalpath="framework/system/tmr/src" name="framework/system/tmr/src/sys_tmr_local.h"/>
+            <include logicalpath="framework/system/tmr/src" name="framework/system/tmr/src/sys_tmr_variant_mapping.h"/>
+			<include logicalpath="framework/system/tmr/config" name="framework/system/tmr/config/sys_tmr_config.h"/>
+		</includes>
+		<files>
+			 <file logicalpath="framework/system/tmr/src" name="framework/system/tmr/src/sys_tmr.c"/>
+		</files>
+		<paths>
+			<path name="framework/system/"/>
+		</paths>	
+	</component>
+	
+	<component name="wdt">
+		<includes>
+			<include logicalpath="framework/system/wdt" name="framework/system/system.h"/>
+			<include logicalpath="framework/system/wdt" name="framework/system/wdt/sys_wdt.h"/>
+            <include logicalpath="framework/system/wdt/src" name="framework/system/wdt/src/sys_wdt_local.h"/>
+			<include logicalpath="framework/system/wdt/config" name="framework/system/wdt/config/sys_wdt_config.h"/>
+		</includes>
+		<files>
+			<file logicalpath="framework/system/wdt/src" name="framework/system/wdt/src/sys_wdt.c"/>
+		</files>
+		<paths>
+			<path name="framework/system/"/>
+		</paths>
+	</component>
+	
+</module>

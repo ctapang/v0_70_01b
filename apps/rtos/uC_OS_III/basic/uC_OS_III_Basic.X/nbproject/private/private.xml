@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?><project-private xmlns="http://www.netbeans.org/ns/project-private/1">
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/1"/>
+    <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/1">
+        <file>file:/C:/Microchip/harmony/v0_70b/third_party/rtos/Micrium/MicriumOSIII/Software/uCOS_III/Source/os_core.c</file>
+        <file>file:/C:/Microchip/harmony/v0_70b/third_party/rtos/Micrium/MicriumOSIII/Software/uCOS_III/Ports/MIPS32_M14KEc/ExternalInterruptController/MPLABX_XC32_GCC/os_cpu_c.c</file>
+        <file>file:/C:/Microchip/harmony/v0_70b/third_party/rtos/Micrium/MicriumOSIII/Software/uCOS_III/Ports/MIPS32_M14KEc/ExternalInterruptController/MPLABX_XC32_GCC/os_cpu_a.S</file>
+        <file>file:/C:/Microchip/harmony/v0_70b/third_party/rtos/Micrium/MicriumOSIII/Software/uC_CPU/MIPS32_14KEc/MPLABX_XC32_GCC/cpu_a.s</file>
+        <file>file:/C:/Microchip/harmony/v0_70b/apps/rtos/uC_OS_III/basic/src/main.c</file>
+        <file>file:/C:/Microchip/harmony/v0_70b/apps/rtos/uC_OS_III/basic/src/lib_cfg.h</file>
+        <file>file:/C:/Microchip/harmony/v0_70b/apps/rtos/uC_OS_III/basic/src/cpu_cfg.h</file>
+        <file>file:/C:/Microchip/harmony/v0_70b/apps/rtos/uC_OS_III/basic/src/os_cfg.h</file>
+        <file>file:/C:/Microchip/harmony/v0_70b/apps/rtos/uC_OS_III/basic/src/os_cfg_app.h</file>
+        <file>file:/C:/Microchip/harmony/v0_70b/apps/rtos/uC_OS_III/basic/src/config_words.c</file>
+        <file>file:/C:/Microchip/harmony/v0_70b/apps/rtos/uC_OS_III/basic/src/bsp.c</file>
+        <file>file:/C:/Microchip/harmony/v0_70b/apps/rtos/uC_OS_III/basic/src/bsp.h</file>
+        <file>file:/C:/Microchip/harmony/v0_70b/framework/peripheral/ports/processor/ports_p32mz2048ech144.h</file>
+        <file>file:/C:/Microchip/harmony/v0_70b/third_party/rtos/Micrium/MicriumOSIII/Software/uCOS_III/Source/os.h</file>
+        <file>file:/C:/Microchip/harmony/v0_70b/apps/rtos/uC_OS_III/basic/src/bsp_a.S</file>
+        <file>file:/C:/Microchip/harmony/v0_70b/apps/rtos/uC_OS_III/basic/src/app_cfg.h</file>
+        <file>file:/C:/Microchip/harmony/v0_70b/apps/rtos/uC_OS_III/basic/src/crt0.S</file>
+        <file>file:/C:/Microchip/harmony/v0_70b/third_party/rtos/Micrium/MicriumOSIII/Software/uCOS_III/Ports/MIPS32_M14KEc/ExternalInterruptController/MPLABX_XC32_GCC/os_cpu.h</file>
+        <file>file:/C:/Microchip/harmony/v0_70b/third_party/rtos/Micrium/MicriumOSIII/Software/uCOS_III/Source/os_type.h</file>
+    </open-files>
+</project-private>

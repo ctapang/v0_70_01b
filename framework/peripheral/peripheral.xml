@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE module SYSTEM "ispmodule.dtd">
+
+<!-- MPLAB Harmony Peripheral Library Module File -->
+<module name="peripherals" displayname="Peripheral Library Module">
+    <component name="Required Files">
+        <includes  logicalpath="/framework/peripheral">
+            <include name="/framework/peripheral/peripheral.h"      		logicalpath="/framework/peripheral"/>
+            <include name="/framework/peripheral/peripheral_common.h"       logicalpath="/framework/peripheral"/>
+            <include name="/framework/peripheral/adc/plib_adc.h"  			logicalpath="adc"/>
+			<include name="/framework/peripheral/adcp/plib_adcp.h"  		logicalpath="adcp"/>
+            <include name="/framework/peripheral/bmx/plib_bmx.h"  			logicalpath="bmx"/>
+            <include name="/framework/peripheral/can/plib_can.h"  			logicalpath="can"/>
+            <include name="/framework/peripheral/cmp/plib_cmp.h"  			logicalpath="cmp"/>
+			<include name="/framework/peripheral/devcon/plib_devcon.h"  	logicalpath="devcon"/>
+            <include name="/framework/peripheral/dma/plib_dma.h"  			logicalpath="dma"/>
+			<include name="/framework/peripheral/dmt/plib_dmt.h"  			logicalpath="dmt"/>
+			<include name="/framework/peripheral/ebi/plib_ebi.h"  			logicalpath="ebi"/>
+            <include name="/framework/peripheral/eth/plib_eth.h"  			logicalpath="eth"/>
+			<include name="/framework/peripheral/eth/src/plib_eth_legacy.h"  	logicalpath="eth"/>
+            <include name="/framework/peripheral/i2c/plib_i2c.h"  			logicalpath="i2c"/>
+            <include name="/framework/peripheral/i2c/plib_i2c_helper_macros.h"          logicalpath="i2c"/>
+            <include name="/framework/peripheral/ic/plib_ic.h" 				logicalpath="ic"/>
+            <include name="/framework/peripheral/int/plib_int.h" 			logicalpath="int"/>
+            <include name="/framework/peripheral/nvm/plib_nvm.h" 			logicalpath="nvm"/>
+            <include name="/framework/peripheral/oc/plib_oc.h" 				logicalpath="oc"/>
+            <include name="/framework/peripheral/osc/plib_osc.h" 			logicalpath="osc"/>
+            <include name="/framework/peripheral/pcache/plib_pcache.h"      logicalpath="pcache"/>
+            <include name="/framework/peripheral/pmp/plib_pmp.h" 			logicalpath="pmp"/>
+            <include name="/framework/peripheral/ports/plib_ports.h" 		logicalpath="ports"/>
+            <include name="/framework/peripheral/power/plib_power.h" 		logicalpath="power"/>
+            <include name="/framework/peripheral/reset/plib_reset.h" 		logicalpath="reset"/>
+            <include name="/framework/peripheral/rtcc/plib_rtcc.h" 			logicalpath="rtcc"/>
+			<include name="/framework/peripheral/sb/plib_sb.h" 				logicalpath="sb"/>
+            <include name="/framework/peripheral/spi/plib_spi.h" 			logicalpath="spi"/>
+			<include name="/framework/peripheral/sqi/plib_sqi.h" 			logicalpath="sqi"/>
+            <include name="/framework/peripheral/tmr/plib_tmr.h" 			logicalpath="tmr"/>
+            <include name="/framework/peripheral/usart/plib_usart.h" 		logicalpath="usart"/>
+            <include name="/framework/peripheral/usb/plib_usb.h" 			logicalpath="usb"/>
+			<include name="/framework/peripheral/usbhs/plib_usbhs.h" 		logicalpath="usbhs"/>
+            <include name="/framework/peripheral/wdt/plib_wdt.h" 			logicalpath="wdt"/>
+        </includes>
+
+	<paths>
+        <path name="framework"/>
+	    <path name="framework/system/"/>
+    </paths>
+
+    </component>
+    <configurations exclusive="true">
+        <configuration name="PIC32" partprefix="PIC32">
+            <component name="Required Files">
+                <includes  logicalpath="/framework/peripheral">
+                    <include name="/framework/peripheral/peripheral_common_32bit.h"  logicalpath="/framework/peripheral"/>
+                </includes>
+                <libraries>
+					<library name="/bin/framework/peripheral/PIC32MX110F016B_peripherals.a" partprefix="PIC32MX110F016B" />
+					<library name="/bin/framework/peripheral/PIC32MX110F016C_peripherals.a" partprefix="PIC32MX110F016C" />
+					<library name="/bin/framework/peripheral/PIC32MX110F016D_peripherals.a" partprefix="PIC32MX110F016D" />
+					<library name="/bin/framework/peripheral/PIC32MX120F032B_peripherals.a" partprefix="PIC32MX120F032B" />
+					<library name="/bin/framework/peripheral/PIC32MX120F032C_peripherals.a" partprefix="PIC32MX120F032C" />
+					<library name="/bin/framework/peripheral/PIC32MX120F032D_peripherals.a" partprefix="PIC32MX120F032D" />
+					<library name="/bin/framework/peripheral/PIC32MX130F064B_peripherals.a" partprefix="PIC32MX130F064B" />
+					<library name="/bin/framework/peripheral/PIC32MX130F064C_peripherals.a" partprefix="PIC32MX130F064C" />
+					<library name="/bin/framework/peripheral/PIC32MX130F064D_peripherals.a" partprefix="PIC32MX130F064D" />
+					<library name="/bin/framework/peripheral/PIC32MX150F128B_peripherals.a" partprefix="PIC32MX150F128B" />
+					<library name="/bin/framework/peripheral/PIC32MX150F128C_peripherals.a" partprefix="PIC32MX150F128C" />
+					<library name="/bin/framework/peripheral/PIC32MX150F128D_peripherals.a" partprefix="PIC32MX150F128D" />
+					<library name="/bin/framework/peripheral/PIC32MX210F016B_peripherals.a" partprefix="PIC32MX210F016B" />
+					<library name="/bin/framework/peripheral/PIC32MX210F016C_peripherals.a" partprefix="PIC32MX210F016C" />
+					<library name="/bin/framework/peripheral/PIC32MX210F016D_peripherals.a" partprefix="PIC32MX210F016D" />
+					<library name="/bin/framework/peripheral/PIC32MX220F032B_peripherals.a" partprefix="PIC32MX220F032B" />
+					<library name="/bin/framework/peripheral/PIC32MX220F032C_peripherals.a" partprefix="PIC32MX220F032C" />
+					<library name="/bin/framework/peripheral/PIC32MX220F032D_peripherals.a" partprefix="PIC32MX220F032D" />
+					<library name="/bin/framework/peripheral/PIC32MX230F064B_peripherals.a" partprefix="PIC32MX230F064B" />
+					<library name="/bin/framework/peripheral/PIC32MX230F064C_peripherals.a" partprefix="PIC32MX230F064C" />
+					<library name="/bin/framework/peripheral/PIC32MX230F064D_peripherals.a" partprefix="PIC32MX230F064D" />
+					<library name="/bin/framework/peripheral/PIC32MX250F128B_peripherals.a" partprefix="PIC32MX250F128B" />
+					<library name="/bin/framework/peripheral/PIC32MX250F128C_peripherals.a" partprefix="PIC32MX250F128C" />
+					<library name="/bin/framework/peripheral/PIC32MX250F128D_peripherals.a" partprefix="PIC32MX250F128D" />
+					
+					<library name="/bin/framework/peripheral/PIC32MX320F032H_peripherals.a" partprefix="PIC32MX320F032H" />
+					<library name="/bin/framework/peripheral/PIC32MX320F064H_peripherals.a" partprefix="PIC32MX320F064H" />
+					<library name="/bin/framework/peripheral/PIC32MX320F128H_peripherals.a" partprefix="PIC32MX320F128H" />
+					<library name="/bin/framework/peripheral/PIC32MX320F128L_peripherals.a" partprefix="PIC32MX320F128L" />
+					<library name="/bin/framework/peripheral/PIC32MX330F064H_peripherals.a" partprefix="PIC32MX330F064H" />
+					<library name="/bin/framework/peripheral/PIC32MX330F064L_peripherals.a" partprefix="PIC32MX330F064L" />
+					<library name="/bin/framework/peripheral/PIC32MX340F128H_peripherals.a" partprefix="PIC32MX340F128H" />
+					<library name="/bin/framework/peripheral/PIC32MX340F128L_peripherals.a" partprefix="PIC32MX340F128L" />
+					<library name="/bin/framework/peripheral/PIC32MX340F256H_peripherals.a" partprefix="PIC32MX340F256H" />
+					<library name="/bin/framework/peripheral/PIC32MX340F512H_peripherals.a" partprefix="PIC32MX340F512H" />
+					<library name="/bin/framework/peripheral/PIC32MX350F128H_peripherals.a" partprefix="PIC32MX350F128H" />
+					<library name="/bin/framework/peripheral/PIC32MX350F128L_peripherals.a" partprefix="PIC32MX350F128L" />
+					<library name="/bin/framework/peripheral/PIC32MX350F256H_peripherals.a" partprefix="PIC32MX350F256H" />
+					<library name="/bin/framework/peripheral/PIC32MX350F256L_peripherals.a" partprefix="PIC32MX350F256L" />
+					<library name="/bin/framework/peripheral/PIC32MX360F256L_peripherals.a" partprefix="PIC32MX360F256L" />
+					<library name="/bin/framework/peripheral/PIC32MX360F512L_peripherals.a" partprefix="PIC32MX360F512L" />
+					<library name="/bin/framework/peripheral/PIC32MX370F512H_peripherals.a" partprefix="PIC32MX370F512H" />
+					<library name="/bin/framework/peripheral/PIC32MX370F512L_peripherals.a" partprefix="PIC32MX370F512L" />
+					
+					<library name="/bin/framework/peripheral/PIC32MX420F032H_peripherals.a" partprefix="PIC32MX420F032H" />
+					<library name="/bin/framework/peripheral/PIC32MX430F064H_peripherals.a" partprefix="PIC32MX430F064H" />
+					<library name="/bin/framework/peripheral/PIC32MX430F064L_peripherals.a" partprefix="PIC32MX430F064L" />
+					<library name="/bin/framework/peripheral/PIC32MX440F128H_peripherals.a" partprefix="PIC32MX440F128H" />
+					<library name="/bin/framework/peripheral/PIC32MX440F128L_peripherals.a" partprefix="PIC32MX440F128L" />
+					<library name="/bin/framework/peripheral/PIC32MX440F256H_peripherals.a" partprefix="PIC32MX440F256H" />
+					<library name="/bin/framework/peripheral/PIC32MX440F512H_peripherals.a" partprefix="PIC32MX440F512H" />
+					<library name="/bin/framework/peripheral/PIC32MX450F128H_peripherals.a" partprefix="PIC32MX450F128H" />
+					<library name="/bin/framework/peripheral/PIC32MX450F128L_peripherals.a" partprefix="PIC32MX450F128L" />
+					<library name="/bin/framework/peripheral/PIC32MX450F256H_peripherals.a" partprefix="PIC32MX450F256H" />
+					<library name="/bin/framework/peripheral/PIC32MX450F256L_peripherals.a" partprefix="PIC32MX450F256L" />
+					<library name="/bin/framework/peripheral/PIC32MX460F256L_peripherals.a" partprefix="PIC32MX460F256L" />
+					<library name="/bin/framework/peripheral/PIC32MX460F512L_peripherals.a" partprefix="PIC32MX460F512L" />
+					<library name="/bin/framework/peripheral/PIC32MX470F512H_peripherals.a" partprefix="PIC32MX470F512H" />
+					<library name="/bin/framework/peripheral/PIC32MX470F512L_peripherals.a" partprefix="PIC32MX470F512L" />
+                    <library name="/bin/framework/peripheral/PIC32MX534F064H_peripherals.a" partprefix="PIC32MX534F064H" />
+					<library name="/bin/framework/peripheral/PIC32MX534F064L_peripherals.a" partprefix="PIC32MX534F064L" />
+					<library name="/bin/framework/peripheral/PIC32MX564F064H_peripherals.a" partprefix="PIC32MX564F064H" />
+					<library name="/bin/framework/peripheral/PIC32MX564F064L_peripherals.a" partprefix="PIC32MX564F064L" />
+					<library name="/bin/framework/peripheral/PIC32MX564F128H_peripherals.a" partprefix="PIC32MX564F128H" />
+					<library name="/bin/framework/peripheral/PIC32MX564F128L_peripherals.a" partprefix="PIC32MX564F128L" />
+					<library name="/bin/framework/peripheral/PIC32MX575F256H_peripherals.a" partprefix="PIC32MX575F256H" />
+					<library name="/bin/framework/peripheral/PIC32MX575F256L_peripherals.a" partprefix="PIC32MX575F256L" />
+					<library name="/bin/framework/peripheral/PIC32MX575F512H_peripherals.a" partprefix="PIC32MX575F512H" />
+					<library name="/bin/framework/peripheral/PIC32MX575F512L_peripherals.a" partprefix="PIC32MX575F512L" />
+					<library name="/bin/framework/peripheral/PIC32MX664F064H_peripherals.a" partprefix="PIC32MX664F064H" />
+					<library name="/bin/framework/peripheral/PIC32MX664F064L_peripherals.a" partprefix="PIC32MX664F064L" />
+					<library name="/bin/framework/peripheral/PIC32MX664F128H_peripherals.a" partprefix="PIC32MX664F128H" />
+					<library name="/bin/framework/peripheral/PIC32MX664F128L_peripherals.a" partprefix="PIC32MX664F128L" />
+					<library name="/bin/framework/peripheral/PIC32MX675F256H_peripherals.a" partprefix="PIC32MX675F256H" />
+					<library name="/bin/framework/peripheral/PIC32MX675F256L_peripherals.a" partprefix="PIC32MX675F256L" />
+					<library name="/bin/framework/peripheral/PIC32MX675F512H_peripherals.a" partprefix="PIC32MX675F512H" />
+					<library name="/bin/framework/peripheral/PIC32MX675F512L_peripherals.a" partprefix="PIC32MX675F512L" />
+					<library name="/bin/framework/peripheral/PIC32MX695F512H_peripherals.a" partprefix="PIC32MX695F512H" />
+					<library name="/bin/framework/peripheral/PIC32MX695F512L_peripherals.a" partprefix="PIC32MX695F512L" />
+					<library name="/bin/framework/peripheral/PIC32MX764F128H_peripherals.a" partprefix="PIC32MX764F128H" />
+					<library name="/bin/framework/peripheral/PIC32MX764F128L_peripherals.a" partprefix="PIC32MX764F128L" />
+					<library name="/bin/framework/peripheral/PIC32MX775F256H_peripherals.a" partprefix="PIC32MX775F256H" />
+					<library name="/bin/framework/peripheral/PIC32MX775F256L_peripherals.a" partprefix="PIC32MX775F256L" />
+					<library name="/bin/framework/peripheral/PIC32MX775F512H_peripherals.a" partprefix="PIC32MX775F512H" />
+					<library name="/bin/framework/peripheral/PIC32MX775F512L_peripherals.a" partprefix="PIC32MX775F512L" />
+					<library name="/bin/framework/peripheral/PIC32MX795F512H_peripherals.a" partprefix="PIC32MX795F512H" />
+					<library name="/bin/framework/peripheral/PIC32MX795F512L_peripherals.a" partprefix="PIC32MX795F512L" />
+					
+					<library name="/bin/framework/peripheral/PIC32MZ1024ECG064_peripherals.a" partprefix="PIC32MZ1024ECG064" />
+					<library name="/bin/framework/peripheral/PIC32MZ1024ECG100_peripherals.a" partprefix="PIC32MZ1024ECG100" />
+					<library name="/bin/framework/peripheral/PIC32MZ1024ECG124_peripherals.a" partprefix="PIC32MZ1024ECG124" />
+					<library name="/bin/framework/peripheral/PIC32MZ1024ECG144_peripherals.a" partprefix="PIC32MZ1024ECG144" />
+					<library name="/bin/framework/peripheral/PIC32MZ1024ECH064_peripherals.a" partprefix="PIC32MZ1024ECH064" />
+					<library name="/bin/framework/peripheral/PIC32MZ1024ECH100_peripherals.a" partprefix="PIC32MZ1024ECH100" />
+					<library name="/bin/framework/peripheral/PIC32MZ1024ECH124_peripherals.a" partprefix="PIC32MZ1024ECH124" />
+					<library name="/bin/framework/peripheral/PIC32MZ1024ECH144_peripherals.a" partprefix="PIC32MZ1024ECH144" />
+					<library name="/bin/framework/peripheral/PIC32MZ1024ECM064_peripherals.a" partprefix="PIC32MZ1024ECM064" />
+					<library name="/bin/framework/peripheral/PIC32MZ1024ECM100_peripherals.a" partprefix="PIC32MZ1024ECM100" />
+					<library name="/bin/framework/peripheral/PIC32MZ1024ECM124_peripherals.a" partprefix="PIC32MZ1024ECM124" />
+					<library name="/bin/framework/peripheral/PIC32MZ1024ECM144_peripherals.a" partprefix="PIC32MZ1024ECM144" />
+					<library name="/bin/framework/peripheral/PIC32MZ2048ECG064_peripherals.a" partprefix="PIC32MZ2048ECG064" />
+					<library name="/bin/framework/peripheral/PIC32MZ2048ECG100_peripherals.a" partprefix="PIC32MZ2048ECG100" />
+					<library name="/bin/framework/peripheral/PIC32MZ2048ECG124_peripherals.a" partprefix="PIC32MZ2048ECG124" />
+					<library name="/bin/framework/peripheral/PIC32MZ2048ECG144_peripherals.a" partprefix="PIC32MZ2048ECG144" />
+					<library name="/bin/framework/peripheral/PIC32MZ2048ECH064_peripherals.a" partprefix="PIC32MZ2048ECH064" />
+					<library name="/bin/framework/peripheral/PIC32MZ2048ECH100_peripherals.a" partprefix="PIC32MZ2048ECH100" />
+					<library name="/bin/framework/peripheral/PIC32MZ2048ECH124_peripherals.a" partprefix="PIC32MZ2048ECH124" />
+					<library name="/bin/framework/peripheral/PIC32MZ2048ECH144_peripherals.a" partprefix="PIC32MZ2048ECH144" />
+					<library name="/bin/framework/peripheral/PIC32MZ2048ECM064_peripherals.a" partprefix="PIC32MZ2048ECM064" />
+					<library name="/bin/framework/peripheral/PIC32MZ2048ECM100_peripherals.a" partprefix="PIC32MZ2048ECM100" />
+					<library name="/bin/framework/peripheral/PIC32MZ2048ECM124_peripherals.a" partprefix="PIC32MZ2048ECM124" />
+					<library name="/bin/framework/peripheral/PIC32MZ2048ECM144_peripherals.a" partprefix="PIC32MZ2048ECM144" />
+					
+				</libraries>
+            </component>
+        </configuration>
+    </configurations>
+</module>

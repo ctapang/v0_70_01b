@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE module SYSTEM "ispmodule.dtd">
+
+<module name="drv_gfx_lcc" displayname="Low-Cost Controllerless Graphics Driver Module">
+    <component name="Required Files">
+        <includes>
+<include  logicalpath="/framework/driver/gfx" name="/framework/driver/gfx/drv_gfx_display.h"/>
+<include  logicalpath="/framework/driver/gfx/gfx_lcc" name="/framework/driver/gfx/gfx_lcc/drv_gfx_lcc.h"/>
+        </includes>
+        <files>
+            <file logicalpath="/framework/driver/gfx/gfx_lcc/src" name="/framework/driver/gfx/gfx_lcc/src/drv_gfx_lcc.c"/>
+        </files>
+    </component>
+</module>

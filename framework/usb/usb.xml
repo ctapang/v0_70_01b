@@ -1,0 +1,599 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE module SYSTEM "ispmodule.dtd">
+
+<module name="usb">    
+	<configurations exclusive="true">	
+		<configuration name="device">
+	
+			<component name="HID_Basic">
+				<includes>
+					<include logicalpath="/framework/usb" name="framework/usb/usb_chapter_9.h"/>
+					<include logicalpath="/framework/usb" name="framework/usb/usb_common.h"/>
+					<include logicalpath="/framework/usb" name="framework/usb/usb_device.h"/>
+					<include logicalpath="/framework/usb" name="framework/usb/usb_device_hid.h"/>
+					<include logicalpath="/framework/usb/src" name="framework/usb/src/usb_device_mapping.h"/>
+					<include logicalpath="/framework/usb/src" name="framework/usb/src/usb_device_local.h"/>
+				</includes>
+				<files>
+					<file logicalpath="/framework/system/int/src" name="framework/system/int/src/sys_int_pic32.c"/>
+                    <file logicalpath="/framework/peripheral/int/src/" name="framework/peripheral/int/src/plib_int_pic32.c"/>
+					<file logicalpath="/framework/driver/usb/usbhs/src/dynamic" name="framework/driver/usb/usbhs/src/dynamic/drv_usb.c" partprefix="PIC32MZ"/>
+					<file logicalpath="/framework/driver/usb/usbhs/src/dynamic" name="framework/driver/usb/usbhs/src/dynamic/drv_usb_device.c" partprefix="PIC32MZ"/>
+                    <file logicalpath="/framework/driver/usb/usbfs/src/dynamic" name="framework/driver/usb/usbfs/src/dynamic/drv_usb.c" partprefix="PIC32MX"/>
+					<file logicalpath="/framework/driver/usb/usbfs/src/dynamic" name="framework/driver/usb/usbfs/src/dynamic/drv_usb_device.c" partprefix="PIC32MX"/>
+					<file logicalpath="/framework/usb/src/dynamic" name="framework/usb/src/dynamic/usb_device.c"/>
+					<file logicalpath="/framework/usb/src/dynamic" name="framework/usb/src/dynamic/usb_device_hid.c"/>
+
+				</files>
+				<paths>
+                     <path name="framework"/>
+                </paths>
+				
+				
+								
+			</component> <!-- End of USB Device HID Basic-->
+
+			<component name="HID_Mouse">
+				<includes>
+                    <include logicalpath="/app" name="apps/usb/device/hid_mouse/firmware/src/mouse.h"/>
+					<include logicalpath="/framework/usb" name="framework/usb/usb_chapter_9.h"/>
+					<include logicalpath="/framework/usb" name="framework/usb/usb_common.h"/>
+					<include logicalpath="/framework/usb" name="framework/usb/usb_device.h"/>
+					<include logicalpath="/framework/usb" name="framework/usb/usb_device_hid.h"/>
+					<include logicalpath="/framework/usb/src" name="framework/usb/src/usb_device_mapping.h"/>
+					<include logicalpath="/framework/usb/src" name="framework/usb/src/usb_device_local.h"/>
+				</includes>
+				<files>
+                    <file logicalpath="/app" name="apps/usb/device/hid_mouse/firmware/src/mouse.c"/>
+					<file logicalpath="/framework/system/int/src" name="framework/system/int/src/sys_int_pic32.c"/>
+                    <file logicalpath="/framework/peripheral/int/src" name="framework/peripheral/int/src/plib_int_pic32.c"/>
+					<file logicalpath="/framework/driver/usb/usbhs/src/dynamic" name="framework/driver/usb/usbhs/src/dynamic/drv_usb.c" partprefix="PIC32MZ"/>
+					<file logicalpath="/framework/driver/usb/usbhs/src/dynamic" name="framework/driver/usb/usbhs/src/dynamic/drv_usb_device.c" partprefix="PIC32MZ"/>
+                    <file logicalpath="/framework/driver/usb/usbfs/src/dynamic" name="framework/driver/usb/usbfs/src/dynamic/drv_usb.c" partprefix="PIC32MX"/>
+					<file logicalpath="/framework/driver/usb/usbfs/src/dynamic" name="framework/driver/usb/usbfs/src/dynamic/drv_usb_device.c" partprefix="PIC32MX"/>
+					<file logicalpath="/framework/usb/src/dynamic" name="framework/usb/src/dynamic/usb_device.c"/>
+					<file logicalpath="/framework/usb/src/dynamic" name="framework/usb/src/dynamic/usb_device_hid.c"/>
+
+				</files>
+				<paths>
+                     <path name="framework"/>
+                </paths>
+				
+				
+			</component> <!-- End of USB Device HID Mouse-->
+
+			<component name="HID_Keyboard">
+				<includes>
+                    <include logicalpath="/app" name="apps/usb/device/hid_keyboard/firmware/src/keyboard.h"/>
+					<include logicalpath="/framework/usb" name="framework/usb/usb_chapter_9.h"/>
+					<include logicalpath="/framework/usb" name="framework/usb/usb_common.h"/>
+					<include logicalpath="/framework/usb" name="framework/usb/usb_device.h"/>
+					<include logicalpath="/framework/usb" name="framework/usb/usb_device_hid.h"/>
+					<include logicalpath="/framework/usb/src" name="framework/usb/src/usb_device_mapping.h"/>
+					<include logicalpath="/framework/usb/src" name="framework/usb/src/usb_device_local.h"/>
+				</includes>
+				<files>
+                    <file logicalpath="/app" name="apps/usb/device/hid_keyboard/firmware/src/keyboard.c"/>
+					<file logicalpath="/framework/system/int/src" name="framework/system/int/src/sys_int_pic32.c"/>
+                    <file logicalpath="/framework/peripheral/int/src" name="framework/peripheral/int/src/plib_int_pic32.c"/>
+					<file logicalpath="/framework/driver/usb/usbhs/src/dynamic" name="framework/driver/usb/usbhs/src/dynamic/drv_usb.c" partprefix="PIC32MZ"/>
+					<file logicalpath="/framework/driver/usb/usbhs/src/dynamic" name="framework/driver/usb/usbhs/src/dynamic/drv_usb_device.c" partprefix="PIC32MZ"/>
+                    <file logicalpath="/framework/driver/usb/usbfs/src/dynamic" name="framework/driver/usb/usbfs/src/dynamic/drv_usb.c" partprefix="PIC32MX"/>
+					<file logicalpath="/framework/driver/usb/usbfs/src/dynamic" name="framework/driver/usb/usbfs/src/dynamic/drv_usb_device.c" partprefix="PIC32MX"/>
+					<file logicalpath="/framework/usb/src/dynamic" name="framework/usb/src/dynamic/usb_device.c"/>
+					<file logicalpath="/framework/usb/src/dynamic" name="framework/usb/src/dynamic/usb_device_hid.c"/>
+
+				</files>
+				<paths>
+                     <path name="framework"/>
+                </paths>
+				
+			</component> <!-- End USB Device HID Keyboard-->
+
+			<!-- USB Device HID Joystick-->
+			<component name="HID_Joystick">
+				<includes>
+                    <include logicalpath="/app" name="apps/usb/device/hid_joystick/firmware/src/joystick.h"/>
+					<include logicalpath="/framework/usb" name="framework/usb/usb_chapter_9.h"/>
+					<include logicalpath="/framework/usb" name="framework/usb/usb_common.h"/>
+					<include logicalpath="/framework/usb" name="framework/usb/usb_device.h"/>
+					<include logicalpath="/framework/usb" name="framework/usb/usb_device_hid.h"/>
+					<include logicalpath="/framework/usb/src" name="framework/usb/src/usb_device_mapping.h"/>
+					<include logicalpath="/framework/usb/src" name="framework/usb/src/usb_device_local.h"/>
+				</includes>
+				<files>
+                    <file logicalpath="/framework/system/int/src" name="framework/system/int/src/sys_int_pic32.c"/>
+                    <file logicalpath="/framework/peripheral/int/src" name="framework/peripheral/int/src/plib_int_pic32.c"/>
+					<file logicalpath="/framework/driver/usb/usbhs/src/dynamic" name="framework/driver/usb/usbhs/src/dynamic/drv_usb.c" partprefix="PIC32MZ"/>
+					<file logicalpath="/framework/driver/usb/usbhs/src/dynamic" name="framework/driver/usb/usbhs/src/dynamic/drv_usb_device.c" partprefix="PIC32MZ"/>
+                    <file logicalpath="/framework/driver/usb/usbfs/src/dynamic" name="framework/driver/usb/usbfs/src/dynamic/drv_usb.c" partprefix="PIC32MX"/>
+					<file logicalpath="/framework/driver/usb/usbfs/src/dynamic" name="framework/driver/usb/usbfs/src/dynamic/drv_usb_device.c" partprefix="PIC32MX"/>
+					<file logicalpath="/framework/usb/src/dynamic" name="framework/usb/src/dynamic/usb_device.c"/>
+					<file logicalpath="/framework/usb/src/dynamic" name="framework/usb/src/dynamic/usb_device_hid.c"/>
+
+				</files>
+				<paths>
+                     <path name="framework"/>
+                </paths>
+				
+				
+				
+			</component> <!-- End of USB Device HID Joystick-->
+
+			<component name="CDC">
+				<includes>
+					<include logicalpath="/framework/usb" name="framework/usb/usb_chapter_9.h"/>
+					<include logicalpath="/framework/usb" name="framework/usb/usb_common.h"/>
+					<include logicalpath="/framework/usb" name="framework/usb/usb_device.h"/>
+					<include logicalpath="/framework/usb" name="framework/usb/src/usb_device_cdc_local.h"/>
+					<include logicalpath="/framework/usb" name="framework/usb/usb_device_cdc.h"/>
+					<include logicalpath="/framework/usb/src" name="framework/usb/src/usb_device_mapping.h"/>
+					<include logicalpath="/framework/usb/src" name="framework/usb/src/usb_device_local.h"/>
+				</includes>
+				<files>
+                    <file logicalpath="/framework/system/int/src" name="framework/system/int/src/sys_int_pic32.c"/>
+                    <file logicalpath="/framework/peripheral/int/src" name="framework/peripheral/int/src/plib_int_pic32.c"/>
+					<file logicalpath="/framework/driver/usb/usbhs/src/dynamic" name="framework/driver/usb/usbhs/src/dynamic/drv_usb.c" partprefix="PIC32MZ"/>
+					<file logicalpath="/framework/driver/usb/usbhs/src/dynamic" name="framework/driver/usb/usbhs/src/dynamic/drv_usb_device.c" partprefix="PIC32MZ"/>
+                    <file logicalpath="/framework/driver/usb/usbfs/src/dynamic" name="framework/driver/usb/usbfs/src/dynamic/drv_usb.c" partprefix="PIC32MX"/>
+					<file logicalpath="/framework/driver/usb/usbfs/src/dynamic" name="framework/driver/usb/usbfs/src/dynamic/drv_usb_device.c" partprefix="PIC32MX"/>
+					<file logicalpath="/framework/usb/src/dynamic" name="framework/usb/src/dynamic/usb_device.c"/>
+					<file logicalpath="/framework/usb/src/dynamic" name="framework/usb/src/dynamic/usb_device_cdc.c"/>
+					<file logicalpath="/framework/usb/src/dynamic" name="framework/usb/src/dynamic/usb_device_cdc_acm.c"/>
+				</files>
+				<paths>
+                     <path name="framework"/>
+                </paths>
+				
+			
+			<code dataobject="harmony_sys_init">
+	/* Initialize the USB device layer */
+	usbDevObject = USB_DEVICE_Initialize (USB_DEVICE_INDEX_0 ,
+										( SYS_MODULE_INIT* ) &amp;usbDevInitData);
+			</code>
+			<code dataobject="harmony_sys_tasks">
+    /* device layer tasks routine. CDC tasks gets called from device layer tasks */
+    USB_DEVICE_Tasks(usbDevObject);
+			</code>
+			
+			<code dataobject="usb_init_code_app_c">
+    SYS_INT_SourceDisable(INT_SOURCE_TIMER_CORE);
+			</code>	
+			
+					<code dataobject="app_extern_declr_app_h">
+extern const USB_DEVICE_FUNC_REGISTRATION_TABLE 
+	funcRegistrationTable[USB_DEVICE_CDC_INSTANCES_NUMBER];
+extern USB_DEVICE_FUNCTION_DRIVER cdcFuncDriver;
+extern const USB_MASTER_DESCRIPTOR usbMasterDescriptor;
+extern SYS_MODULE_OBJ usbDevObject;
+			</code>	
+	
+			<code dataobject="inc_files_app_h">
+#include "system/system.h"
+#include "system/int/sys_int.h"
+#include "driver/driver_common.h"
+#include "usb/usb_cdc.h"
+#include "usb/usb_device_cdc.h"
+			</code>	
+	
+			<code dataobject="usb_macro_app_h">
+#define USB_DEVICE_CDC_INDEX_0 0
+			</code>	
+			
+			<code dataobject="usb_dev_obj_sys_init">
+SYS_MODULE_OBJ usbDevObject=SYS_MODULE_OBJ_INVALID;
+
+uint8_t __attribute__((aligned(512))) endpointTable[USB_DEVICE_ENDPOINT_TABLE_SIZE];
+
+// *****************************************************************************
+/* USB Device layer Initialization Data
+
+  Summary:
+	Defines the device layer initialization data
+
+  Description
+	This structure defines the device layer's initialization data.
+
+  Remarks:
+	None.
+*/
+
+USB_DEVICE_INIT usbDevInitData =
+{
+
+	//TODO - Initialize the usbDevInitData
+
+};
+			</code>	
+			
+			
+			
+			<code dataobject="usb_code_app_c">
+/*******************************************************
+ * USB Device Layer Events - Application Event Handler
+ *******************************************************/
+
+void APP_USBDeviceEventHandler ( USB_DEVICE_EVENT event,
+		USB_DEVICE_EVENT_DATA * eventData )
+{
+	switch ( event )
+	{
+		case USB_DEVICE_EVENT_RESET:
+			break;
+		case USB_DEVICE_EVENT_DECONFIGURED:
+
+			// USB device is reset or device is deconfigured.
+			// This means that USB device layer is about to deininitialize
+			// all function drivers. 
+
+			appData.isConfigured = false;
+			break;
+
+		case USB_DEVICE_EVENT_CONFIGURED:
+
+			/* check the configuration */
+			if ( eventData->eventConfigured.configurationValue == 1)
+			{
+				/* the device is in configured state */
+				
+				/* Register the CDC Device application event handler here.
+				 * Note how the appData object pointer is passed as the 
+				 * user data */
+
+				USB_DEVICE_CDC_EventHandlerSet(USB_DEVICE_CDC_INDEX_0,
+						APP_USBDeviceCDCEventHandler, (uintptr_t)&amp;appData);
+				
+				/* mark that set configuration is complete */
+				appData.isConfigured = true;
+
+			}
+			break;
+
+		case USB_DEVICE_EVENT_SUSPENDED:
+
+			break;
+
+		case USB_DEVICE_EVENT_RESUMED:
+		case USB_DEVICE_EVENT_ATTACHED:
+		case USB_DEVICE_EVENT_DETACHED:
+		case USB_DEVICE_EVENT_ERROR:
+		default:
+			break;
+
+	}
+
+}
+
+/*******************************************************
+ * USB CDC Device Events - Application Event Handler
+ *******************************************************/
+
+USB_DEVICE_CDC_EVENT_RESPONSE APP_USBDeviceCDCEventHandler
+( 
+	USB_DEVICE_CDC_INDEX index ,
+	USB_DEVICE_CDC_EVENT event ,
+	USB_DEVICE_CDC_CONTROL_TRANSFER_HANDLE controlTransferHandle,
+	void* pData,
+	uintptr_t userData 
+)
+{
+	switch ( event )
+	{
+		case USB_DEVICE_CDC_EVENT_GET_LINE_CODING:
+
+			/* This means the host wants to know the current line
+			 * coding. This is a control transfer request. Use the 
+			 * USB_DEVICE_ControlSend() function to send the data to
+			 * host.  */
+			break;
+
+		case USB_DEVICE_CDC_EVENT_SET_LINE_CODING:
+
+			/* This means the host wants to set the line coding.
+			 * This is a control transfer request. Use the
+			 * USB_DEVICE_ControlReceive() function to receive the 
+			 * data from the host */
+			break;
+
+		case USB_DEVICE_CDC_EVENT_SET_CONTROL_LINE_STATE:
+
+			/* This means the host is setting the control line state.
+			 * Read the control line state. We will accept this request
+			 * for now. */
+			break;
+
+		case USB_DEVICE_CDC_EVENT_SEND_BREAK:
+
+			/* This means that the host is requesting that a break of the
+			 * specified duration be sent. Read the break duration */
+			break;
+
+		case USB_DEVICE_CDC_EVENT_READ_COMPLETE:
+
+			/* This means that the host has sent some data*/   
+			break;
+
+		case USB_DEVICE_CDC_EVENT_CONTROL_TRANSFER_DATA_RECEIVED:
+
+			/* The data stage of the last control transfer is
+			 * complete. For now we accept all the data */       
+			break;
+
+		case USB_DEVICE_CDC_EVENT_CONTROL_TRANSFER_DATA_SENT:
+
+			/* This means the GET LINE CODING function data is valid. We dont
+			 * do much with this data in this demo. */
+			break;
+
+		case USB_DEVICE_CDC_EVENT_WRITE_COMPLETE:
+
+			/* This means that the data write got completed. We can schedule
+			 * the next read. */
+			break;
+   
+		default:
+			break;
+	}
+
+	return USB_DEVICE_CDC_EVENT_RESPONSE_NONE;
+}
+			</code>	
+			
+			<code dataobject="usb_app_states_app_h">
+
+	/* Application waits for device configuration*/
+	APP_STATE_WAIT_FOR_CONFIGURATION,
+
+	/* The application checks if a switch was pressed */
+	APP_STATE_CHECK_SWITCH_PRESSED,
+
+	/* Wait for a character receive */
+	APP_STATE_SCHEDULE_READ,
+	
+	/* A character is received from host */
+	APP_STATE_WAIT_FOR_READ_COMPLETE,
+
+	/* Wait for the TX to get completed */
+	APP_STATE_SCHEDULE_WRITE,
+
+	/* Wait for the write to complete */
+	APP_STATE_WAIT_FOR_WRITE_COMPLETE,
+
+	/* Application Error state*/
+	APP_STATE_ERROR
+			</code>	
+			<code dataobject="usb_app_data_app_h">
+    /* Device layer handle returned by device layer open function */
+    USB_DEVICE_HANDLE deviceHandle;
+
+    USB_DEVICE_CDC_INDEX cdcInstance;
+   
+    /* Device configured state */
+    bool isConfigured;
+ 
+    /* Read Data Buffer */
+    uint8_t readBuffer[64];
+
+    /* Set Line Coding Data */
+    USB_DEVICE_CDC_EVENT_DATA_SET_LINE_CODING setLineCodingData;
+
+    /* Get Line Coding Data */
+    USB_DEVICE_CDC_EVENT_DATA_GET_LINE_CODING getLineCodingData;
+
+    /* Contorl Line State */
+    USB_DEVICE_CDC_EVENT_DATA_SET_CONTROL_LINE_STATE controlLineStateData;
+
+    /* Break data */
+    USB_DEVICE_CDC_EVENT_DATA_SEND_BREAK breakData;
+
+    /* Read transfer handle */
+    USB_DEVICE_CDC_TRANSFER_HANDLE readTransferHandle;
+
+    /* Write transfer handle */
+    USB_DEVICE_CDC_TRANSFER_HANDLE writeTransferHandle;
+
+    /* True if a character was read */
+    bool isReadComplete;
+
+    /* True if a character was written*/
+    bool isWriteComplete;
+
+   /* True is switch was pressed */
+   bool isSwitchPressed;
+
+   /* True if the switch press needs to be ignored*/
+   bool ignoreSwitchPress;
+			</code>	
+		
+			
+			<code dataobject="app_callback_app_h">
+			
+/*******************************************************************************
+  Function:
+	void APP_UsbDeviceEventCallBack(USB_DEVICE_EVENTS events)
+
+  Summary:
+	Device layer event notification callback.
+
+  Description:
+	This routine defines the device layer event notification callback.
+
+  Precondition:
+	The device layer should be opened by the application and the callback should
+	be registered with the device layer.
+
+  Parameters:
+	events  - specific device event
+
+  Returns:
+	None.
+
+  Remarks:
+	None.
+*/
+
+void APP_USBDeviceEventCallBack(USB_DEVICE_EVENT events, 
+		USB_DEVICE_EVENT_DATA * eventData);
+
+void APP_USBDeviceCDCEventHandler
+(
+	USB_DEVICE_CDC_INDEX index ,
+	USB_DEVICE_CDC_EVENT event ,
+	USB_DEVICE_CDC_TRANSFER_HANDLE controlTransferHandle,
+	void * pData,
+	uintptr_t userData
+);
+			</code>	
+			
+
+			
+			</component> <!-- End of USB CDC Class-->
+		
+		</configuration>
+		
+        <configuration name="host">
+
+			<component name="Host CDC">
+				<includes>
+					<include logicalpath="/framework/usb" name="framework/usb/usb_chapter_9.h"/>
+					<include logicalpath="/framework/usb" name="framework/usb/usb_common.h"/>
+                    <include logicalpath="/framework/usb" name="framework/usb/usb_cdc.h"/>
+					<include logicalpath="/framework/usb" name="framework/usb/usb_host.h"/>
+					<include logicalpath="/framework/usb" name="framework/usb/usb_host_cdc.h"/>
+					<include logicalpath="/framework/usb/src" name="framework/usb/src/usb_host_local.h"/>
+                    <include logicalpath="/framework/usb/src" name="framework/usb/src/usb_host_cdc_local.h"/>
+				</includes>
+				<files>
+					<file logicalpath="/framework/system/int/src" name="framework/system/int/src/sys_int_pic32.c"/>
+                    <file logicalpath="/framework/peripheral/int/src" name="framework/peripheral/int/src/plib_int_pic32.c"/>
+					<file logicalpath="/framework/driver/usb/usbhs/src/dynamic" name="framework/driver/usb/usbhs/src/dynamic/drv_usb.c" partprefix="PIC32MZ"/>
+					<file logicalpath="/framework/driver/usb/usbhs/src/dynamic" name="framework/driver/usb/usbhs/src/dynamic/drv_usb_host.c" partprefix="PIC32MZ"/>
+                    <file logicalpath="/framework/driver/usb/usbfs/src/dynamic" name="framework/driver/usb/usbfs/src/dynamic/drv_usb.c" partprefix="PIC32MX"/>
+					<file logicalpath="/framework/driver/usb/usbfs/src/dynamic" name="framework/driver/usb/usbfs/src/dynamic/drv_usb_host.c" partprefix="PIC32MX"/>
+					<file logicalpath="/framework/usb/src/dynamic" name="framework/usb/src/dynamic/usb_host.c"/>
+					<file logicalpath="/framework/usb/src/dynamic" name="framework/usb/src/dynamic/usb_host_cdc.c"/>
+				</files>
+				<paths>
+                     <path name="framework"/>
+                </paths>
+				<code dataobject="usb_host_system_config_h">
+#define DRV_USB_DEVICE_SUPPORT false (value based user selection)
+
+#define DRV_USB_HOST_SUPPORT   true (value based user selection)
+
+#define DRV_USB_ENDPOINTS_NUMBER  3
+
+#define DRV_USB_INSTANCES_NUMBER   1
+
+#define DRV_USB_INTERRUPT_MODE  1
+
+#define DRV_USB_HOST_PIPES_NUMBER           5
+
+#define DRV_USB_HOST_IRP_PER_FRAME_NUMBER   5
+
+#define DRV_USB_HOST_IRP_NUMBER             5
+
+#define DRV_USB_HOST_NAK_LIMIT              200
+
+#define USB_HOST_DEVICE_INFORMATION_STRING_LENGTH 31
+
+#define USB_HOST_INDEX_0                0
+
+#define USB_HOST_CLIENTS_NUMBER         1
+
+#define USB_HOST_MAX_INTERFACES         2   /* Max interfaces per device */
+
+#define USB_HOST_INSTANCES_NUMBER       1   /* Maximum Host layer instances */
+
+#define USB_HOST_MAX_CONFIGURATION      1   /* Host support configurations per device */
+
+#define USB_HOST_MAX_DRIVER_SUPPORTED   1   /* Based on TPL list.  */
+
+#define USB_HOST_MAX_DEVICE_SUPPORTED   1   /* This is max per bus including root hub */
+
+#define USB_HOST_MAX_ALTERNATE_SETTINGS 1   /* Max alternate setting per device */
+
+#define DRV_USB_HOST_MAXIMUM_ENDPOINTS_NUMBER     8
+
+#define  USB_HOST_CDC_INSTANCES_NUMBER   1				
+			</code>
+							
+			</component> <!-- End of Host CDC-->
+
+			<component name="Host MSD">
+				<includes>
+					<include logicalpath="/framework/usb" name="framework/usb/usb_chapter_9.h"/>
+					<include logicalpath="/framework/usb" name="framework/usb/usb_common.h"/>
+					<include logicalpath="/framework/usb" name="framework/usb/usb_host.h"/>
+					<include logicalpath="/framework/usb" name="framework/usb/src/usb_host_msd_local.h"/>
+					<include logicalpath="/framework/usb" name="framework/usb/usb_host_msd.h"/>
+					<include logicalpath="/framework/usb/src" name="framework/usb/src/usb_host_local.h"/>
+				</includes>
+				<files>
+					<file logicalpath="/framework/system/int/src" name="framework/system/int/src/sys_int_pic32.c"/>
+                    <file logicalpath="/framework/peripheral/int/src" name="framework/peripheral/int/src/plib_int_pic32.c"/>
+					<file logicalpath="/framework/driver/usb/usbhs/src/dynamic" name="framework/driver/usb/usbhs/src/dynamic/drv_usb.c" partprefix="PIC32MZ"/>
+					<file logicalpath="/framework/driver/usb/usbhs/src/dynamic" name="framework/driver/usb/usbhs/src/dynamic/drv_usb_host.c" partprefix="PIC32MZ"/>
+                    <file logicalpath="/framework/driver/usb/usbfs/src/dynamic" name="framework/driver/usb/usbfs/src/dynamic/drv_usb.c" partprefix="PIC32MX"/>
+					<file logicalpath="/framework/driver/usb/usbfs/src/dynamic" name="framework/driver/usb/usbfs/src/dynamic/drv_usb_host.c" partprefix="PIC32MX"/>
+					<file logicalpath="/framework/usb/src/dynamic" name="framework/usb/src/dynamic/usb_host.c"/>
+					<file logicalpath="/framework/usb/src/dynamic" name="framework/usb/src/dynamic/usb_host_msd.c"/>
+                    <file logicalpath="/framework/usb/src/dynamic" name="framework/usb/src/dynamic/usb_host_scsi.c"/>
+					<file logicalpath="/framework/system/fs/src/dynamic" name="framework/system/fs/src/dynamic/sys_fs_media_manager.c"/>
+				</files>
+				<paths>
+                     <path name="framework"/>
+                </paths>
+				<code dataobject="usb_host_system_config_h">
+#define DRV_USB_DEVICE_SUPPORT false (value based user selection)
+
+#define DRV_USB_HOST_SUPPORT   true (value based user selection)
+
+#define DRV_USB_ENDPOINTS_NUMBER  3
+
+#define DRV_USB_INSTANCES_NUMBER   1
+
+#define DRV_USB_INTERRUPT_MODE  1
+
+#define DRV_USB_HOST_PIPES_NUMBER           5
+
+#define DRV_USB_HOST_IRP_PER_FRAME_NUMBER   5
+
+#define DRV_USB_HOST_IRP_NUMBER             5
+
+#define DRV_USB_HOST_NAK_LIMIT              200
+
+#define USB_HOST_DEVICE_INFORMATION_STRING_LENGTH 31
+
+#define USB_HOST_INDEX_0                0
+
+#define USB_HOST_CLIENTS_NUMBER         1
+
+#define USB_HOST_MAX_INTERFACES         2   /* Max interfaces per device */
+
+#define USB_HOST_INSTANCES_NUMBER       1   /* Maximum Host layer instances */
+
+#define USB_HOST_MAX_CONFIGURATION      1   /* Host support configurations per device */
+
+#define USB_HOST_MAX_DRIVER_SUPPORTED   1   /* Based on TPL list.  */
+
+#define USB_HOST_MAX_DEVICE_SUPPORTED   1   /* This is max per bus including root hub */
+
+#define USB_HOST_MAX_ALTERNATE_SETTINGS 1   /* Max alternate setting per device */
+
+#define DRV_USB_HOST_MAXIMUM_ENDPOINTS_NUMBER     8
+
+#define USB_HOST_SCSI_INSTANCES_NUMBER  		2
+
+#define  USB_HOST_MSD_INSTANCES_NUMBER   		1
+
+#define USB_HOST_MSD_DRIVE_MAX            1
+
+#define SYS_FS_MEDIA_NUMBER  			2	
+			</code>
+				
+			</component> <!-- End of host MSD-->
+
+		</configuration>
+    </configurations>
+</module> <!-- End of USB Module-->

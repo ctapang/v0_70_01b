@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE module SYSTEM "ispmodule.dtd">
+
+<module name="drv_nvm" displayname="Non-Volatile Memory Driver Module">
+  <component name="Dynamic" logicalpath="/framework/driver/nvm">
+    <includes>
+      <include logicalpath="" name="/framework/driver/nvm/drv_nvm.h"/>
+      <include logicalpath="" name="/framework/driver/nvm/drv_nvm_mapping.h"/>
+      <include logicalpath="" name="/framework/driver/nvm/drv_nvm_media.h"/>
+      <include logicalpath="" name="/framework/driver/nvm/drv_nvm_static.h"/>
+      <include logicalpath="src" name="/framework/driver/nvm/src/drv_nvm_local.h"/>
+      <include logicalpath="src" name="/framework/driver/nvm/src/drv_nvm_media_local.h"/>
+      <include logicalpath="src" name="/framework/driver/nvm/src/drv_nvm_variant_mapping.h"/>
+    </includes>
+    <files>
+      <file logicalpath="src/dynamic" name="/framework/driver/nvm/src/dynamic/drv_nvm.c"/>
+      <file logicalpath="src/dynamic" name="/framework/driver/nvm/src/dynamic/drv_nvm_media.c"/>
+    </files>
+  </component>
+</module>

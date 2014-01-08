@@ -1,0 +1,782 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configurationDescriptor version="62">
+  <logicalFolder name="root" displayName="root" projectFiles="true">
+    <logicalFolder name="HeaderFiles"
+                   displayName="Header Files"
+                   projectFiles="true">
+      <logicalFolder name="fbsp" displayName="bsp" projectFiles="true">
+        <logicalFolder name="fpic32mz_sk" displayName="pic32mz_sk" projectFiles="true">
+          <itemPath>..\..\..\..\..\bsp\sk_pic32_mz\bsp_config.h</itemPath>
+        </logicalFolder>
+        <logicalFolder name="f1" displayName="sk_pic32mx_usb" projectFiles="true">
+          <itemPath>../../../../../bsp/sk_pic32_mx_usb/bsp_config.h</itemPath>
+        </logicalFolder>
+      </logicalFolder>
+      <logicalFolder name="fframework" displayName="framework" projectFiles="true">
+        <logicalFolder name="f1" displayName="crypto" projectFiles="true">
+          <itemPath>../../../../../framework/crypto/crypto.h</itemPath>
+        </logicalFolder>
+        <logicalFolder name="fperipheral" displayName="peripheral" projectFiles="true">
+          <logicalFolder name="fadc" displayName="adc" projectFiles="true">
+            <itemPath>..\..\..\..\..\framework\peripheral\adc\plib_adc.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="fbmx" displayName="bmx" projectFiles="true">
+            <itemPath>..\..\..\..\..\framework\peripheral\bmx\plib_bmx.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="fcan" displayName="can" projectFiles="true">
+            <itemPath>..\..\..\..\..\framework\peripheral\can\plib_can.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="fcmp" displayName="cmp" projectFiles="true">
+            <itemPath>..\..\..\..\..\framework\peripheral\cmp\plib_cmp.h</itemPath>
+            <itemPath>..\..\..\..\..\framework\peripheral\dma\plib_dma.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="feth" displayName="eth" projectFiles="true">
+            <itemPath>..\..\..\..\..\framework\peripheral\eth\plib_eth.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="fi2c" displayName="i2c" projectFiles="true">
+            <itemPath>..\..\..\..\..\framework\peripheral\i2c\plib_i2c.h</itemPath>
+            <itemPath>..\..\..\..\..\framework\peripheral\i2c\plib_i2c_helper_macros.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="fic" displayName="ic" projectFiles="true">
+            <itemPath>..\..\..\..\..\framework\peripheral\ic\plib_ic.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="fint" displayName="int" projectFiles="true">
+            <itemPath>..\..\..\..\..\framework\peripheral\int\plib_int.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="fnvm" displayName="nvm" projectFiles="true">
+            <itemPath>..\..\..\..\..\framework\peripheral\nvm\plib_nvm.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="foc" displayName="oc" projectFiles="true">
+            <itemPath>..\..\..\..\..\framework\peripheral\oc\plib_oc.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="fosc" displayName="osc" projectFiles="true">
+            <itemPath>..\..\..\..\..\framework\peripheral\osc\plib_osc.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="fpcache" displayName="pcache" projectFiles="true">
+            <itemPath>..\..\..\..\..\framework\peripheral\pcache\plib_pcache.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="fpmp" displayName="pmp" projectFiles="true">
+            <itemPath>..\..\..\..\..\framework\peripheral\pmp\plib_pmp.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="fports" displayName="ports" projectFiles="true">
+            <itemPath>..\..\..\..\..\framework\peripheral\ports\plib_ports.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="fpower" displayName="power" projectFiles="true">
+            <itemPath>..\..\..\..\..\framework\peripheral\power\plib_power.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="freset" displayName="reset" projectFiles="true">
+            <itemPath>..\..\..\..\..\framework\peripheral\reset\plib_reset.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="frtcc" displayName="rtcc" projectFiles="true">
+            <itemPath>..\..\..\..\..\framework\peripheral\rtcc\plib_rtcc.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="fspi" displayName="spi" projectFiles="true">
+            <itemPath>..\..\..\..\..\framework\peripheral\spi\plib_spi.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="ftmr" displayName="tmr" projectFiles="true">
+            <itemPath>..\..\..\..\..\framework\peripheral\tmr\plib_tmr.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="fusart" displayName="usart" projectFiles="true">
+            <itemPath>..\..\..\..\..\framework\peripheral\usart\plib_usart.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="fusb" displayName="usb" projectFiles="true">
+            <itemPath>..\..\..\..\..\framework\peripheral\usb\plib_usb.h</itemPath>
+          </logicalFolder>
+          <logicalFolder name="fwdt" displayName="wdt" projectFiles="true">
+            <itemPath>..\..\..\..\..\framework\peripheral\wdt\plib_wdt.h</itemPath>
+          </logicalFolder>
+          <itemPath>..\..\..\..\..\framework\peripheral\peripheral.h</itemPath>
+          <itemPath>..\..\..\..\..\framework\peripheral\peripheral_common.h</itemPath>
+          <itemPath>..\..\..\..\..\framework\peripheral\peripheral_common_32bit.h</itemPath>
+        </logicalFolder>
+      </logicalFolder>
+      <itemPath>../src/crypto_hw.h</itemPath>
+      <itemPath>../src/app.h</itemPath>
+    </logicalFolder>
+    <logicalFolder name="LinkerScript"
+                   displayName="Linker Files"
+                   projectFiles="true">
+    </logicalFolder>
+    <logicalFolder name="SourceFiles"
+                   displayName="Source Files"
+                   projectFiles="true">
+      <logicalFolder name="fbsp" displayName="bsp" projectFiles="true">
+        <logicalFolder name="fpic32mz_sk" displayName="pic32mz_sk" projectFiles="true">
+          <itemPath>..\..\..\..\..\bsp\sk_pic32_mz\bsp_sys_init.c</itemPath>
+        </logicalFolder>
+        <logicalFolder name="f1" displayName="sk_pic32mx_usb" projectFiles="true">
+          <itemPath>../../../../../bsp/sk_pic32_mx_usb/bsp_sys_init.c</itemPath>
+          <itemPath>../../../../../bsp/sk_pic32_mx_usb/config_performance.c</itemPath>
+        </logicalFolder>
+      </logicalFolder>
+      <logicalFolder name="f1" displayName="system_config" projectFiles="true">
+        <logicalFolder name="f1" displayName="pic32mz_sk" projectFiles="true">
+          <itemPath>../src/system_config/sk_pic32mz/system_init.c</itemPath>
+        </logicalFolder>
+        <logicalFolder name="f2" displayName="sk_pic32mx_usb" projectFiles="true">
+          <itemPath>../src/system_config/sk_pic32mx_usb/system_init.c</itemPath>
+        </logicalFolder>
+        <itemPath>../src/system_config/system_config.c</itemPath>
+        <itemPath>../src/system_config/system_tasks.c</itemPath>
+      </logicalFolder>
+      <itemPath>../src/main.c</itemPath>
+      <itemPath>../src/app.c</itemPath>
+    </logicalFolder>
+    <logicalFolder name="ExternalFiles"
+                   displayName="Important Files"
+                   projectFiles="false">
+      <itemPath>Makefile</itemPath>
+    </logicalFolder>
+  </logicalFolder>
+  <sourceRootList>
+    <Elem>../src</Elem>
+    <Elem>../../../../../framework/system/ports</Elem>
+    <Elem>../../../../../bsp/sk_pic32_mx_usb</Elem>
+    <Elem>../../../../../framework/crypto</Elem>
+    <Elem>../../../../../bsp/sk_pic32_mz</Elem>
+  </sourceRootList>
+  <projectmakefile>Makefile</projectmakefile>
+  <confs>
+    <conf name="PIC32MZ_HW" type="2">
+      <toolsSet>
+        <developmentServer>localhost</developmentServer>
+        <targetDevice>PIC32MZ2048ECM144</targetDevice>
+        <targetHeader></targetHeader>
+        <targetPluginBoard></targetPluginBoard>
+        <platformTool>PKOBSKDEPlatformTool</platformTool>
+        <languageToolchain>XC32</languageToolchain>
+        <languageToolchainVersion>1.30</languageToolchainVersion>
+        <platform>3</platform>
+      </toolsSet>
+      <compileType>
+        <linkerTool>
+          <linkerLibItems>
+            <linkerLibFileItem>../../../../../bin/framework/peripheral/PIC32MZ2048ECH144_peripherals.a</linkerLibFileItem>
+          </linkerLibItems>
+        </linkerTool>
+        <loading>
+          <useAlternateLoadableFile>false</useAlternateLoadableFile>
+          <alternateLoadableFile></alternateLoadableFile>
+        </loading>
+      </compileType>
+      <makeCustomizationType>
+        <makeCustomizationPreStepEnabled>false</makeCustomizationPreStepEnabled>
+        <makeCustomizationPreStep></makeCustomizationPreStep>
+        <makeCustomizationPostStepEnabled>false</makeCustomizationPostStepEnabled>
+        <makeCustomizationPostStep></makeCustomizationPostStep>
+        <makeCustomizationPutChecksumInUserID>false</makeCustomizationPutChecksumInUserID>
+        <makeCustomizationEnableLongLines>false</makeCustomizationEnableLongLines>
+        <makeCustomizationNormalizeHexFile>false</makeCustomizationNormalizeHexFile>
+      </makeCustomizationType>
+      <item path="../../../../../bsp/sk_pic32_mx_usb/bsp_config.h"
+            ex="true"
+            overriding="false">
+        <C32>
+        </C32>
+        <C32-AS>
+        </C32-AS>
+        <C32-LD>
+        </C32-LD>
+        <C32CPP>
+        </C32CPP>
+        <C32Global>
+        </C32Global>
+      </item>
+      <item path="../../../../../bsp/sk_pic32_mx_usb/bsp_sys_init.c"
+            ex="true"
+            overriding="false">
+        <C32>
+        </C32>
+        <C32-AS>
+        </C32-AS>
+        <C32-LD>
+        </C32-LD>
+        <C32CPP>
+        </C32CPP>
+        <C32Global>
+        </C32Global>
+      </item>
+      <item path="../../../../../bsp/sk_pic32_mx_usb/config_performance.c"
+            ex="true"
+            overriding="false">
+        <C32>
+        </C32>
+        <C32-AS>
+        </C32-AS>
+        <C32-LD>
+        </C32-LD>
+        <C32CPP>
+        </C32CPP>
+        <C32Global>
+        </C32Global>
+      </item>
+      <item path="../../../../../framework/crypto/crypto.h"
+            ex="true"
+            overriding="false">
+        <C32>
+        </C32>
+        <C32-AS>
+        </C32-AS>
+        <C32-LD>
+        </C32-LD>
+        <C32CPP>
+        </C32CPP>
+        <C32Global>
+        </C32Global>
+      </item>
+      <item path="../src/system_config/sk_pic32mx_usb/system_init.c"
+            ex="true"
+            overriding="false">
+        <C32>
+        </C32>
+        <C32-AS>
+        </C32-AS>
+        <C32-LD>
+        </C32-LD>
+        <C32CPP>
+        </C32CPP>
+        <C32Global>
+        </C32Global>
+      </item>
+      <C32>
+        <property key="additional-warnings" value="false"/>
+        <property key="enable-app-io" value="false"/>
+        <property key="enable-omit-frame-pointer" value="false"/>
+        <property key="enable-symbols" value="true"/>
+        <property key="enable-unroll-loops" value="false"/>
+        <property key="exclude-floating-point" value="false"/>
+        <property key="extra-include-directories"
+                  value="..\..\..\..\..\framework;..\..\..\..\..\bsp\sk_pic32_mz;..\src;..\src\system_config\sk_pic32mz;..\src\system_config;..\..\..\..\..\framework\crypto"/>
+        <property key="generate-16-bit-code" value="false"/>
+        <property key="isolate-each-function" value="false"/>
+        <property key="make-warnings-into-errors" value="false"/>
+        <property key="optimization-level" value=""/>
+        <property key="place-data-into-section" value="false"/>
+        <property key="post-instruction-scheduling" value="default"/>
+        <property key="pre-instruction-scheduling" value="default"/>
+        <property key="preprocessor-macros" value="USE_CRYPTO_HW"/>
+        <property key="strict-ansi" value="false"/>
+        <property key="support-ansi" value="false"/>
+        <property key="use-cci" value="false"/>
+        <property key="use-iar" value="false"/>
+        <property key="use-indirect-calls" value="false"/>
+      </C32>
+      <C32-AS>
+      </C32-AS>
+      <C32-LD>
+        <property key="additional-options-use-response-files" value="false"/>
+        <property key="enable-check-sections" value="false"/>
+        <property key="exclude-floating-point-library" value="false"/>
+        <property key="exclude-standard-libraries" value="false"/>
+        <property key="extra-lib-directories" value=""/>
+        <property key="generate-16-bit-code" value="false"/>
+        <property key="generate-cross-reference-file" value="false"/>
+        <property key="heap-size" value=""/>
+        <property key="input-libraries" value=""/>
+        <property key="linker-symbols" value=""/>
+        <property key="map-file" value="${DISTDIR}/${PROJECTNAME}.${IMAGE_TYPE}.map"/>
+        <property key="no-startup-files" value="false"/>
+        <property key="oXC32ld-extra-opts" value=""/>
+        <property key="optimization-level" value=""/>
+        <property key="preprocessor-macros" value=""/>
+        <property key="remove-unused-sections" value="true"/>
+        <property key="report-memory-usage" value="false"/>
+        <property key="stack-size" value=""/>
+        <property key="symbol-stripping" value=""/>
+        <property key="trace-symbols" value=""/>
+        <property key="warn-section-align" value="false"/>
+      </C32-LD>
+      <C32CPP>
+        <property key="additional-warnings" value="false"/>
+        <property key="check-new" value="false"/>
+        <property key="eh-specs" value="true"/>
+        <property key="enable-app-io" value="false"/>
+        <property key="enable-omit-frame-pointer" value="false"/>
+        <property key="enable-symbols" value="true"/>
+        <property key="enable-unroll-loops" value="false"/>
+        <property key="exceptions" value="true"/>
+        <property key="exclude-floating-point" value="false"/>
+        <property key="extra-include-directories" value=""/>
+        <property key="generate-16-bit-code" value="false"/>
+        <property key="isolate-each-function" value="false"/>
+        <property key="make-warnings-into-errors" value="false"/>
+        <property key="optimization-level" value=""/>
+        <property key="place-data-into-section" value="false"/>
+        <property key="post-instruction-scheduling" value="default"/>
+        <property key="pre-instruction-scheduling" value="default"/>
+        <property key="preprocessor-macros" value=""/>
+        <property key="rtti" value="true"/>
+        <property key="strict-ansi" value="false"/>
+        <property key="use-cci" value="false"/>
+        <property key="use-iar" value="false"/>
+        <property key="use-indirect-calls" value="false"/>
+      </C32CPP>
+      <C32Global>
+        <property key="legacy-libc" value="false"/>
+        <property key="save-temps" value="false"/>
+        <property key="wpo-lto" value="false"/>
+      </C32Global>
+      <PKOBSKDEPlatformTool>
+        <property key="AutoSelectMemRanges" value="auto"/>
+        <property key="SecureSegment.SegmentProgramming" value="FullChipProgramming"/>
+        <property key="ToolFirmwareFilePath"
+                  value="Press to browse for a specific firmware version"/>
+        <property key="ToolFirmwareOption.UseLatestFirmware" value="true"/>
+        <property key="memories.configurationmemory" value="true"/>
+        <property key="memories.eeprom" value="true"/>
+        <property key="memories.id" value="true"/>
+        <property key="memories.programmemory" value="true"/>
+        <property key="memories.programmemory.end" value="0x1d1fffff"/>
+        <property key="memories.programmemory.start" value="0x1d000000"/>
+        <property key="poweroptions.powerenable" value="false"/>
+        <property key="programoptions.eraseb4program" value="true"/>
+        <property key="programoptions.preserveeeprom" value="false"/>
+        <property key="programoptions.preserveprogramrange" value="false"/>
+        <property key="programoptions.preserveprogramrange.end" value="0x1d0007ff"/>
+        <property key="programoptions.preserveprogramrange.start" value="0x1d000000"/>
+        <property key="programoptions.usehighvoltageonmclr" value="false"/>
+        <property key="programoptions.uselvpprogramming" value="false"/>
+        <property key="voltagevalue" value="3.25"/>
+      </PKOBSKDEPlatformTool>
+    </conf>
+    <conf name="PIC32MZ_SW" type="2">
+      <toolsSet>
+        <developmentServer>localhost</developmentServer>
+        <targetDevice>PIC32MZ2048ECH144</targetDevice>
+        <targetHeader></targetHeader>
+        <targetPluginBoard></targetPluginBoard>
+        <platformTool>PKOBSKDEPlatformTool</platformTool>
+        <languageToolchain>XC32</languageToolchain>
+        <languageToolchainVersion>1.30</languageToolchainVersion>
+        <platform>3</platform>
+      </toolsSet>
+      <compileType>
+        <linkerTool>
+          <linkerLibItems>
+            <linkerLibFileItem>../../../../../bin/framework/peripheral/PIC32MZ2048ECH144_peripherals.a</linkerLibFileItem>
+            <linkerLibProjectItem>
+              <makeArtifact PL="../../../../../build/framework/crypto/crypto.X"
+                            CT="3"
+                            CN="PIC32MZ"
+                            AC="false"
+                            BL="true"
+                            WD="../../../../../build/framework/crypto/crypto.X"
+                            BC="${MAKE} MAKE_OPTIONS=&quot; -j 16&quot; -f Makefile CONF=PIC32MZ"
+                            DBC="${MAKE} MAKE_OPTIONS=&quot; -j 16&quot; -f Makefile CONF=PIC32MZ TYPE_IMAGE=DEBUG_RUN"
+                            CC="rm -rf &quot;build/PIC32MZ&quot; &quot;dist/PIC32MZ&quot;"
+                            OP="dist/PIC32MZ/production/crypto.X.a"
+                            DOP="dist/PIC32MZ/debug/crypto.X.a"
+                            FL="dist/PIC32MZ/production/crypto.X.a"
+                            PD="dist/PIC32MZ/production/crypto.X."
+                            DD="dist/PIC32MZ/debug/crypto.X.">
+              </makeArtifact>
+            </linkerLibProjectItem>
+            <linkerLibProjectItem>
+              <makeArtifact PL="../../../../../build/framework/crypto/zlib.X"
+                            CT="3"
+                            CN="PIC32MZ"
+                            AC="false"
+                            BL="true"
+                            WD="../../../../../build/framework/crypto/zlib.X"
+                            BC="${MAKE} MAKE_OPTIONS=&quot; -j 16&quot; -f Makefile CONF=PIC32MZ"
+                            DBC="${MAKE} MAKE_OPTIONS=&quot; -j 16&quot; -f Makefile CONF=PIC32MZ TYPE_IMAGE=DEBUG_RUN"
+                            CC="rm -rf &quot;build/PIC32MZ&quot; &quot;dist/PIC32MZ&quot;"
+                            OP="dist/PIC32MZ/production/zlib.X.a"
+                            DOP="dist/PIC32MZ/debug/zlib.X.a"
+                            FL="dist/PIC32MZ/production/zlib.X.a"
+                            PD="dist/PIC32MZ/production/zlib.X."
+                            DD="dist/PIC32MZ/debug/zlib.X.">
+              </makeArtifact>
+            </linkerLibProjectItem>
+          </linkerLibItems>
+        </linkerTool>
+        <loading>
+          <useAlternateLoadableFile>false</useAlternateLoadableFile>
+          <alternateLoadableFile></alternateLoadableFile>
+        </loading>
+      </compileType>
+      <makeCustomizationType>
+        <makeCustomizationPreStepEnabled>false</makeCustomizationPreStepEnabled>
+        <makeCustomizationPreStep></makeCustomizationPreStep>
+        <makeCustomizationPostStepEnabled>false</makeCustomizationPostStepEnabled>
+        <makeCustomizationPostStep></makeCustomizationPostStep>
+        <makeCustomizationPutChecksumInUserID>false</makeCustomizationPutChecksumInUserID>
+        <makeCustomizationEnableLongLines>false</makeCustomizationEnableLongLines>
+        <makeCustomizationNormalizeHexFile>false</makeCustomizationNormalizeHexFile>
+      </makeCustomizationType>
+      <item path="../../../../../bsp/sk_pic32_mx_usb/bsp_config.h"
+            ex="true"
+            overriding="false">
+        <C32>
+        </C32>
+        <C32-AS>
+        </C32-AS>
+        <C32-LD>
+        </C32-LD>
+        <C32CPP>
+        </C32CPP>
+        <C32Global>
+        </C32Global>
+      </item>
+      <item path="../../../../../bsp/sk_pic32_mx_usb/bsp_sys_init.c"
+            ex="true"
+            overriding="false">
+        <C32>
+        </C32>
+        <C32-AS>
+        </C32-AS>
+        <C32-LD>
+        </C32-LD>
+        <C32CPP>
+        </C32CPP>
+        <C32Global>
+        </C32Global>
+      </item>
+      <item path="../../../../../bsp/sk_pic32_mx_usb/config_performance.c"
+            ex="true"
+            overriding="false">
+        <C32>
+        </C32>
+        <C32-AS>
+        </C32-AS>
+        <C32-LD>
+        </C32-LD>
+        <C32CPP>
+        </C32CPP>
+        <C32Global>
+        </C32Global>
+      </item>
+      <item path="../src/system_config/sk_pic32mx_usb/system_init.c"
+            ex="true"
+            overriding="false">
+        <C32>
+        </C32>
+        <C32-AS>
+        </C32-AS>
+        <C32-LD>
+        </C32-LD>
+        <C32CPP>
+        </C32CPP>
+        <C32Global>
+        </C32Global>
+      </item>
+      <C32>
+        <property key="additional-warnings" value="false"/>
+        <property key="enable-app-io" value="false"/>
+        <property key="enable-omit-frame-pointer" value="false"/>
+        <property key="enable-symbols" value="true"/>
+        <property key="enable-unroll-loops" value="false"/>
+        <property key="exclude-floating-point" value="false"/>
+        <property key="extra-include-directories"
+                  value="..\..\..\..\..\framework;..\..\..\..\..\framework\system;..\..\..\..\..\framework\crypto;..\..\..\..\..\bsp\sk_pic32_mz;..\src;..\src\system_config"/>
+        <property key="generate-16-bit-code" value="false"/>
+        <property key="isolate-each-function" value="false"/>
+        <property key="make-warnings-into-errors" value="false"/>
+        <property key="optimization-level" value=""/>
+        <property key="place-data-into-section" value="false"/>
+        <property key="post-instruction-scheduling" value="default"/>
+        <property key="pre-instruction-scheduling" value="default"/>
+        <property key="preprocessor-macros" value=""/>
+        <property key="strict-ansi" value="false"/>
+        <property key="support-ansi" value="false"/>
+        <property key="use-cci" value="false"/>
+        <property key="use-iar" value="false"/>
+        <property key="use-indirect-calls" value="false"/>
+      </C32>
+      <C32-AS>
+        <property key="assembler-symbols" value=""/>
+        <property key="enable-symbols" value="true"/>
+        <property key="exclude-floating-point-library" value="false"/>
+        <property key="expand-macros" value="false"/>
+        <property key="extra-include-directories-for-assembler" value=""/>
+        <property key="extra-include-directories-for-preprocessor" value=""/>
+        <property key="false-conditionals" value="false"/>
+        <property key="keep-locals" value="false"/>
+        <property key="list-assembly" value="false"/>
+        <property key="list-source" value="false"/>
+        <property key="list-symbols" value="false"/>
+        <property key="oXC32asm-list-to-file" value="false"/>
+        <property key="omit-debug-dirs" value="false"/>
+        <property key="omit-forms" value="false"/>
+        <property key="preprocessor-macros" value=""/>
+        <property key="warning-level" value=""/>
+      </C32-AS>
+      <C32-LD>
+        <property key="additional-options-use-response-files" value="false"/>
+        <property key="enable-check-sections" value="false"/>
+        <property key="exclude-floating-point-library" value="false"/>
+        <property key="exclude-standard-libraries" value="false"/>
+        <property key="extra-lib-directories" value=""/>
+        <property key="generate-16-bit-code" value="false"/>
+        <property key="generate-cross-reference-file" value="false"/>
+        <property key="heap-size" value="2048"/>
+        <property key="input-libraries" value=""/>
+        <property key="linker-symbols" value=""/>
+        <property key="map-file" value="${DISTDIR}/${PROJECTNAME}.${IMAGE_TYPE}.map"/>
+        <property key="no-startup-files" value="false"/>
+        <property key="oXC32ld-extra-opts" value=""/>
+        <property key="optimization-level" value=""/>
+        <property key="preprocessor-macros" value=""/>
+        <property key="remove-unused-sections" value="true"/>
+        <property key="report-memory-usage" value="false"/>
+        <property key="stack-size" value=""/>
+        <property key="symbol-stripping" value=""/>
+        <property key="trace-symbols" value=""/>
+        <property key="warn-section-align" value="false"/>
+      </C32-LD>
+      <C32CPP>
+        <property key="additional-warnings" value="false"/>
+        <property key="check-new" value="false"/>
+        <property key="eh-specs" value="true"/>
+        <property key="enable-app-io" value="false"/>
+        <property key="enable-omit-frame-pointer" value="false"/>
+        <property key="enable-symbols" value="true"/>
+        <property key="enable-unroll-loops" value="false"/>
+        <property key="exceptions" value="true"/>
+        <property key="exclude-floating-point" value="false"/>
+        <property key="extra-include-directories" value=""/>
+        <property key="generate-16-bit-code" value="false"/>
+        <property key="isolate-each-function" value="false"/>
+        <property key="make-warnings-into-errors" value="false"/>
+        <property key="optimization-level" value=""/>
+        <property key="place-data-into-section" value="false"/>
+        <property key="post-instruction-scheduling" value="default"/>
+        <property key="pre-instruction-scheduling" value="default"/>
+        <property key="preprocessor-macros" value=""/>
+        <property key="rtti" value="true"/>
+        <property key="strict-ansi" value="false"/>
+        <property key="use-cci" value="false"/>
+        <property key="use-iar" value="false"/>
+        <property key="use-indirect-calls" value="false"/>
+      </C32CPP>
+      <C32Global>
+        <property key="legacy-libc" value="false"/>
+        <property key="save-temps" value="false"/>
+        <property key="wpo-lto" value="false"/>
+      </C32Global>
+      <PKOBSKDEPlatformTool>
+        <property key="AutoSelectMemRanges" value="auto"/>
+        <property key="SecureSegment.SegmentProgramming" value="FullChipProgramming"/>
+        <property key="ToolFirmwareFilePath"
+                  value="Press to browse for a specific firmware version"/>
+        <property key="ToolFirmwareOption.UseLatestFirmware" value="true"/>
+        <property key="memories.configurationmemory" value="true"/>
+        <property key="memories.eeprom" value="true"/>
+        <property key="memories.id" value="true"/>
+        <property key="memories.programmemory" value="true"/>
+        <property key="memories.programmemory.end" value="0x1d1fffff"/>
+        <property key="memories.programmemory.start" value="0x1d000000"/>
+        <property key="poweroptions.powerenable" value="false"/>
+        <property key="programoptions.eraseb4program" value="true"/>
+        <property key="programoptions.preserveeeprom" value="false"/>
+        <property key="programoptions.preserveprogramrange" value="false"/>
+        <property key="programoptions.preserveprogramrange.end" value="0x1d0007ff"/>
+        <property key="programoptions.preserveprogramrange.start" value="0x1d000000"/>
+        <property key="programoptions.usehighvoltageonmclr" value="false"/>
+        <property key="programoptions.uselvpprogramming" value="false"/>
+        <property key="voltagevalue" value="3.25"/>
+      </PKOBSKDEPlatformTool>
+    </conf>
+    <conf name="PIC32MX_SW" type="2">
+      <toolsSet>
+        <developmentServer>localhost</developmentServer>
+        <targetDevice>PIC32MX795F512L</targetDevice>
+        <targetHeader></targetHeader>
+        <targetPluginBoard></targetPluginBoard>
+        <platformTool>SKDEPIC32PlatformTool</platformTool>
+        <languageToolchain>XC32</languageToolchain>
+        <languageToolchainVersion>1.30</languageToolchainVersion>
+        <platform>3</platform>
+      </toolsSet>
+      <compileType>
+        <linkerTool>
+          <linkerLibItems>
+            <linkerLibProjectItem>
+              <makeArtifact PL="../../../../../build/framework/crypto/crypto.X"
+                            CT="3"
+                            CN="PIC32MX"
+                            AC="true"
+                            BL="true"
+                            WD="../../../../../build/framework/crypto/crypto.X"
+                            BC="${MAKE} MAKE_OPTIONS=&quot; -j 16&quot; -f Makefile CONF=PIC32MX"
+                            DBC="${MAKE} MAKE_OPTIONS=&quot; -j 16&quot; -f Makefile CONF=PIC32MX TYPE_IMAGE=DEBUG_RUN"
+                            CC="rm -rf &quot;build/PIC32MX&quot; &quot;dist/PIC32MX&quot;"
+                            OP="dist/PIC32MX/production/crypto.X.a"
+                            DOP="dist/PIC32MX/debug/crypto.X.a"
+                            FL="dist/PIC32MX/production/crypto.X.a"
+                            PD="dist/PIC32MX/production/crypto.X."
+                            DD="dist/PIC32MX/debug/crypto.X.">
+              </makeArtifact>
+            </linkerLibProjectItem>
+            <linkerLibProjectItem>
+              <makeArtifact PL="../../../../../build/framework/crypto/zlib.X"
+                            CT="3"
+                            CN="PIC32MX"
+                            AC="true"
+                            BL="true"
+                            WD="../../../../../build/framework/crypto/zlib.X"
+                            BC="${MAKE} MAKE_OPTIONS=&quot; -j 16&quot; -f Makefile CONF=PIC32MX"
+                            DBC="${MAKE} MAKE_OPTIONS=&quot; -j 16&quot; -f Makefile CONF=PIC32MX TYPE_IMAGE=DEBUG_RUN"
+                            CC="rm -rf &quot;build/PIC32MX&quot; &quot;dist/PIC32MX&quot;"
+                            OP="dist/PIC32MX/production/zlib.X.a"
+                            DOP="dist/PIC32MX/debug/zlib.X.a"
+                            FL="dist/PIC32MX/production/zlib.X.a"
+                            PD="dist/PIC32MX/production/zlib.X."
+                            DD="dist/PIC32MX/debug/zlib.X.">
+              </makeArtifact>
+            </linkerLibProjectItem>
+            <linkerLibFileItem>../../../../../bin/framework/peripheral/PIC32MX795F512L_peripherals.a</linkerLibFileItem>
+          </linkerLibItems>
+        </linkerTool>
+        <loading>
+          <useAlternateLoadableFile>false</useAlternateLoadableFile>
+          <alternateLoadableFile></alternateLoadableFile>
+        </loading>
+      </compileType>
+      <makeCustomizationType>
+        <makeCustomizationPreStepEnabled>false</makeCustomizationPreStepEnabled>
+        <makeCustomizationPreStep></makeCustomizationPreStep>
+        <makeCustomizationPostStepEnabled>false</makeCustomizationPostStepEnabled>
+        <makeCustomizationPostStep></makeCustomizationPostStep>
+        <makeCustomizationPutChecksumInUserID>false</makeCustomizationPutChecksumInUserID>
+        <makeCustomizationEnableLongLines>false</makeCustomizationEnableLongLines>
+        <makeCustomizationNormalizeHexFile>false</makeCustomizationNormalizeHexFile>
+      </makeCustomizationType>
+      <item path="../src/system_config/sk_pic32mz/system_init.c"
+            ex="true"
+            overriding="false">
+        <C32>
+        </C32>
+        <C32-AS>
+        </C32-AS>
+        <C32-LD>
+        </C32-LD>
+        <C32CPP>
+        </C32CPP>
+        <C32Global>
+        </C32Global>
+      </item>
+      <item path="../src/system_config/system_config.c" ex="false" overriding="false">
+        <C32>
+        </C32>
+        <C32-AS>
+        </C32-AS>
+        <C32-LD>
+        </C32-LD>
+        <C32CPP>
+        </C32CPP>
+        <C32Global>
+        </C32Global>
+      </item>
+      <item path="..\..\..\..\..\bsp\sk_pic32_mz\bsp_config.h"
+            ex="true"
+            overriding="false">
+        <C32>
+        </C32>
+        <C32-AS>
+        </C32-AS>
+        <C32-LD>
+        </C32-LD>
+        <C32CPP>
+        </C32CPP>
+        <C32Global>
+        </C32Global>
+      </item>
+      <item path="..\..\..\..\..\bsp\sk_pic32_mz\bsp_sys_init.c"
+            ex="true"
+            overriding="false">
+        <C32>
+        </C32>
+        <C32-AS>
+        </C32-AS>
+        <C32-LD>
+        </C32-LD>
+        <C32CPP>
+        </C32CPP>
+        <C32Global>
+        </C32Global>
+      </item>
+      <C32>
+        <property key="additional-warnings" value="false"/>
+        <property key="enable-app-io" value="false"/>
+        <property key="enable-omit-frame-pointer" value="false"/>
+        <property key="enable-symbols" value="true"/>
+        <property key="enable-unroll-loops" value="false"/>
+        <property key="exclude-floating-point" value="false"/>
+        <property key="extra-include-directories"
+                  value="..\..\..\..\..\framework;..\..\..\..\..\framework\system;..\..\..\..\..\framework\crypto;..\..\..\..\..\bsp\sk_pic32_mz;..\src;..\src\system_config"/>
+        <property key="generate-16-bit-code" value="false"/>
+        <property key="isolate-each-function" value="false"/>
+        <property key="make-warnings-into-errors" value="false"/>
+        <property key="optimization-level" value=""/>
+        <property key="place-data-into-section" value="false"/>
+        <property key="post-instruction-scheduling" value="default"/>
+        <property key="pre-instruction-scheduling" value="default"/>
+        <property key="preprocessor-macros" value=""/>
+        <property key="strict-ansi" value="false"/>
+        <property key="support-ansi" value="false"/>
+        <property key="use-cci" value="false"/>
+        <property key="use-iar" value="false"/>
+        <property key="use-indirect-calls" value="false"/>
+      </C32>
+      <C32-AS>
+      </C32-AS>
+      <C32-LD>
+        <property key="additional-options-use-response-files" value="false"/>
+        <property key="enable-check-sections" value="false"/>
+        <property key="exclude-floating-point-library" value="false"/>
+        <property key="exclude-standard-libraries" value="false"/>
+        <property key="extra-lib-directories" value=""/>
+        <property key="generate-16-bit-code" value="false"/>
+        <property key="generate-cross-reference-file" value="false"/>
+        <property key="heap-size" value="2048"/>
+        <property key="input-libraries" value=""/>
+        <property key="linker-symbols" value=""/>
+        <property key="map-file" value="${DISTDIR}/${PROJECTNAME}.${IMAGE_TYPE}.map"/>
+        <property key="no-startup-files" value="false"/>
+        <property key="oXC32ld-extra-opts" value=""/>
+        <property key="optimization-level" value=""/>
+        <property key="preprocessor-macros" value=""/>
+        <property key="remove-unused-sections" value="true"/>
+        <property key="report-memory-usage" value="false"/>
+        <property key="stack-size" value=""/>
+        <property key="symbol-stripping" value=""/>
+        <property key="trace-symbols" value=""/>
+        <property key="warn-section-align" value="false"/>
+      </C32-LD>
+      <C32CPP>
+        <property key="additional-warnings" value="false"/>
+        <property key="check-new" value="false"/>
+        <property key="eh-specs" value="true"/>
+        <property key="enable-app-io" value="false"/>
+        <property key="enable-omit-frame-pointer" value="false"/>
+        <property key="enable-symbols" value="true"/>
+        <property key="enable-unroll-loops" value="false"/>
+        <property key="exceptions" value="true"/>
+        <property key="exclude-floating-point" value="false"/>
+        <property key="extra-include-directories" value=""/>
+        <property key="generate-16-bit-code" value="false"/>
+        <property key="isolate-each-function" value="false"/>
+        <property key="make-warnings-into-errors" value="false"/>
+        <property key="optimization-level" value=""/>
+        <property key="place-data-into-section" value="false"/>
+        <property key="post-instruction-scheduling" value="default"/>
+        <property key="pre-instruction-scheduling" value="default"/>
+        <property key="preprocessor-macros" value=""/>
+        <property key="rtti" value="true"/>
+        <property key="strict-ansi" value="false"/>
+        <property key="use-cci" value="false"/>
+        <property key="use-iar" value="false"/>
+        <property key="use-indirect-calls" value="false"/>
+      </C32CPP>
+      <C32Global>
+        <property key="legacy-libc" value="false"/>
+        <property key="save-temps" value="false"/>
+        <property key="wpo-lto" value="false"/>
+      </C32Global>
+      <SKDEPIC32PlatformTool>
+        <property key="whatToProgram" value="all"/>
+      </SKDEPIC32PlatformTool>
+    </conf>
+  </confs>
+</configurationDescriptor>

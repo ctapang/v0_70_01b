@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE module SYSTEM "ispmodule.dtd">
+
+<module name="drv_tmr" displayname="Timer Driver Module">
+    <component name="Dynamic" logicalpath="/framework/driver/tmr">
+        <includes>
+            <include logicalpath="" name="/framework/driver/tmr/drv_tmr.h"/>
+            <include logicalpath="" name="/framework/driver/tmr/drv_tmr_mapping.h"/>
+            <include logicalpath="src" name="/framework/driver/tmr/src/drv_tmr_local.h"/>
+            <include logicalpath="src" name="/framework/driver/tmr/src/drv_tmr_variant_mapping.h"/>
+        </includes>
+        <files>
+            <file logicalpath="src/dynamic" name="/framework/driver/tmr/src/dynamic/drv_tmr_dynamic.c"/>
+        </files>
+    </component>
+</module>

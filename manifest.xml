@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE harmony SYSTEM "ispmanifest.dtd">
+
+<!-- ISP Manifest File -->
+<harmony>
+    <modules>
+        <!-- The periheral libraries have their own module file. -->
+        <module name="plib_headers" displayname="Peripheral Library Headers">
+            <xi:include href="framework/peripheral/peripheral.xml" parse="xml"/>
+        </module>
+
+        <!-- The system services have their own module file. -->
+        <module name="system" displayname="System Services">
+            <xi:include href="framework/system/system.xml" parse="xml"/>
+        </module>
+		
+	 <!-- The Board Support Package services have their own module file. -->
+        <module name="bsp" displayname="Board Support Packages">
+            <xi:include href="bsp/explorer16/pic32mx795f512l/pic32mx795f512l.xml" parse="xml"/>
+			<xi:include href="bsp/sk_pic32_mx_usb/pic32mx_usb_sk.xml" parse="xml"/>
+			<xi:include href="bsp/sk_pic32_mz/pic32mz_sk.xml" parse="xml"/>
+			<xi:include href="bsp/pic32mx_usb_audio/pic32mx_usb_audio.xml" parse="xml"/>
+        </module>
+
+        <!-- The graphics library has own module file. -->
+        <module name="gfx" displayname="Graphics Library">
+            <xi:include href="framework/gfx/gfx.xml" parse="xml"/>
+        </module>
+
+        <!-- The OSAL  has own module file. -->
+        <module name="osal" displayname="OS Abstraction Layer">
+            <xi:include href="framework/osal/osal.xml" parse="xml"/>
+        </module>
+
+        <!-- The TCP/IP stack  has own module file. -->
+        <module name="tcpip" displayname="TCPIP Stack">
+            <xi:include href="framework/tcpip/tcpip.xml" parse="xml"/>
+        </module>
+
+        <!-- The USB stack  has own module file. -->
+        <module name="usb" displayname="USB Stack">
+            <xi:include href="framework/usb/usb.xml" parse="xml"/>
+        </module>
+
+        <!-- Each ISP Driver has it's own module file. -->
+        <module name="Drivers" logicalpath="framework/driver">
+            <xi:include href="framework/driver/adc/drv_adc.xml" parse="xml"/>
+            <xi:include href="framework/driver/ethmac/drv_ethmac.xml" parse="xml"/>
+            <xi:include href="framework/driver/ethphy/drv_ethphy.xml" parse="xml"/>
+            <xi:include href="framework/driver/gfx/gfx_lcc/drv_gfx_lcc.xml" parse="xml"/>
+            <xi:include href="framework/driver/gfx/gfx_s1d13517/drv_gfx_s1d13517.xml" parse="xml"/>
+            <xi:include href="framework/driver/gfx/gfx_ssd1926/drv_gfx_ssd1926.xml" parse="xml"/>
+            <xi:include href="framework/driver/nvm/drv_nvm.xml" parse="xml"/>
+            <xi:include href="framework/driver/pmp/drv_pmp.xml" parse="xml"/>
+            <xi:include href="framework/driver/sdcard/drv_sdcard.xml" parse="xml"/>
+            <xi:include href="framework/driver/spi/drv_spi.xml" parse="xml"/>
+            <xi:include href="framework/driver/tmr/drv_tmr.xml" parse="xml"/>
+            <xi:include href="framework/driver/usart/drv_usart.xml" parse="xml"/>
+            <xi:include href="framework/driver/usb/drv_usb.xml" parse="xml"/>
+        </module>
+
+        <!-- FreeRTOS has it's own manifest file -->
+		<module name="Third Party">
+            <xi:include href="third_party/rtos/FreeRTOS/manifest.xml" parse="xml"/>
+            <xi:include href="third_party/rtos/OPENRTOS/manifest.xml" parse="xml"/>
+
+        </module>
+
+    </modules>
+
+    <!-- ISP App starter template files -->
+    <templates>
+        <template>
+            <files>
+                <file logicalpath="app" name="utilities/configurator/templates/main.c"/>
+                <file logicalpath="app" name="utilities/configurator/templates/app.c"/>
+                <file logicalpath="app" name="utilities/configurator/templates/app.h"/>
+				<file logicalpath="app/system_config" name="utilities/configurator/templates/system_config/system_config.c"/>
+                <file logicalpath="app/system_config" name="utilities/configurator/templates/system_config/system_config.h"/>
+                <file logicalpath="app/system_config" name="utilities/configurator/templates/system_config/system_init.c"/>
+                <file logicalpath="app/system_config" name="utilities/configurator/templates/system_config/system_int.c"/>
+                <file logicalpath="app/system_config" name="utilities/configurator/templates/system_config/system_tasks.c"/>
+            </files>
+        </template>
+    </templates>
+
+</harmony>

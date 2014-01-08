@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE module SYSTEM "ispmodule.dtd">
+
+<module name="Graphics Library Module">
+    <component name="Required Files">
+        <includes>
+            <include logicalpath="framework/gfx" name="framework/gfx/gfx.h"/>
+            <include logicalpath="framework/gfx" name="framework/gfx/gfx_colors.h"/>
+            <include logicalpath="framework/gfx" name="framework/gfx/gfx_gol.h"/>
+            <include logicalpath="framework/gfx" name="framework/gfx/gfx_gol_analog_clock.h"/>
+            <include logicalpath="framework/gfx" name="framework/gfx/gfx_gol_button.h"/>
+            <include logicalpath="framework/gfx" name="framework/gfx/gfx_gol_check_box.h"/>
+            <include logicalpath="framework/gfx" name="framework/gfx/gfx_gol_custom_control.h"/>
+            <include logicalpath="framework/gfx" name="framework/gfx/gfx_gol_digital_meter.h"/>
+            <include logicalpath="framework/gfx" name="framework/gfx/gfx_gol_edit_box.h"/>
+            <include logicalpath="framework/gfx" name="framework/gfx/gfx_gol_font_default.h"/>
+            <include logicalpath="framework/gfx" name="framework/gfx/gfx_gol_group_box.h"/>
+            <include logicalpath="framework/gfx" name="framework/gfx/gfx_gol_list_box.h"/>
+            <include logicalpath="framework/gfx" name="framework/gfx/gfx_gol_meter.h"/>
+            <include logicalpath="framework/gfx" name="framework/gfx/gfx_gol_picture.h"/>
+            <include logicalpath="framework/gfx" name="framework/gfx/gfx_gol_progress_bar.h"/>
+            <include logicalpath="framework/gfx" name="framework/gfx/gfx_gol_radio_button.h"/>
+            <include logicalpath="framework/gfx" name="framework/gfx/gfx_gol_scan_codes.h"/>
+            <include logicalpath="framework/gfx" name="framework/gfx/gfx_gol_scheme.h"/>
+            <include logicalpath="framework/gfx" name="framework/gfx/gfx_gol_scroll_bar.h"/>
+            <include logicalpath="framework/gfx" name="framework/gfx/gfx_gol_static_text.h"/>
+            <include logicalpath="framework/gfx" name="framework/gfx/gfx_gol_text_entry.h"/>
+            <include logicalpath="framework/gfx" name="framework/gfx/gfx_gol_window.h"/>
+            <include logicalpath="framework/gfx" name="framework/gfx/gfx_palette.h"/>
+            <include logicalpath="framework/gfx" name="framework/gfx/gfx_primitive.h"/>
+            <include logicalpath="framework/gfx" name="framework/gfx/gfx_primitive_local.h"/>
+            <include logicalpath="framework/gfx" name="framework/gfx/gfx_transitions.h"/>
+            <include logicalpath="framework/gfx" name="framework/gfx/gfx_types_font.h"/>
+            <include logicalpath="framework/gfx" name="framework/gfx/gfx_types_image.h"/>
+            <include logicalpath="framework/gfx" name="framework/gfx/gfx_types_macros.h"/>
+            <include logicalpath="framework/gfx" name="framework/gfx/gfx_types_palette.h"/>
+            <include logicalpath="framework/gfx" name="framework/gfx/gfx_types_resource.h"/>
+            <include logicalpath="framework/gfx/src/common_legacy" name="framework/gfx/src/common_legacy/i2c.h"/>
+            <include logicalpath="framework/gfx/src/common_legacy" name="framework/gfx/src/common_legacy/SST25VF016.h"/>
+            <include logicalpath="framework/gfx/src/common_legacy" name="framework/gfx/src/common_legacy/TouchScreen.h"/>
+	    <include logicalpath="framework/gfx/src/common_legacy" name="framework/gfx/src/common_legacy/TouchScreenCapacitive.h"/>
+            <include logicalpath="framework/gfx/src/common_legacy" name="framework/gfx/src/common_legacy/TouchScreenResistive.h"/>
+        </includes>
+        <files>
+            <file logicalpath="framework/gfx/src" name="framework/gfx/src/gfx_font_default.c"/>
+            <file logicalpath="framework/gfx/src" name="framework/gfx/src/gfx_gol.c"/>
+            <file logicalpath="framework/gfx/src" name="framework/gfx/src/gfx_gol_analog_clock.c"/>
+            <file logicalpath="framework/gfx/src" name="framework/gfx/src/gfx_gol_button.c"/>
+            <file logicalpath="framework/gfx/src" name="framework/gfx/src/gfx_gol_check_box.c"/>
+            <file logicalpath="framework/gfx/src" name="framework/gfx/src/gfx_gol_custom_control.c"/>
+            <file logicalpath="framework/gfx/src" name="framework/gfx/src/gfx_gol_digital_meter.c"/>
+            <file logicalpath="framework/gfx/src" name="framework/gfx/src/gfx_gol_edit_box.c"/>
+            <file logicalpath="framework/gfx/src" name="framework/gfx/src/gfx_gol_font_default.S"/>
+            <file logicalpath="framework/gfx/src" name="framework/gfx/src/gfx_gol_font_default_reference.c"/>
+            <file logicalpath="framework/gfx/src" name="framework/gfx/src/gfx_gol_group_box.c"/>
+            <file logicalpath="framework/gfx/src" name="framework/gfx/src/gfx_gol_list_box.c"/>
+            <file logicalpath="framework/gfx/src" name="framework/gfx/src/gfx_gol_meter.c"/>
+            <file logicalpath="framework/gfx/src" name="framework/gfx/src/gfx_gol_picture.c"/>
+            <file logicalpath="framework/gfx/src" name="framework/gfx/src/gfx_gol_progress_bar.c"/>
+            <file logicalpath="framework/gfx/src" name="framework/gfx/src/gfx_gol_radio_button.c"/>
+            <file logicalpath="framework/gfx/src" name="framework/gfx/src/gfx_gol_scheme_default.c"/>
+            <file logicalpath="framework/gfx/src" name="framework/gfx/src/gfx_gol_scroll_bar.c"/>
+            <file logicalpath="framework/gfx/src" name="framework/gfx/src/gfx_gol_static_text.c"/>
+            <file logicalpath="framework/gfx/src" name="framework/gfx/src/gfx_gol_text_entry.c"/>
+            <file logicalpath="framework/gfx/src" name="framework/gfx/src/gfx_gol_window.c"/>
+            <file logicalpath="framework/gfx/src" name="framework/gfx/src/gfx_palette.c"/>
+            <file logicalpath="framework/gfx/src" name="framework/gfx/src/gfx_primitive.c"/>
+            <file logicalpath="framework/gfx/src" name="framework/gfx/src/gfx_transitions.c"/>
+            <file logicalpath="framework/gfx/src/common_legacy" name="framework/gfx/src/common_legacy/i2c_sw.c"/>
+            <file logicalpath="framework/gfx/src/common_legacy" name="framework/gfx/src/common_legacy/SST25VF016.c"/>
+            <file logicalpath="framework/gfx/src/common_legacy" name="framework/gfx/src/common_legacy/TouchScreen.c"/>
+	    <file logicalpath="framework/gfx/src/common_legacy" name="framework/gfx/src/common_legacy/TCON_SSD1289.c"/>
+	    <file logicalpath="framework/gfx/src/common_legacy" name="framework/gfx/src/common_legacy/TouchScreenCapacitive.c"/>
+            <file logicalpath="framework/gfx/src/common_legacy" name="framework/gfx/src/common_legacy/TouchScreenResistive.c"/>
+        </files>
+		<paths>
+			<path name="."/>
+			<path name="framework/gfx"/>
+		</paths>
+		<code dataobject="harmony_gfx_appC_include">
+
+#include "internal_resource.h"
+		</code>
+		<code dataobject="harmony_gfx_appH_include">
+		
+#include &lt;xc.h&gt;
+#include &lt;stdio.h&gt;
+#include "peripheral/ports/plib_ports.h"
+
+#include "system/int/sys_int.h"
+#include "system/ports/sys_ports.h"
+
+#include "gfx/gfx.h"
+#include "../bsp/gfx/meb/meb/cpld.h"
+		</code>
+	<code dataobject="harmony_gfx_Initialize">
+    DisplayResetEnable();               // hold in reset by default
+    DisplayResetConfig();               // enable RESET line
+    DisplayCmdDataConfig();
+    DisplayConfig();                    // enable chip select line
+    DisplayBacklightOff();              // initially set the backlight to off
+    DisplayBacklightConfig();           // set the backlight control pin
+    T4CONbits.ON = 1;
+    PR4 = 160;
+    IEC0bits.T4IE = 1;
+	</code>
+		<code dataobject="harmony_gfx_SYS_Initialize_1">
+		
+    uint8_t handle=0xff;            //Handle to the driver
+
+    // populate the PMP init configuration structure
+    init.polarity.addressLatchPolarity = PMP_POLARITY_ACTIVE_HIGH;
+    init.polarity.rwStrobePolarity = PMP_POLARITY_ACTIVE_LOW;
+    init.polarity.writeEnableStrobePolarity = PMP_POLARITY_ACTIVE_LOW;
+    init.polarity.chipselect1Polarity = PMP_POLARITY_ACTIVE_HIGH;
+    init.polarity.chipselect2Polarity = PMP_POLARITY_ACTIVE_LOW;
+    init.ports.readWriteStrobe = PORT_ENABLE;
+    init.ports.writeEnableStrobe = PORT_ENABLE;
+    init.moduleInit.value = SYS_MODULE_POWER_RUN_FULL;
+    init.pmpID            = PMP_ID_0;
+    init.stopInIdle       = false;
+    init.muxMode          = PMP_MUX_NONE;
+
+    object = DRV_PMP_Initialize (DRV_PMP_INDEX_0, (SYS_MODULE_INIT *)&amp;init);    
+		</code>
+		<code dataobject="harmony_gfx_SYS_Initialize_2">
+		/* Initializethe interrupt system  */
+    SYS_INT_Initialize();
+
+    SYS_INT_VectorPrioritySet(INT_VECTOR_T4, INT_PRIORITY_LEVEL2);
+
+    /* set priority for PMP interrupt source */
+    SYS_INT_VectorPrioritySet(INT_VECTOR_PMP, INT_PRIORITY_LEVEL6);
+
+    /* Initialize the global interrupts */
+    SYS_INT_Enable();
+
+    GFX_DRV_SSD1926_Initialize(0);   //Initialize the Graphics Driver
+
+    while( handle != 0)
+    {
+	  handle = GFX_DRV_SSD1926_Open(0);
+    }
+
+    GFX_Initialize();
+
+    /* Turn on the backlight */
+    DisplayBacklightOn();
+		</code>
+		<code dataobject="harmony_gfx_SYS_Initialize_var">
+		
+SYS_MODULE_OBJ   object;
+DRV_PMP_INIT     init;
+SYS_STATUS       pmpStatus;
+		</code>
+		<code dataobject="harmony_gfx_SYS_Int">
+		
+void __ISR ( _TIMER_4_VECTOR) _InterruptHandler_GFX_stub ( void )
+{
+//    GFX_Primitive_Tasks();
+
+    GFX_DRV_SSD1926_Tasks();
+
+    // Clear flag
+    SYS_INT_SourceStatusClear(INT_SOURCE_TIMER_4);
+}
+
+void __ISR(_PMP_VECTOR) PMP_ISR(void)
+{
+    DRV_PMP_Tasks((SYS_MODULE_OBJ)object);
+}
+		</code>
+		<code dataobject="harmony_gfx_SYS_Config_Macros">
+
+//PICTail
+#define GFX_PICTAIL_V3
+
+//PMP Data Size
+#define USE_16BIT_PMP
+
+//PIC Interface
+#define PIC_SK
+
+//Graphics Controller
+#define GFX_USE_DISPLAY_CONTROLLER_SSD1926
+#define USE_GFX_PMP
+#define PMP_DATA_SETUP_TIME                (18)
+#define PMP_DATA_WAIT_TIME                 (82)  // based on the minimum pulse width requirement of CS signal of SSD1926
+#define PMP_DATA_HOLD_TIME                 (0)
+
+//GFX
+#define GFX_CONFIG_FONT_ANTIALIASED_DISABLE
+#define GFX_CONFIG_FONT_EXTERNAL_DISABLE
+#define GFX_CONFIG_IMAGE_EXTERNAL_DISABLE
+
+#define GFX_CONFIG_COLOR_DEPTH              (16)
+#define GFX_CONFIG_FONT_CHAR_SIZE           (8)
+#define GFX_CONFIG_PALETTE_DISABLE
+#define GFX_CONFIG_GOL_DISABLE
+#define GFX_CONFIG_FONT_EXTERNAL_DISABLE
+
+//Display
+#define GFX_USE_DISPLAY_PANEL_TFT_G240320LTSW_118W_E
+
+// CLOCK
+#define SYS_CLK_CONFIG_USBPLL_ENABLE              true
+#define SYS_CLK_PRIMARY_CLOCK                     80000000L
+#define SYS_CLK_SECONDARY_CLOCK                   80000000
+#define SYS_CLK_CLOCK_CONFIG_ERROR                10
+#define SYS_CLK_CONFIG_USBPLL_DIVISOR             2
+#define SYS_CLK_CONFIG_SYSCLK_INP_DIVISOR         2
+#define SYS_CLK_CONFIG_SYSCLK_OP_DIVISOR          1
+#define SYS_CLK_ON_WAIT_IDLE	              1
+#define SYS_CLK_ON_WAIT_SLEEP                     0
+#define SYS_CLK_EXTERNAL_CLOCK	              4000000
+
+// Timer
+#define DRV_TMR_COUNT_WIDTH 32
+#define SYS_TMR_MAX_PERIODIC_EVENTS 4
+#define DRV_TMR_INDEX 0
+#define DRV_TMR_INTERRUPT_MODE 0
+#define DRV_TMR_INSTANCES_NUMBER 4
+#define DRV_TMR_CLIENTS_NUMBER 4
+
+#include "bsp/sk_pic32_mx_usb/bsp_config.h"
+#include "bsp/gfx/pictail/pictailssd/bsp_config.h"
+#include "bsp/gfx/pictail/display/qvga/bsp_config.h"
+		</code>
+    </component>
+</module>

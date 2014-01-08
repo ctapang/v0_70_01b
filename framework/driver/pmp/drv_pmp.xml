@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE module SYSTEM "ispmodule.dtd">
+
+<module name="drv_pmp" displayname="Parallel Master Port Driver Module">
+    <component name="Dynamic" logicalpath="/framework/driver/pmp">
+        <includes>
+            <include logicalpath="" name="/framework/driver/pmp/drv_pmp.h"/>
+            <include logicalpath="config" name="/framework/driver/pmp/config/drv_pmp_config.h"/>
+            <include logicalpath="src" name="/framework/driver/pmp/src/drv_pmp_local.h"/>
+        </includes>
+        <files>
+            <file logicalpath="src/dynamic" name="/framework/driver/pmp/src/dynamic/drv_pmp_dynamic.c"/>
+        </files>
+    </component>
+</module>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE module SYSTEM "ispmodule.dtd">
+
+<!-- MPLAB Harmony Board Support Package Files -->
+<module name="explorer16" displayname="explorer16">
+	<component name="Required Files">
+		<includes>
+			<include logicalpath="/bsp/explorer16" name="bsp/explorer16/pic32mx795f512l/bsp_config.h"/>
+		</includes>
+		<files>
+			<file logicalpath="/bsp/explorer16" name="bsp/explorer16/pic32mx795f512l/bsp_sys_init.c"/>
+			<file logicalpath="/bsp/explorer16" name="bsp/explorer16/pic32mx795f512l/config_performance.c"/>
+		</files>
+		<paths>
+            <path name="bsp/explorer16/pic32mx795f512l"/>
+        </paths>
+	</component>
+</module>
+

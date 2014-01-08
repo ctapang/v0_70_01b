@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE module SYSTEM "ispmodule.dtd">
+
+<module name="drv_usart" displayname="USART Driver Module">
+    <component name="Dynamic" logicalpath="/framework/driver/usart">
+        <includes>
+            <include logicalpath="" name="/framework/driver/usart/drv_usart.h"/>
+            <include logicalpath="" name="/framework/driver/usart/drv_usart_mapping.h"/>
+            <include logicalpath="src" name="/framework/driver/usart/src/drv_usart_local.h"/>
+            <include logicalpath="src" name="/framework/driver/usart/src/drv_usart_variant_mapping.h"/>
+        </includes>
+        <files>
+            <file logicalpath="src/dynamic" name="/framework/driver/usart/src/dynamic/drv_usart_dynamic.c"/>
+        </files>
+    </component>
+</module>

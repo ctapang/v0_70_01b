@@ -1,0 +1,127 @@
+
+
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- 2013 Microchip Technology Inc. -->
+<!-- XML Format Policy -->
+<!--- Each board that is used for development of software should be part of this XML. This XML allows Microchip software to have 
+      same name of the board across different software packages\libraries released. This allows microchip to maintain a same set 
+      consistent names and collateral. 
+        
+      If the board that you are referring to is not listed in this list, please make sure that you add the board to this list. 
+
+      board_list : List of all  boards (with or without removable parts or pims), Plug-in modules. 
+      configuration_list : Configuration list allows library or driver configurations.
+            
+      description: Description of the part 
+      part_number: Part number as on Microchip Direct Site. 
+      If the board is used for software development either short_name or long_name should be present. macro_name is optional. 
+      long_name: Long Name when present should be used for code. The guidance is to use long_name first. If the long_name(s) start 
+        to get close to 75 characters, use short names. 
+      short_name : Short Name when present should be used for files\folders\build configurations. 
+      macro: The guidance is to use long_name or short_name for macros, but can use this to increase readability. 
+--->
+
+
+    <board_list>
+        <item>
+            <short_name>meb2</short_name>
+            <!-- No long_name -->
+            <!-- No macro -->
+            <part_number>TBD</part_number>
+            <description>Multi-</description>
+        </item>
+        <item>
+            <short_name>meb1</short_name>
+            <!-- No long_name -->
+            <!-- No macro -->
+            <part_number>TBD</part_number>
+            <description>Multi-</description>
+        </item>
+        <item>
+            <short_name>pictailssd</short_name>
+            <!-- No long_name -->
+            <macro>GFX_PICTAIL</macro>
+            <description>Graphics LCD Controller PICtail(TM) Plus SSD1926 Board</description>          
+            <part_number>AC164127-5</part_number>
+        </item>
+        <item>
+            <short_name>pictails1d</short_name>
+            <!-- No long_name -->
+            <macro>GFX_PICTAIL</macro>
+            <description>Graphics Controller PICtail(TM) Plus Epson S1D13517 Board</description>          
+            <part_number>AC164127-7</part_number>
+        </item>
+        <item>
+            <short_name>pictaillcc</short_name>
+            <!-- No long_name -->
+            <macro>GFX_PICTAIL</macro>
+            <description>Low Cost Controllerless (LCC) Graphics PICtail(TM) Plus Daughter Board</description>          
+            <part_number>AC164144</part_number>
+        </item>
+        <item>
+            <short_name>usbsk</short_name>
+            <long_name>pic32_usb_starter_kit</long_name>
+            <macro>PIC32_USB_STARTER_KIT</macro>
+            <description>PIC32 USB Starter Kit</description>          
+            <part_number>DM320003-2</part_number>
+        </item>
+        <item>
+            <short_name>ethsk</short_name>
+            <long_name>pic32_ethernet_starter_kit</long_name>
+            <macro>PIC32_ETHERNET_STARTER_KIT</macro>
+            <description>PIC32 ETHERNET Starter Kit</description>          
+            <part_number>DM320004</part_number>
+        </item>
+	<item>
+            <short_name>qvgav1</short_name>
+            <!-- No long_name -->
+            <macro>DISPLAY_PANEL_TFT_G240320LTSW_118W_E</macro>
+            <description>Graphics Display Truly 3.2" 240x320 Board</description>          
+            <part_number>AC164127-4</part_number>
+        </item>
+	<item>
+            <short_name>wqvgav1</short_name>
+            <!-- No long_name -->
+            <macro>DISPLAY_PANEL_PH480272T_005_I11Q</macro>
+            <description>Graphics Display Powertip 4.3" 480x272 Board</description>          
+            <part_number>AC164127-6</part_number>
+        </item>
+	<item>
+            <short_name>vgav1</short_name>
+            <!-- No long_name -->
+            <macro>DISPLAY_PANEL_TFT_640480_8_E</macro>
+            <description>Graphics Display Truly 5.7" 640x480 Board</description>          
+            <part_number>AC164127-8</part_number>
+        </item>
+	<item>
+            <short_name>pcapwqvga</short_name>
+            <!-- No long_name -->
+            <macro>DISPLAY_PANEL_PH480272T_005_I11Q</macro>
+            <description>Graphics Display 4.3" WQVFA PCAP" 480x272 Board</description>          
+            <part_number></part_number>
+        </item>
+        <!------------------------------>
+        <!------------------------------>
+        <!--- End of Plug In Modules --->
+        <!------------------------------>
+        <!------------------------------>
+        
+    </board_list>
+
+    <configuration_list>
+
+        <item>
+            <short_name>pmp16</short_name>
+            <macro>USE_PMP_16BIT</macro>
+            <description>Use 16 bits Parallel Master Port (PMP/EPMP) Interface Data Width.</description>          
+        </item>    
+
+        <item>
+            <short_name>pmp8</short_name>
+            <macro>USE_PMP_8BIT</macro>
+            <description>Use 8 bits Parallel Master Port (PMP/EPMP) Interface Data Width.</description>          
+        </item>            
+        
+    </configuration_list>
+</name_reference_list>

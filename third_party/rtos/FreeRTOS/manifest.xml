@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE module SYSTEM "ispmodule.dtd">
+<module name="FreeRTOS" help="http://www.freertos.org">
+    <component name="PIC32MZ">
+        <files>
+            <file name="third_party/rtos/FreeRTOS/Source/croutine.c" logicalpath="/FreeRTOS"/>
+            <file name="third_party/rtos/FreeRTOS/Source/list.c" logicalpath="/FreeRTOS"/>
+            <file name="third_party/rtos/FreeRTOS/Source/queue.c" logicalpath="/FreeRTOS"/>
+            <file name="third_party/rtos/FreeRTOS/Source/tasks.c" logicalpath="/FreeRTOS"/>
+            <file name="third_party/rtos/FreeRTOS/Source/timers.c" logicalpath="/FreeRTOS"/>
+            <file name="third_party/rtos/FreeRTOS/Source/portable/MemMang/heap_3.c" logicalpath="/FreeRTOS"/>
+            <file name="third_party/rtos/FreeRTOS/Source/portable/MPLAB/PIC32MZ/port.c" logicalpath="/FreeRTOS"/>
+            <file name="third_party/rtos/FreeRTOS/Source/portable/MPLAB/PIC32MZ/port_asm.S" logicalpath="/FreeRTOS"/>
+            <file name="/framework/osal/osal_freertos.c" logicalpath="/FreeRTOS"/>
+        </files>
+        <includes>
+            <include name="third_party/rtos/FreeRTOS/Source/portable/MPLAB/PIC32MZ/ISR_Support.h" logicalpath="/FreeRTOS"/>
+            <include name="third_party/rtos/FreeRTOS/Source/portable/MPLAB/PIC32MZ/portmacro.h" logicalpath="/FreeRTOS"/>           
+        </includes>
+        <paths>
+            <path name="third_party/rtos/FreeRTOS/Source/include"/>
+            <path name="third_party/rtos/FreeRTOS/Source/portable/MPLAB/PIC32MZ"/>
+        </paths>
+        <code dataobject="harmony_sys_init">
+            OSAL_Initialize();
+        </code>
+        <code dataobject="harmony_sys_tasks">
+            OSAL_Start();
+        </code>
+    </component>
+    <component name="PIC32MX">
+        <files>
+            <file name="third_party/rtos/FreeRTOS/Source/croutine.c" logicalpath="/FreeRTOS"/>
+            <file name="third_party/rtos/FreeRTOS/Source/list.c" logicalpath="/FreeRTOS"/>
+            <file name="third_party/rtos/FreeRTOS/Source/queue.c" logicalpath="/FreeRTOS"/>
+            <file name="third_party/rtos/FreeRTOS/Source/tasks.c" logicalpath="/FreeRTOS"/>
+            <file name="third_party/rtos/FreeRTOS/Source/timers.c" logicalpath="/FreeRTOS"/>
+            <file name="third_party/rtos/FreeRTOS/Source/portable/MemMang/heap_3.c" logicalpath="/FreeRTOS"/>
+            <file name="third_party/rtos/FreeRTOS/Source/portable/MPLAB/PIC32MX/port.c" logicalpath="/FreeRTOS"/>
+            <file name="third_party/rtos/FreeRTOS/Source/portable/MPLAB/PIC32MX/port_asm.S" logicalpath="/FreeRTOS"/>
+            <file name="/framework/osal/osal_freertos.c" logicalpath="/FreeRTOS"/>
+        </files>
+        <includes>
+            <include name="third_party/rtos/FreeRTOS/Source/portable/MPLAB/PIC32MX/ISR_Support.h" logicalpath="/FreeRTOS"/>
+            <include name="third_party/rtos/FreeRTOS/Source/portable/MPLAB/PIC32MX/portmacro.h" logicalpath="/FreeRTOS"/>           
+        </includes>
+        <paths>
+            <path name="third_party/rtos/FreeRTOS/Source/include"/>
+            <path name="third_party/rtos/FreeRTOS/Source/portable/MPLAB/PIC32MX"/>
+        </paths>
+        <code dataobject="harmony_sys_init">
+            OSAL_Initialize();
+        </code>
+        <code dataobject="harmony_sys_tasks">
+            OSAL_Start();
+        </code>
+    </component>    
+</module>

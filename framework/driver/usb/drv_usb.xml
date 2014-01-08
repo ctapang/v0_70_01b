@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE module SYSTEM "ispmodule.dtd">
+
+<module name="drv_usb" displayname="USB Driver Module">
+    <component name="Dynamic" logicalpath="/framework/driver/usb">
+        <includes>
+            <include logicalpath="" name="/framework/driver/usb/drv_usb.h"/>
+            <include logicalpath="" name="/framework/driver/usb/drv_usb_mapping.h"/>            
+            <include logicalpath="src" name="/framework/driver/usb/src/drv_usb_local.h"/>
+            <include logicalpath="src" name="/framework/driver/usb/src/drv_usb_variant_mapping.h"/>
+        </includes>
+        <files>
+            <file logicalpath="src/dynamic" name="/framework/driver/usb/src/dynamic/drv_usb.c"/>
+            <file logicalpath="src/dynamic" name="/framework/driver/usb/src/dynamic/drv_usb_device.c"/>
+            <file logicalpath="src/dynamic" name="/framework/driver/usb/src/dynamic/drv_usb_host.c"/>
+        </files>
+    </component>
+</module>
