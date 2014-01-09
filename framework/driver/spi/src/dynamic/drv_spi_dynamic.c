@@ -262,11 +262,15 @@ static void _DRV_SPI_SetupHardware ( const SPI_MODULE_ID plibId,
     {
         /* Master Enable */
         PLIB_SPI_MasterEnable ( _DRV_SPI_PERIPHERAL_ID_GET ( plibId ) );
+        if (_DRV_SPI_DUPLEX_MODE_GET( spiInit->dataDirection) == HALF_DUPLEX)
+            PLIB_SPI_PinDisable( _DRV_SPI_PERIPHERAL_ID_GET(plibId), SPI_PIN_DATA_IN);
     }
     else
     {
         /* Slave Enable */
         PLIB_SPI_SlaveEnable ( _DRV_SPI_PERIPHERAL_ID_GET( plibId ) );
+        if (_DRV_SPI_DUPLEX_MODE_GET( spiInit->dataDirection) == HALF_DUPLEX)
+            PLIB_SPI_PinDisable( _DRV_SPI_PERIPHERAL_ID_GET(plibId), SPI_PIN_DATA_OUT);
     }
     dObj->spiMode = _DRV_SPI_USAGE_MODE_GET ( spiInit->spiMode );
 

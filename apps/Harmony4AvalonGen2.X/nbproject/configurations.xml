@@ -253,8 +253,8 @@
         <logicalFolder name="fpic32mx_usb_audio"
                        displayName="pic32mx_usb_audio"
                        projectFiles="true">
-          <itemPath>..\..\..\v0_70_01b\bsp\pic32mx_usb_audio\bsp_sys_init.c</itemPath>
           <itemPath>..\..\..\v0_70_01b\bsp\pic32mx_usb_audio\config_performance.c</itemPath>
+          <itemPath>bsp_sys_init.c</itemPath>
         </logicalFolder>
       </logicalFolder>
       <logicalFolder name="fframework" displayName="framework" projectFiles="true">

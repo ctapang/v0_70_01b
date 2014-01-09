@@ -537,6 +537,16 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 
 #endif
 
+#if defined(DRV_SPI_DUPLEX_MODE)
+
+    #define _DRV_SPI_DUPLEX_MODE_GET(arg)                DRV_SPI_DUPLEX_MODE
+
+#else
+
+    #define _DRV_SPI_DUPLEX_MODE_GET(arg)                (arg)
+
+#endif
+
 
 // *****************************************************************************
 /* Baud rate value Configuration Override

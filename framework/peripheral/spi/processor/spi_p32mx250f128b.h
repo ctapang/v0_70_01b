@@ -63,6 +63,11 @@ typedef enum {
 } SPI_COMMUNICATION_WIDTH;
 
 typedef enum {
+    HALF_DUPLEX = 0,
+    FULL_DUPLEX = 1
+} SPI_DATA_DIRECTION;
+
+typedef enum {
 
     SPI_CLOCK_POLARITY_IDLE_LOW = 0,
     SPI_CLOCK_POLARITY_IDLE_HIGH = 1

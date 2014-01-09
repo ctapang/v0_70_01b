@@ -414,6 +414,9 @@ typedef struct _DRV_SPI_INIT
     /* Communication Width */
     SPI_COMMUNICATION_WIDTH         		commWidth;
 
+    /* FULL OR HALF DUPLEX*/
+    SPI_DATA_DIRECTION                          dataDirection;
+
     /* Baud Rate Value */
     uint32_t                        		baudRate;
 
