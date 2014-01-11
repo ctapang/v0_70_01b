@@ -14,7 +14,7 @@
     This file contains the initialization of board specific I/O.
  *******************************************************************************/
 
-
+#define SYS_ASSERT(expr, str) if (!expr) while(1);
 
 // *****************************************************************************
 // *****************************************************************************
@@ -211,10 +211,14 @@ void BSP_Initialize(void )
     PLIB_PORTS_PinSet( PORTS_ID_0, PORT_CHANNEL_A, VIDS);
 
     // Allow the logic levels to stabilize on the LM10011
-    SpinDelay((uint16_t)22);
+    SpinDelay((uint16_t)44);
 
-    // Set voltage to about 0.9V (0.872 + level * 0.00345)
-    BSP_SetVoltage((char)9);
+    // LEDs
+    PLIB_PORTS_PinDirectionOutputSet( PORTS_ID_0, PORT_CHANNEL_B, BSP_Red_LED);
+    PLIB_PORTS_PinDirectionOutputSet( PORTS_ID_0, PORT_CHANNEL_B, BSP_Green_LED);
+
+    // Light up RED LED
+    PLIB_PORTS_PinClear( PORTS_ID_0, PORT_CHANNEL_B, BSP_Red_LED);
 
     // Set SPI (both ports)
     //
@@ -258,7 +262,10 @@ void BSP_Initialize(void )
     SYS_INT_VectorSubprioritySet(INT_VECTOR_SPI1, INT_SUBPRIORITY_LEVEL1);
 
     SYS_INT_SourceEnable(INT_SOURCE_SPI_1_RECEIVE);
-    SYS_INT_SourceEnable(INT_SOURCE_SPI_2_TRANSMIT);
+    //SYS_INT_SourceEnable(INT_SOURCE_SPI_2_TRANSMIT);
+
+    // Set voltage to about 0.9V (0.872 + level * 0.00345)
+    BSP_SetVoltage((char)9);
 }
 
 // Input level can be from 0 to 64. Every increment is +3.45 mV.
@@ -291,7 +298,7 @@ void BSP_SetVoltage(char level)
     // LM10011 needs at least 20uS hold time
     // Let's give it plenty of time: 220 loops of 4 instructions = 880 * 25nS = 22uS.
     // Note that if interrupts are enabled, this delay can be longer.
-    SpinDelay((uint16_t)22);
+    SpinDelay((uint16_t)44);
 
     // now continue with higher 3 bits
     if (shifter & level)
@@ -319,11 +326,11 @@ void BSP_SetVoltage(char level)
 // 40 cycles (1uSec = 1000 nSec = 1000 / 25 = 40 CPU cycles.
 void SpinDelay(uint16_t delay)
 {
-    SYS_ASSERT( delay < 1000, "For delays longer than 1000 uSec, use timer." );
+    SYS_ASSERT( (delay < 1000), "For delays longer than 1000 uSec, use timer." );
 
     uint16_t nanoSecsPerCycle = (1000000000L / SYS_FREQUENCY);
 
-    SYS_ASSERT( nanoSecsPerCycle > 10, "System clock maybe too high forthis." );
+    SYS_ASSERT( (nanoSecsPerCycle > 10), "System clock maybe too high forthis." );
 
     uint16_t loopsPerMicroSec = (1000L / nanoSecsPerCycle) / 4; // about 4 instructions per loop
     uint16_t loops = delay * loopsPerMicroSec;
@@ -332,6 +339,14 @@ void SpinDelay(uint16_t delay)
     uint16_t i = 0;
     for (; i < loops; i++)
         x++;
+}
+
+void BSP_Toggle_Red_LED()
+{
+    bool lighted = PLIB_PORTS_PinGet(PORTS_ID_0, PORT_CHANNEL_B, BSP_Red_LED);
+    PLIB_PORTS_PinToggle( PORTS_ID_0, PORT_CHANNEL_B, BSP_Red_LED);
+    SpinDelay((uint16_t)20);
+    SYS_ASSERT((lighted != PLIB_PORTS_PinGet(PORTS_ID_0, PORT_CHANNEL_B, BSP_Red_LED)), "Red LED did not toggle");
 }
 
 

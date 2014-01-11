@@ -54,6 +54,7 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 
 int main ( void )
 {
+    int dummy = 0;
 
     /*Call the SYS Init routine. App init routine gets called from this*/
     SYS_Initialize ( NULL );
@@ -62,6 +63,10 @@ int main ( void )
     {
         /*Invoke SYS tasks. APP tasks gets called from this*/
         SYS_Tasks ( );
+
+        dummy++;
+        if (dummy > 1000)
+            dummy = 0;
 
     }
 

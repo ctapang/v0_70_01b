@@ -75,7 +75,7 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #pragma config IESO = OFF               // Internal/External Switch Over (Disabled)
 #pragma config POSCMOD = OFF            // Primary Oscillator Configuration (Primary osc disabled)
 #pragma config OSCIOFNC = OFF           // CLKO Output Signal Active on the OSCO Pin (Disabled)
-#pragma config FPBDIV = DIV_1           // Peripheral Clock Divisor (Pb_Clk == Sys_Clk)
+#pragma config FPBDIV = DIV_2           // Peripheral Clock Divisor (Pb_Clk == Sys_Clk / 2)
 #pragma config FCKSM = CSDCMD           // Clock Switching and Monitor Selection (Clock Switch Disable, FSCM Disabled)
 #pragma config WDTPS = PS1048576        // Watchdog Timer Postscaler (1:1048576)
 #pragma config WINDIS = OFF             // Watchdog Timer Window Enable (Watchdog Timer is in Non-Window Mode)
@@ -312,7 +312,7 @@ bool TickInit()
 {
     TimerInitConfig.moduleInit.value = SYS_MODULE_POWER_RUN_FULL;
     TimerInitConfig.drvIndex = DRV_TMR_INDEX_0;
-    TimerInitConfig.alarmPeriod = TEN_SECONDS;
+    TimerInitConfig.alarmPeriod = 1; // one second
 
     clkObject.peripheralClock = SYS_FREQUENCY;
 
@@ -329,7 +329,8 @@ bool TickInit()
     }
 
     // The first param must be a multiple of TimerInitConfig.alarmPeriod (see above).
-    TimerObjectHandle = SYS_TMR_CallbackPeriodic (TEN_SECONDS, &TimerHandler);
+    // Call the handler once every two seconds.
+    TimerObjectHandle = SYS_TMR_CallbackPeriodic (2, &TimerHandler);
 
 
      /* set priority for Timer 3 interrupt source */
@@ -337,6 +338,8 @@ bool TickInit()
 
     /* set sub-priority for Timer 3 interrupt source */
     SYS_INT_VectorSubprioritySet(INT_VECTOR_T3, INT_SUBPRIORITY_LEVEL3);
+
+    //SYS_INT_SourceEnable(INT_SOURCE_TIMER_3);
 
     return true;
 }
@@ -349,13 +352,14 @@ bool TickInit()
 // *****************************************************************************
 
 extern void BSP_SetVoltage(BSP_VOLTAGE delta);
+extern void BSP_Toggle_Red_LED();
 
 int j = 0;
 
 void TimerHandler(void)
 {
     j++;
-    //BSP_SetVoltage(j);
+    BSP_Toggle_Red_LED();
     if (j > 63)
         j = 0;
 }

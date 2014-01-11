@@ -114,7 +114,7 @@
     Holds Voltage Control numbers.
 
   Description:
-    This enumeration defines the Voltage Control numbers.
+    This enumeration defines the Voltage Control ports.
 
   Remarks:
     None.
@@ -147,10 +147,24 @@ typedef enum
 
 // *****************************************************************************
 // *****************************************************************************
-// Section: Analog Inputs Connected Potentiometer
+// Section: Analog Inputs Connected to hashing chip supply.
 // *****************************************************************************
 // *****************************************************************************
-/* The section below identifies the analog inputs connected to potentiometer */
+/* The section below identifies the analog inputs connected to 1.0V supply. */
+
+#define BSP_Voltage_Monitor_Pin     PORTS_BIT_POS_0   // Pin 1 (Channel B)
+
+
+// *****************************************************************************
+// *****************************************************************************
+// Section: LED pins.
+// *****************************************************************************
+// *****************************************************************************
+/* The section below identifies digital outpus connected to LEDs. */
+
+#define BSP_Red_LED                 PORTS_BIT_POS_5   // Pin 11 RB5
+
+#define BSP_Green_LED               PORTS_BIT_POS_7   // Pin 13 RB7
 
 
 // *****************************************************************************
