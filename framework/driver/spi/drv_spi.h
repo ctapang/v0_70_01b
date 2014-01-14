@@ -985,8 +985,9 @@ void DRV_SPI_Close ( DRV_HANDLE handle );
   ***************************************************************************************/
 
 void DRV_SPI_ClientSetup ( DRV_HANDLE 					handle,
-							const DRV_SPI_CLIENT_SETUP * const clientSetup );
+				const DRV_SPI_CLIENT_SETUP * const clientSetup );
 
+void _DRV_SPI_ClientHardwareSetup( DRV_HANDLE );
 
 // *****************************************************************************
 // *****************************************************************************

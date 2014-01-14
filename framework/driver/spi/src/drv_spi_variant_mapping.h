@@ -206,15 +206,15 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #endif
 
 #if defined(DRV_SPI_CLIENT_SPECIFIC_CONTROL)
-	#define _DRV_SPI_CLIENT_SWITCH_CLIENT()\
+	#define _DRV_SPI_CLIENT_SWITCH_CLIENT(dObj, lObj)\
 		if(dObj->lastClientHandle != lObj->clientHandle) \
 		{ \
 			_DRV_SPI_ClientHardwareSetup(lObj->clientHandle);\
 			dObj->lastClientHandle = lObj->clientHandle; \
 		}
-        #define _DRV_SPI_SAVE_LAST_CLIENT()\
+        #define _DRV_SPI_SAVE_LAST_CLIENT(dObj)\
             {\
-                dObj = clientObj->driverObject;\
+                dObj = clientObj->driverObject->drvIndex;\
                 gDrvSPIObj[dObj].lastClientHandle = DRV_SPI_CLIENTS_NUMBER + 1 ;\
             }
 #else

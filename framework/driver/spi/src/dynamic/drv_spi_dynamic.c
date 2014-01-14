@@ -559,28 +559,29 @@ SYS_STATUS DRV_SPI_Status ( SYS_MODULE_OBJ object )
     None.
 */
 
+
 __attribute__((section("driver")))
 void DRV_SPI_Tasks ( SYS_MODULE_OBJ object )
 {
 
     DRV_SPI_OBJ             *dObj           = (DRV_SPI_OBJ*)object;
-    DRV_SPI_BUFFER_OBJECT   *lBufferObj     = dObj->taskLObj;
+    DRV_SPI_BUFFER_OBJECT   *lBufferObj     = dObj->currentBufObj;
     SPI_DATA_TYPE           dummy           = 0xFF;
     SPI_MODULE_ID           spiId           = dObj->spiId;
     DRV_SPI_CLIENT_OBJ      *lClientObj;
 
+    static int i = 0, j = 0, k = 0, m = 0, p = 0;
+
     switch ( dObj->task )
     {
         case DRV_SPI_TASK_PROCESS_QUEUE:
-            /* Pop the first element from the queue */
+            i++;
             if ( ( dObj->queueHead != NULL ) && ( PLIB_SPI_TransmitBufferIsEmpty ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ) ) ) )
             {
-                /* This should be a global variable since the control could
-                go out of this function */
-                dObj->taskLObj = dObj->queueHead;
-
-                /* Take it to a local variable to avoid multiple referencing and to speed up */
-                lBufferObj   = dObj->taskLObj;
+                j++;
+                /* Pop the first element from the queue */
+                lBufferObj   = dObj->queueHead;
+                dObj->currentBufObj = lBufferObj;
 
                 /* Update the queue head */
                 dObj->queueHead = lBufferObj->next;
@@ -589,29 +590,39 @@ void DRV_SPI_Tasks ( SYS_MODULE_OBJ object )
 
                 /* We need not do this all the time but when the request from a
                  new client  */
-                _DRV_SPI_CLIENT_SWITCH_CLIENT();
-
-                if ( true != _DRV_SPI_CLIENT_OBJ(lClientObj, chipSelectLogicLevel) )
-                {
-                    _DRV_SPI_CHIP_SELECT_CLEAR(_DRV_SPI_CLIENT_OBJ(lClientObj, chipSelectPort),
-                        _DRV_SPI_CLIENT_OBJ(lClientObj, chipSelectPort));
-                }
-                else
-                {
-                    _DRV_SPI_CHIP_SELECT_SET(_DRV_SPI_CLIENT_OBJ(lClientObj, chipSelectPort),
-                        _DRV_SPI_CLIENT_OBJ(lClientObj, chipSelectPort));
-                }
+                _DRV_SPI_CLIENT_SWITCH_CLIENT(dObj, lBufferObj);
 
                 /* Update the task state as per the operation */
-                dObj->task = lBufferObj->operation + DRV_SPI_TASK_PROCESS_READ_ONLY;
-
                 if ( lBufferObj->operation == DRV_SPI_OP_READ )
                 {
-                    PLIB_SPI_BufferWrite( _DRV_SPI_PERIPHERAL_ID_GET( spiId ), dummy ) ;
+                    dObj->task = DRV_SPI_TASK_PROCESS_READ_ONLY;
+                    if (SYS_INT_SourceStatusGet(INT_SOURCE_SPI_1_TRANSMIT))
+                        PLIB_SPI_BufferWrite( _DRV_SPI_PERIPHERAL_ID_GET( spiId ), dummy ) ;
+                    else
+                    {
+                        *lBufferObj->rxBuffer++ = PLIB_SPI_BufferRead( _DRV_SPI_PERIPHERAL_ID_GET( spiId ) );
+                        lBufferObj->transferSize--;
+                    }
                 }
-                else
+                else if ( lBufferObj->operation == DRV_SPI_OP_WRITE )
                 {
-                    PLIB_SPI_BufferWrite ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ), *lBufferObj->txBuffer++ ) ;
+                    dObj->task = DRV_SPI_TASK_PROCESS_WRITE_ONLY;
+                    uint32_t *pWord = (uint32_t *)lBufferObj->txBuffer;
+                    SYS_ASSERT((pWord[0] != 0), "Buffer has zeroes in first word");
+                    PLIB_SPI_BufferWrite ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ), *lBufferObj->txBuffer++ );
+                    lBufferObj->transferSize--;
+
+                    // pull the chip-select line low
+                    if ( true != _DRV_SPI_CLIENT_OBJ(lClientObj, chipSelectLogicLevel) )
+                    {
+                        _DRV_SPI_CHIP_SELECT_CLEAR(_DRV_SPI_CLIENT_OBJ(lClientObj, chipSelectPort),
+                            _DRV_SPI_CLIENT_OBJ(lClientObj, chipSelectBitPos));
+                    }
+                    else
+                    {
+                        _DRV_SPI_CHIP_SELECT_SET(_DRV_SPI_CLIENT_OBJ(lClientObj, chipSelectPort),
+                            _DRV_SPI_CLIENT_OBJ(lClientObj, chipSelectBitPos));
+                    }
                 }
             }
             break;
@@ -622,18 +633,17 @@ void DRV_SPI_Tasks ( SYS_MODULE_OBJ object )
                 if ( PLIB_SPI_ReceiverBufferIsFull ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ) ) )
                 {
                     *lBufferObj->rxBuffer++ = PLIB_SPI_BufferRead ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ) );
+                    lBufferObj->transferSize--;
 
                     /* Handle the overflow */
                     if ( lBufferObj->transferSize > 1 )
                     {
                             PLIB_SPI_BufferWrite( _DRV_SPI_PERIPHERAL_ID_GET( spiId ), dummy ) ;
-                            lBufferObj->transferSize--;
                     }
                     else /* If all transmission is complete */
                     {
                         /* Hold the buffer till the completion of the operation */
                         lBufferObj->inUse = false;
-                        lBufferObj->transferSize--;
                         dObj->task = DRV_SPI_TASK_PROCESS_QUEUE;
 
                         _DRV_SPI_InterruptSourceDisable ( _DRV_SPI_INT_SRC_GET ( dObj->rxInterruptSource ) ) ;
@@ -658,65 +668,71 @@ void DRV_SPI_Tasks ( SYS_MODULE_OBJ object )
             }
             break;
         case DRV_SPI_TASK_PROCESS_WRITE_ONLY:
+            k++;
             /* Loop till the transmit size, do not block though */
             while ( lBufferObj->transferSize )
-            {             
+            {
+                m++;
                 if ( PLIB_SPI_ReceiverBufferIsFull ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ) ) )
                 {
                     dummy = PLIB_SPI_BufferRead ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ) );
+                }
 				
+                PLIB_SPI_BufferWrite ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ), *lBufferObj->txBuffer++ );
+                lBufferObj->transferSize--;
+
                     /* Handle the overflow */
-                    if ( lBufferObj->transferSize > 1 )
+                if ( lBufferObj->transferSize <= 1 )
+                {
+                    // Release chip select signal
+                    lClientObj = (DRV_SPI_CLIENT_OBJ *)lBufferObj->clientHandle;
+                    if ( true != _DRV_SPI_CLIENT_OBJ(lClientObj, chipSelectLogicLevel) )
                     {
-                        PLIB_SPI_BufferWrite ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ), *lBufferObj->txBuffer++ );
-						lBufferObj->transferSize--;
+                        _DRV_SPI_CHIP_SELECT_SET(_DRV_SPI_CLIENT_OBJ(lClientObj, chipSelectPort),
+                            _DRV_SPI_CLIENT_OBJ(lClientObj, chipSelectBitPos));
                     }
                     else
                     {
-                        lBufferObj->transferSize--;
-
-                        /* Hold the buffer till the completion of the operation */
-                        lBufferObj->inUse = false;
-
-                        dObj->task = DRV_SPI_TASK_PROCESS_QUEUE;
-
-                        _DRV_SPI_InterruptSourceDisable ( _DRV_SPI_INT_SRC_GET ( dObj->txInterruptSource ) ) ;
-
-                        _DRV_SPI_CLIENT_OBJ(lBufferObj, status) |=
-                            DRV_SPI_BUFFER_EVENT_COMPLETE;
-
-                       /* Have a check here because DRV_SPI_ClientSetup function call is optional */
-                        if ( _DRV_SPI_CLIENT_OBJ(((DRV_SPI_CLIENT_OBJ *)lBufferObj->clientHandle), callback) != NULL )
-                        {
-                            /* Give an indication to the higher layer upon successful transmission */
-                            _DRV_SPI_CLIENT_OBJ(((DRV_SPI_CLIENT_OBJ *)lBufferObj->clientHandle), callback)
-                                    ( DRV_SPI_BUFFER_EVENT_COMPLETE, (DRV_SPI_BUFFER_HANDLE)lBufferObj, 0x00 );
-                        }
+                        _DRV_SPI_CHIP_SELECT_CLEAR(_DRV_SPI_CLIENT_OBJ(lClientObj, chipSelectPort),
+                            _DRV_SPI_CLIENT_OBJ(lClientObj, chipSelectBitPos));
                     }
-                }
-                else
-                {
-                    /* Do not block in any case */
-                    break;
+
+                    /* Hold the buffer till the completion of the operation */
+                    lBufferObj->inUse = false;
+
+                    dObj->task = DRV_SPI_TASK_PROCESS_QUEUE;
+
+                    _DRV_SPI_InterruptSourceDisable ( _DRV_SPI_INT_SRC_GET ( dObj->txInterruptSource ) ) ;
+
+                    _DRV_SPI_CLIENT_OBJ(lBufferObj, status) |=
+                        DRV_SPI_BUFFER_EVENT_COMPLETE;
+
+                   /* Have a check here because DRV_SPI_ClientSetup function call is optional */
+                    if ( _DRV_SPI_CLIENT_OBJ(((DRV_SPI_CLIENT_OBJ *)lBufferObj->clientHandle), callback) != NULL )
+                    {
+                        /* Give an indication to the higher layer upon successful transmission */
+                        _DRV_SPI_CLIENT_OBJ(((DRV_SPI_CLIENT_OBJ *)lBufferObj->clientHandle), callback)
+                                ( DRV_SPI_BUFFER_EVENT_COMPLETE, (DRV_SPI_BUFFER_HANDLE)lBufferObj, 0x00 );
+                    }
                 }
              }
             break;
         case DRV_SPI_TASK_PROCESS_WRITE_READ:
+            p++;
             while( lBufferObj->transferSize )
             {
                 if ( PLIB_SPI_ReceiverBufferIsFull ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ) ) )
                 {
                     *lBufferObj->rxBuffer++ = PLIB_SPI_BufferRead ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ) );
+                    lBufferObj->transferSize--;
 
                     if ( lBufferObj->transferSize > 1 )
                     {
                         PLIB_SPI_BufferWrite ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ), *lBufferObj->txBuffer++ ) ;
-                        lBufferObj->transferSize--;
                     }
                     else
                     {
                         dObj->task = DRV_SPI_TASK_PROCESS_QUEUE;
-                        lBufferObj->transferSize--;
                         /* Hold the buffer till the completion of the operation */
                         lBufferObj->inUse = false;
                         _DRV_SPI_InterruptSourceDisable ( _DRV_SPI_INT_SRC_GET ( dObj->txInterruptSource ) ) ;
@@ -910,7 +926,8 @@ void DRV_SPI_ClientSetup ( DRV_HANDLE handle,
 
     /* Get the Client object from the handle passed */
     /* Get the driver object from the client */
-    _DRV_SPI_SAVE_LAST_CLIENT();
+    int drv = 0;
+    _DRV_SPI_SAVE_LAST_CLIENT(drv);
 
     _DRV_SPI_CLIENT_OBJ(clientObj,baudRate)             = config->baudRate;
     _DRV_SPI_CLIENT_OBJ(clientObj,inputSamplePhase)     = config->inputSamplePhase;
@@ -942,7 +959,7 @@ void DRV_SPI_ClientSetup ( DRV_HANDLE handle,
     None
 */
 __attribute__((section("driver")))
-static void _DRV_SPI_ClientHardwareSetup ( DRV_HANDLE handle )
+void _DRV_SPI_ClientHardwareSetup ( DRV_HANDLE handle )
 {
     /* Multi client variables are removed from single client builds. */
     DRV_SPI_CLIENT_OBJ  *clientObj  = (DRV_SPI_CLIENT_OBJ *) handle;
@@ -1063,6 +1080,7 @@ DRV_SPI_BUFFER_HANDLE DRV_SPI_BufferAddRead ( DRV_HANDLE handle, void *rxBuffer,
         spiDataObj->txBuffer        = NULL;
         spiDataObj->rxBuffer        = rxBuffer;
         spiDataObj->transferSize    = size;
+        spiDataObj->next            = NULL;
 
         if ( dObj->queueHead == NULL )
         {
@@ -1070,8 +1088,10 @@ DRV_SPI_BUFFER_HANDLE DRV_SPI_BufferAddRead ( DRV_HANDLE handle, void *rxBuffer,
         }
         else
         {
-            dObj->queueHead->next = spiDataObj;
+            dObj->taskLObj->next = spiDataObj;
         }
+        dObj->taskLObj = spiDataObj;
+        
         _DRV_SPI_InterruptSourceEnable( _DRV_SPI_INT_SRC_GET( dObj->rxInterruptSource ) ) ;
 
         return (DRV_SPI_BUFFER_HANDLE)spiDataObj;
@@ -1123,6 +1143,7 @@ DRV_SPI_BUFFER_HANDLE DRV_SPI_BufferAddWrite ( DRV_HANDLE handle, void *txBuffer
         spiDataObj->txBuffer        = txBuffer;
         spiDataObj->rxBuffer        = NULL;
         spiDataObj->transferSize    = size;
+        spiDataObj->next            = NULL;
 
         if ( dObj->queueHead == NULL )
         {
@@ -1130,8 +1151,9 @@ DRV_SPI_BUFFER_HANDLE DRV_SPI_BufferAddWrite ( DRV_HANDLE handle, void *txBuffer
         }
         else
         {
-            dObj->queueHead->next = spiDataObj;
+            dObj->taskLObj->next = spiDataObj;
         }
+        dObj->taskLObj = spiDataObj;
 
         _DRV_SPI_InterruptSourceEnable( _DRV_SPI_INT_SRC_GET( dObj->txInterruptSource ) ) ;
 
@@ -1186,6 +1208,7 @@ DRV_SPI_BUFFER_HANDLE DRV_SPI_BufferAddWriteRead ( DRV_HANDLE handle, void *txBu
         spiDataObj->txBuffer            = txBuffer;
         spiDataObj->rxBuffer            = rxBuffer;
         spiDataObj->transferSize        = size;
+        spiDataObj->next                = NULL;
 
         if ( dObj->queueHead == NULL )
         {
@@ -1193,8 +1216,9 @@ DRV_SPI_BUFFER_HANDLE DRV_SPI_BufferAddWriteRead ( DRV_HANDLE handle, void *txBu
         }
         else
         {
-            dObj->queueHead->next = spiDataObj;
+            dObj->taskLObj->next = spiDataObj;
         }
+        dObj->taskLObj = spiDataObj;
 
         _DRV_SPI_InterruptSourceEnable( _DRV_SPI_INT_SRC_GET( dObj->txInterruptSource ) ) ;
         _DRV_SPI_InterruptSourceEnable( _DRV_SPI_INT_SRC_GET( dObj->rxInterruptSource ) ) ;
@@ -1237,7 +1261,7 @@ DRV_SPI_BUFFER_EVENT DRV_SPI_BufferStatus ( DRV_SPI_BUFFER_HANDLE bufferHandle )
     size_t DRV_SPI_Read ( DRV_HANDLE handle, void* buffer, size_t noOfBytes )
 
   Summary:
-    Reads specified bytes from the SPI module.
+    Directly reads specified bytes from the SPI module, bypassing the queue.
 
   Description:
     This function reads specified bytes from the SPI module.
@@ -1266,17 +1290,18 @@ size_t DRV_SPI_Read ( DRV_HANDLE handle, void* buffer, size_t noOfBytes )
     }
 
     /* Block until the operation is complete */
-    while ( noOfBytes-- )
+    while ( noOfBytes )
     {
         /* Wait until the transmit buffer is free */
-        while ( PLIB_SPI_TransmitBufferIsEmpty ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ) ) )
-        {
-            PLIB_SPI_BufferWrite( _DRV_SPI_PERIPHERAL_ID_GET( spiId ), 0xFF ) ;
-        }
+        //while ( PLIB_SPI_TransmitBufferIsEmpty ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ) ) )
+        //{
+        //    PLIB_SPI_BufferWrite( _DRV_SPI_PERIPHERAL_ID_GET( spiId ), 0xFF ) ;
+        //}
         /* Wait until the data is received back */
         while ( PLIB_SPI_ReceiverBufferIsFull ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ) ) )
         {
             *tempBuffer++ = PLIB_SPI_BufferRead ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ) );
+            noOfBytes--;
         }
     }
     /*TODO*/
@@ -1289,7 +1314,7 @@ size_t DRV_SPI_Read ( DRV_HANDLE handle, void* buffer, size_t noOfBytes )
     size_t DRV_SPI_Write ( DRV_HANDLE handle, void* buffer, size_t noOfBytes )
 
   Summary:
-    Writes specified bytes from the SPI module.
+    Directly writes specified bytes from the SPI module, bypassing the queue.
 
   Description:
     This function writes specified bytes from the SPI module.
@@ -1307,21 +1332,24 @@ size_t DRV_SPI_Read ( DRV_HANDLE handle, void* buffer, size_t noOfBytes )
 __attribute__((section("driver")))
 size_t DRV_SPI_Write ( DRV_HANDLE handle, void* buffer, size_t noOfBytes )
 {
-    register char *tempBuffer       = buffer, dummy;
+    register uint32_t *tempBuffer       = buffer, dummy;
     DRV_SPI_OBJ *dObj               = ((DRV_SPI_CLIENT_OBJ *) handle)->driverObject;
     SPI_MODULE_ID spiId             = dObj->spiId;
+    size_t count = noOfBytes / 4;
 
     /* If there is something in the queue, return. Come back after some time. */
     if ( dObj->queueHead != NULL  )
     {
         return 0;
     }
+    SYS_ASSERT((tempBuffer[0] != 0), "First word to transmit cannot be zero");
     /* Block until the operation is complete */
-    while ( noOfBytes-- )
+    while ( count )
     {
         while ( PLIB_SPI_TransmitBufferIsEmpty ( _DRV_SPI_PERIPHERAL_ID_GET( spiId ) ) )
         {
             PLIB_SPI_BufferWrite ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ), *tempBuffer++ );
+            count--;
         }
         if ( PLIB_SPI_ReceiverBufferIsFull ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ) ) )
         {
@@ -1329,7 +1357,7 @@ size_t DRV_SPI_Write ( DRV_HANDLE handle, void* buffer, size_t noOfBytes )
         }
     }
     /*TODO*/
-    return 0;
+    return noOfBytes;
 }
 
 

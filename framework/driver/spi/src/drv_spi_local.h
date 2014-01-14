@@ -376,6 +376,8 @@ typedef struct _DRV_SPI_OBJ
 
     DRV_SPI_BUFFER_OBJECT                       *taskLObj;
 
+    DRV_SPI_BUFFER_OBJECT                       *currentBufObj;
+
 } DRV_SPI_OBJ;
 
 

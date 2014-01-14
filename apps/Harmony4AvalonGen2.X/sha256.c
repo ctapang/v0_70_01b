@@ -14,35 +14,84 @@
 #include "byte_manipulation.h"
 #include "sha256.h"
 
-pic32_sha256 *lm_sha256; // = SHA256_BASE;
 
-void sha256_init()
+inline uint32_t ReverseBits( uint32_t value )
 {
-    lm_sha256 = (pic32_sha256 *)malloc(sizeof(pic32_sha256));
-    writel(0L /*LM32_SHA256_CMD_INIT*/, &lm_sha256->cmd);
+    uint32_t outValue = 0;
+    uint32_t probe = 1;
+    uint32_t bitSet = 0x80000000;
+    while(probe)
+    {
+        if (value & probe)
+            outValue |= bitSet;
+        probe <<= 1;
+        bitSet >>= 1;
+    }
+    return outValue;
 }
 
-static void write_block(const uint8_t *block)
+inline uint8_t ReverseEightBits( uint8_t value )
 {
-	int i;
-	uint32_t tmp;
-
-	for (i = 0; i < 64; i += 4) {
-		memcpy((uint8_t *)(&tmp), block + i, 4);
-		writel(tmp, &lm_sha256->din);
-		if (!((i + 4) % 64)) /* Every 512bits we wait */
-			while (!(readl(&lm_sha256->cmd) & 1 /*LM32_SHA256_CMD_DONE*/))
-				;
-	}
+    uint8_t outValue = 0;
+    uint8_t probe = 1;
+    uint8_t bitSet = 0x80;
+    while(probe)
+    {
+        if (value & probe)
+            outValue |= bitSet;
+        probe <<= 1;
+        bitSet >>= 1;
+    }
+    return outValue;
 }
 
-static void sha256_padding(const uint8_t *input, unsigned int count)
+void flip32bytes(void *dest_p, const uint8_t *src_p)
+{
+    uint32_t *dest = dest_p;
+    uint32_t *src = (uint32_t *)src_p;
+    int i;
+    for (i = 0; i < 8; i++)
+    {
+        dest[i] = ReverseBits(src[i]);
+    }
+}
+
+void flip32bytesbybyte(void *dest_p, const uint8_t *src_p)
+{
+    uint8_t *dest = dest_p;
+    int i;
+    for (i = 0; i < 32; i++)
+    {
+        dest[i] = ReverseEightBits(src_p[i]);
+    }
+}
+
+void flip64bytes(void *dest_p, const uint8_t *src_p)
+{
+    uint32_t *dest = dest_p;
+    uint32_t *src = (uint32_t *)src_p;
+    int i;
+    for (i = 0; i < 16; i++)
+    {
+        dest[i] = ReverseBits(src[i]);
+    }
+}
+
+void flip64bytesbybyte(void *dest_p, const uint8_t *src_p)
+{
+    uint8_t *dest = dest_p;
+    int i;
+    for (i = 0; i < 64; i++)
+    {
+        dest[i] = ReverseEightBits(src_p[i]);
+    }
+}
+
+void sha256_padding(const uint8_t *input, uint8_t *output, unsigned int count)
 {
 	int i, len_rem, block_nb;
-	uint8_t block[SHA256_BLOCK_SIZE], block1[SHA256_BLOCK_SIZE];
 
-	memset(block, 0, ARRAY_SIZE(block));
-	memset(block1, 0, ARRAY_SIZE(block));
+	memset(output, 0, 2 * SHA256_BLOCK_SIZE);
 
 	len_rem = count % SHA256_BLOCK_SIZE;
 	block_nb = ((SHA256_BLOCK_SIZE - 9) < (len_rem % SHA256_BLOCK_SIZE));
@@ -50,81 +99,33 @@ static void sha256_padding(const uint8_t *input, unsigned int count)
 
 	if (block_nb) {
 		for (i = 0; i < len_rem; i++)
-			block[i] = input[i];
-		block[i] = 0x80;
+			output[i] = input[i];
+		output[i] = 0x80;
 
-		block1[60] = ((count*8) & 0xff000000) >> 24;
-		block1[61] = ((count*8) & 0x00ff0000) >> 16;
-		block1[62] = ((count*8) & 0x0000ff00) >> 8;
-		block1[63] = ((count*8) & 0x000000ff);
-
-		write_block(block);
-		write_block(block1);
+		output[124] = ((count*8) & 0xff000000) >> 24;
+		output[125] = ((count*8) & 0x00ff0000) >> 16;
+		output[126] = ((count*8) & 0x0000ff00) >> 8;
+		output[127] = ((count*8) & 0x000000ff);
 	} else {
 		for (i = 0; i < len_rem; i++)
-			block[i] = input[i];
-		block[i] = 0x80;
-		block[60] = ((count*8) & 0xff000000) >> 24;
-		block[61] = ((count*8) & 0x00ff0000) >> 16;
-		block[62] = ((count*8) & 0x0000ff00) >> 8;
-		block[63] = ((count*8) & 0x000000ff);
-		write_block(block);
+			output[i] = input[i];
+		output[i] = 0x80;
+		output[60] = ((count*8) & 0xff000000) >> 24;
+		output[61] = ((count*8) & 0x00ff0000) >> 16;
+		output[62] = ((count*8) & 0x0000ff00) >> 8;
+		output[63] = ((count*8) & 0x000000ff);
 	}
 }
 
-void sha256_update(const uint8_t *input, unsigned int count)
-{
-	int i, len_blocks;
-
-	len_blocks = count / SHA256_BLOCK_SIZE;
-
-	if (len_blocks != 0) {
-		for (i = 0; i < len_blocks * SHA256_BLOCK_SIZE; i += SHA256_BLOCK_SIZE)
-			write_block(input + i);
-	}
-}
-
-void sha256_precalc_final(uint8_t *state)
+// FIXME: not sure about this
+void sha256_precalc(const uint8_t *h, const uint8_t *input, uint8_t *output, unsigned int count)
 {
 	int i;
-	uint32_t tmp;
+	uint8_t temp[64];
 
-	for (i = 0; i < 6 * 4; i += 4) {
-		tmp = readl(&lm_sha256->pre);
-		memcpy(state + i, (uint8_t *)(&tmp), 4);
-	}
-}
-
-void sha256_final(uint8_t *state)
-{
-	int i;
-	uint32_t tmp;
-
-	for (i = 0; i < 8 * 4; i += 4) {
-		tmp = readl(&lm_sha256->hash);
-		memcpy(state + i, (uint8_t *)(&tmp), 4);
-	}
-}
-
-void sha256(const uint8_t *input, unsigned int count, uint8_t *state)
-{
-	sha256_init();
-	sha256_update(input, count);
-	sha256_padding(input + (count / SHA256_BLOCK_SIZE) * SHA256_BLOCK_SIZE, count);
-	sha256_final(state);
-}
-
-void sha256_precalc(const uint8_t *h, const uint8_t *input, unsigned int count, uint8_t *state)
-{
-	int i;
-	uint32_t tmp;
-
-	sha256_init();
 	for (i = 0; i < 32; i += 4) {
-		memcpy((uint8_t *)(&tmp), h + i, 4);
-		writel(tmp, &lm_sha256->hi);
+		memcpy(temp + i, h + i, 4);
 	}
-	sha256_update(input, count);
-	sha256_padding(input + (count / SHA256_BLOCK_SIZE) * SHA256_BLOCK_SIZE, count);
-	sha256_precalc_final(state);
+
+        //sha256_padding(input + (count / SHA256_BLOCK_SIZE) * SHA256_BLOCK_SIZE, count);
 }

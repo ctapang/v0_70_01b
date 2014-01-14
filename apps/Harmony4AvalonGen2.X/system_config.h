@@ -524,6 +524,8 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 
 #define DRV_SPI_FRAME_SYNC_PULSE_EDGE               SPI_FRAME_PULSE_EDGE_COINCIDES_FIRST_BIT_CLOCK
 
+#define DRV_SPI_CLIENT_SPECIFIC_CONTROL             1
+
 
 // *****************************************************************************
 // *****************************************************************************

@@ -81,6 +81,7 @@ typedef enum
     WaitingForCommand,
     PreCalculating,
     WaitingForReport,
+    ReadReport,
     Idle
 
 } APP_STATES;
@@ -102,8 +103,10 @@ typedef enum
 typedef struct
 {
     APP_STATES appState;
-    SYS_MODULE_OBJ spiReport;
-    SYS_MODULE_OBJ spiConfig;
+    SYS_MODULE_OBJ spiReportModule;
+    DRV_HANDLE  spiReportDrvHandle;
+    SYS_MODULE_OBJ spiConfigModule;
+    DRV_HANDLE  spiConfigDrvHandle;
     SYS_MODULE_OBJ TimerObjectHandle;
 } APP_DATA;
 
@@ -125,8 +128,8 @@ typedef struct
 
 typedef struct
 {
-
-
+    DRV_SPI_BUFFER_HANDLE  receiveBufHandle;
+    DRV_SPI_BUFFER_HANDLE  transmitBufHandle;
 } APP_DRV_OBJECTS;
 
 

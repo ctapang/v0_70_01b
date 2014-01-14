@@ -32,11 +32,11 @@ typedef struct pic_sha256 {
 	volatile unsigned int pre; /* Please read the A3255 datasheet */
 } pic32_sha256;
 
-
-void sha256_init();
-void sha256_update(const uint8_t *input, unsigned int count);
-void sha256_final(uint8_t *state);
-void sha256(const uint8_t *input, unsigned int count, uint8_t *state);
-void sha256_precalc(const uint8_t *h, const uint8_t *input, unsigned int count, uint8_t *state);
+void flip32bytesbybyte(void *dest_p, const uint8_t *src_p);
+void flip32bytes(void *dest_p, const uint8_t *src_p);
+void flip64bytesbybyte(void *dest_p, const uint8_t *src_p);
+void flip64bytes(void *dest_p, const uint8_t *src_p);
+void sha256_padding(const uint8_t *input, uint8_t *output, unsigned int count);
+//void sha256_precalc(const uint8_t *h, const uint8_t *input, uint8_t *output, unsigned int count);
 
 #endif	/* _SHA256_H_ */

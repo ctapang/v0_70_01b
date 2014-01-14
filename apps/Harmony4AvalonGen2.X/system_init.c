@@ -354,14 +354,15 @@ bool TickInit()
 extern void BSP_SetVoltage(BSP_VOLTAGE delta);
 extern void BSP_Toggle_Red_LED();
 
-int j = 0;
+//int j = 0;
 
 void TimerHandler(void)
 {
-    j++;
-    BSP_Toggle_Red_LED();
-    if (j > 63)
-        j = 0;
+    BSP_Toggle_Green_LED();
+    //j++;
+    //if (j > 32)
+    //    j = 0;
+    //BSP_SetVoltage((BSP_VOLTAGE)j);
 }
 
 

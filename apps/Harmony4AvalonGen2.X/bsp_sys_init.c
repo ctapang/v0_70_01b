@@ -135,28 +135,6 @@ DRV_SPI_INIT drvSPIInit2 =
     .errInterruptSource = INT_SOURCE_SPI_2_ERROR,
 };
 
-DRV_SPI_CLIENT_SETUP drvSPIClientSetup =
-{
-    /* Variable specifying the baud.  */
-    .baudRate = 4000000L,
-
-    /* SPI Input Sample Phase Selection */
-    .inputSamplePhase = SPI_INPUT_SAMPLING_PHASE_IN_MIDDLE,
-
-    /* SPI Clock mode */
-    .clockMode = DRV_SPI_CLOCK_MODE_IDLE_HIGH_EDGE_RISE,
-
-    /* Set this bit if it has to be logic high to
-    assert the chip select */
-    .chipSelectLogicLevel = 0,
-
-    /* PORT which the chip select pin belongs to */
-    .chipSelectPort = PORT_CHANNEL_B,
-
-    /* Bit position in the port */
-    .chipSelectBitPos = PORTS_BIT_POS_0
-};
-
 
 // *****************************************************************************
 // *****************************************************************************
@@ -232,28 +210,28 @@ void BSP_Initialize(void )
     // SS2  is on Pin3/RB2
 
     //Initialize input SPI (connected to REPORT signal from Avalon Gen2 chips)
-    appObject.spiReport = DRV_SPI_Initialize ( DRV_SPI_INDEX_0, (SYS_MODULE_INIT *)&drvSPIInit1 );
+    appObject.spiReportModule = DRV_SPI_Initialize ( DRV_SPI_INDEX_0, (SYS_MODULE_INIT *)&drvSPIInit1 );
 
     /* Remap the SPI1 pin */
-    PLIB_SPI_PinEnable(SPI_ID_1, SPI_PIN_DATA_IN);
     SYS_PORTS_RemapInput(PORTS_ID_0, INPUT_FUNC_SDI1, INPUT_PIN_RPB1);
+    PLIB_SPI_PinEnable(SPI_ID_1, SPI_PIN_DATA_IN);
 
     // Initialize output SPI (connected to CONFIG signal to Avalon Gen2 chips)
-    appObject.spiConfig = DRV_SPI_Initialize ( DRV_SPI_INDEX_0, (SYS_MODULE_INIT *)&drvSPIInit2 );
+    appObject.spiConfigModule = DRV_SPI_Initialize ( DRV_SPI_INDEX_1, (SYS_MODULE_INIT *)&drvSPIInit2 );
 
     /* Remap the SPI2 pins */
+    SYS_PORTS_RemapOutput(PORTS_ID_0, OTPUT_FUNC_SDO2, OUTPUT_PIN_RPB5); // pin 11
     PLIB_SPI_PinEnable(SPI_ID_2, SPI_PIN_DATA_OUT);
-    SYS_PORTS_RemapOutput(PORTS_ID_0, OTPUT_FUNC_SDO2, OUTPUT_PIN_RPB3); // pin 4
-    PLIB_PORTS_PinDirectionOutputSet( PORTS_ID_0, PORT_CHANNEL_B, PORTS_BIT_POS_3);
+    PLIB_PORTS_PinDirectionOutputSet( PORTS_ID_0, PORT_CHANNEL_B, PORTS_BIT_POS_5);
 
     // Set Pin for clock
     PLIB_PORTS_PinDirectionOutputSet( PORTS_ID_0, PORT_CHANNEL_B, PORTS_BIT_POS_15);
 
     /* Slave select should be managed by us*/
-    //SYS_PORTS_RemapOutput(PORTS_ID_0, OTPUT_FUNC_SS2, OUTPUT_PIN_RPB2);  // pin 3
-    //PLIB_SPI_PinEnable(SPI_ID_2, SPI_PIN_DATA_IN);
-    PLIB_PORTS_PinDirectionOutputSet( PORTS_ID_0, PORT_CHANNEL_B, PORTS_BIT_POS_2);
-    PLIB_PORTS_PinSet( PORTS_ID_0, PORT_CHANNEL_B, PORTS_BIT_POS_2);
+    SYS_PORTS_RemapInput(PORTS_ID_0, INPUT_FUNC_SS2, INPUT_PIN_RPB2);  // pin 3
+    PLIB_SPI_PinEnable(SPI_ID_2, SPI_PIN_SLAVE_SELECT);
+    PLIB_PORTS_PinDirectionOutputSet( PORTS_ID_0, PORT_CHANNEL_B, PORTS_BIT_POS_13); // pin 21
+    PLIB_PORTS_PinSet( PORTS_ID_0, PORT_CHANNEL_B, PORTS_BIT_POS_13);
 
     /* set priority for SPI interrupt source */
     SYS_INT_VectorPrioritySet(INT_VECTOR_SPI2, INT_PRIORITY_LEVEL3);
@@ -263,9 +241,11 @@ void BSP_Initialize(void )
 
     SYS_INT_SourceEnable(INT_SOURCE_SPI_1_RECEIVE);
     //SYS_INT_SourceEnable(INT_SOURCE_SPI_2_TRANSMIT);
+    SYS_INT_SourceEnable(INT_SOURCE_SPI_1_ERROR);
+    //SYS_INT_SourceEnable(INT_SOURCE_SPI_2_ERROR);
 
     // Set voltage to about 0.9V (0.872 + level * 0.00345)
-    BSP_SetVoltage((char)9);
+    BSP_SetVoltage((char)0);
 }
 
 // Input level can be from 0 to 64. Every increment is +3.45 mV.
@@ -347,6 +327,14 @@ void BSP_Toggle_Red_LED()
     PLIB_PORTS_PinToggle( PORTS_ID_0, PORT_CHANNEL_B, BSP_Red_LED);
     SpinDelay((uint16_t)20);
     SYS_ASSERT((lighted != PLIB_PORTS_PinGet(PORTS_ID_0, PORT_CHANNEL_B, BSP_Red_LED)), "Red LED did not toggle");
+}
+
+void BSP_Toggle_Green_LED()
+{
+    bool lighted = PLIB_PORTS_PinGet(PORTS_ID_0, PORT_CHANNEL_B, BSP_Green_LED);
+    PLIB_PORTS_PinToggle( PORTS_ID_0, PORT_CHANNEL_B, BSP_Green_LED);
+    SpinDelay((uint16_t)20);
+    SYS_ASSERT((lighted != PLIB_PORTS_PinGet(PORTS_ID_0, PORT_CHANNEL_B, BSP_Green_LED)), "Green LED did not toggle");
 }
 
 
