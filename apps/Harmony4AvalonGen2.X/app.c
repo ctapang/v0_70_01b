@@ -100,7 +100,7 @@ DRV_SPI_CLIENT_SETUP drvSPIClientCONFIGSetup =
     .inputSamplePhase = SPI_INPUT_SAMPLING_PHASE_IN_MIDDLE,
 
     /* SPI Clock mode */
-    .clockMode = DRV_SPI_CLOCK_MODE_IDLE_HIGH_EDGE_RISE,
+    .clockMode = DRV_SPI_CLOCK_MODE_IDLE_LOW_EDGE_RISE,
 
     /* Set this bit if it has to be logic high to
     assert the chip select */
@@ -116,7 +116,6 @@ DRV_SPI_CLIENT_SETUP drvSPIClientCONFIGSetup =
 // test data
 
 uint8_t state[32];
-uint8_t sendData[128];
 
 const uint8_t sha256_in[] = {0x61, 0x62, 0x63};
 
@@ -179,6 +178,30 @@ void APP_Initialize ( void )
 {
 }
 
+// private methods
+
+// remove this method for the next revision of the PCB card
+uint8_t sendData[2 * SHA256_BLOCK_SIZE];
+void invert_logic_64bytes(SPI_DATA_TYPE *output, SPI_DATA_TYPE *input)
+{
+    SPI_DATA_TYPE allOnes = 0xFFFFFFFF;
+    int count = 64 / sizeof(SPI_DATA_TYPE);
+    int i;
+    for (i = 0; i < count; i++)
+    {
+        output[i] = allOnes ^ input[i];
+    }
+}
+
+SPI_DATA_TYPE * massage_data( const uint8_t * rawBuf, int size)
+{
+    uint8_t temp[2 * SHA256_BLOCK_SIZE];
+    sha256_padding( rawBuf, sendData, size);
+    flip64bytes(temp, sendData);
+    invert_logic_64bytes((SPI_DATA_TYPE *)sendData, (SPI_DATA_TYPE *)temp);
+    return (SPI_DATA_TYPE *)sendData;
+}
+
 /******************************************************************************
   Function:
     void APP_Tasks ( void )
@@ -188,10 +211,10 @@ void APP_Initialize ( void )
  */
 
 static int q = 0, r = 0, s = 0;
+SPI_DATA_TYPE *dataToSend;
 
 void APP_Tasks ( void )
 {
-    uint8_t temp[2 * SHA256_BLOCK_SIZE];
     
     /* check the application state*/
     switch (appObject.appState)
@@ -219,18 +242,8 @@ void APP_Tasks ( void )
             break;
 
         case PreCalculating:
-            // do precalc, then wait for report
-            sha256_padding( sha256_in, temp, 3);
-            flip64bytes(sendData, temp);
-
-            _DRV_SPI_CHIP_SELECT_CLEAR(PORT_CHANNEL_B, PORTS_BIT_POS_13);
-            size_t sent = DRV_SPI_Write ( appObject.spiConfigDrvHandle, sendData, 64 );
-            while (!PLIB_SPI_TransmitBufferIsEmpty(DRV_SPI_INDEX_1))
-                r++;
-            //SpinDelay((uint8_t)900);
-            _DRV_SPI_CHIP_SELECT_SET(PORT_CHANNEL_B, PORTS_BIT_POS_13);
-            SYS_ASSERT((sent = 64), "Not all config bytes sent");
-            //appDrvObject.transmitBufHandle = DRV_SPI_BufferAddWrite(appObject.spiConfigDrvHandle, sendData, 64);
+            dataToSend = massage_data( sha256_in, 3 );
+            appDrvObject.transmitBufHandle = DRV_SPI_BufferAddWrite(appObject.spiConfigDrvHandle, dataToSend, 64);
 
             appDrvObject.receiveBufHandle = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state, 32);
             appObject.appState = WaitingForReport;

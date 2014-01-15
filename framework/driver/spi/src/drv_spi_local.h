@@ -249,10 +249,10 @@ typedef struct _DRV_SPI_BUFFER_OBJECT
     DRV_SPI_OPERATIONS                                      operation;
 
     /* Pointer to transmit buffer */
-    uint8_t *                                               txBuffer;
+    SPI_DATA_TYPE *                                               txBuffer;
 
     /* Pointer to receive buffer */
-    uint8_t *                                               rxBuffer;
+    SPI_DATA_TYPE *                                               rxBuffer;
 
     /* size of buffer for transfer */
     uint32_t                                                transferSize;
@@ -346,10 +346,10 @@ typedef struct _DRV_SPI_OBJ
     unsigned int                                bufLength;
 
     /* Pointer to tx buffer */
-    uint8_t *                                   txBuffer;
+    SPI_DATA_TYPE *                                   txBuffer;
 
     /* Pointer to tx buffer */
-    uint8_t *                                   rxBuffer;
+    SPI_DATA_TYPE *                                   rxBuffer;
 
     /* size of buffer for transmission */
     uint32_t                     		txSize;

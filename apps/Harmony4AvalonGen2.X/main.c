@@ -57,6 +57,7 @@ int main ( void )
     int dummy = 0;
 
     /*Call the SYS Init routine. App init routine gets called from this*/
+
     SYS_Initialize ( NULL );
 
     while ( true )
