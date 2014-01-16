@@ -275,13 +275,13 @@ static void _DRV_SPI_SetupHardware ( const SPI_MODULE_ID plibId,
     dObj->spiMode = _DRV_SPI_USAGE_MODE_GET ( spiInit->spiMode );
 
     /* Slave Select Handling */
-    if( _DRV_SPI_USAGE_MODE_GET ( spiInit->spiMode ) == DRV_SPI_MODE_SLAVE )
+    if( _DRV_SPI_USAGE_MODE_GET ( spiInit->spiMode ) == DRV_SPI_MODE_MASTER ) // DRV_SPI_MODE_SLAVE )
     {
         PLIB_SPI_SlaveSelectEnable ( _DRV_SPI_PERIPHERAL_ID_GET( plibId ) );
     }
     else
     {
-		PLIB_SPI_SlaveSelectDisable ( _DRV_SPI_PERIPHERAL_ID_GET ( plibId ) );
+	PLIB_SPI_SlaveSelectDisable ( _DRV_SPI_PERIPHERAL_ID_GET ( plibId ) );
     }
 
     /* Communication Width Selection */
@@ -1091,8 +1091,16 @@ DRV_SPI_BUFFER_HANDLE DRV_SPI_BufferAddRead ( DRV_HANDLE handle, void *rxBuffer,
             dObj->taskLObj->next = spiDataObj;
         }
         dObj->taskLObj = spiDataObj;
-        
-        _DRV_SPI_InterruptSourceEnable( _DRV_SPI_INT_SRC_GET( dObj->rxInterruptSource ) ) ;
+
+        while ( PLIB_SPI_TransmitBufferIsEmpty ( _DRV_SPI_PERIPHERAL_ID_GET( dObj->spiId ) ) )
+        {
+            SPI_DATA_TYPE dummy = 0xaaaaaaaa;
+            PLIB_SPI_BufferWrite ( _DRV_SPI_PERIPHERAL_ID_GET ( dObj->spiId ), dummy );
+        }
+
+        // FIXME: enable interrupts after testing SPIRBF loop
+        //_DRV_SPI_InterruptSourceEnable( _DRV_SPI_INT_SRC_GET( dObj->rxInterruptSource ) ) ;
+        //_DRV_SPI_InterruptSourceEnable( _DRV_SPI_INT_SRC_GET( dObj->txInterruptSource ) ) ;
 
         return (DRV_SPI_BUFFER_HANDLE)spiDataObj;
     }

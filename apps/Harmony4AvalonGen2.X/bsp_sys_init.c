@@ -60,22 +60,22 @@ DRV_SPI_INIT drvSPIInit1 =
     .dataDirection = HALF_DUPLEX,
 
     /* SPI Baud Rate Value */
-    .baudRate = 10000000,
+    .baudRate = 2000000,
 
     /* SPI Buffer Type */
     .bufferType  = DRV_SPI_BUFFER_TYPE_STANDARD,
 
     /* FIFO RX Interrupt Mode */
-    .rxInterruptMode = SPI_FIFO_INTERRUPT_WHEN_RECEIVE_BUFFER_IS_NOT_EMPTY,
+    .rxInterruptMode = SPI_FIFO_INTERRUPT_WHEN_RECEIVE_BUFFER_IS_FULL,
 
     /* FIFO TX Interrupt Mode */
     .txInterruptMode = SPI_FIFO_INTERRUPT_WHEN_TRANSMISSION_IS_COMPLETE,
 
     /* SPI Clock mode */
-    .clockMode = DRV_SPI_CLOCK_MODE_IDLE_HIGH_EDGE_FALL,
+    .clockMode = DRV_SPI_CLOCK_MODE_IDLE_HIGH_EDGE_RISE,
 
     /* SPI Input Sample Phase Selection. NOTE: ignored in this case (in slave mode) */
-    .inputSamplePhase = SPI_INPUT_SAMPLING_PHASE_AT_END,
+    .inputSamplePhase = SPI_INPUT_SAMPLING_PHASE_IN_MIDDLE,
 
     /* Transmit Interrupt Source for SPI module NOTE: no transmit */
     .txInterruptSource = INT_SOURCE_SPI_1_TRANSMIT,
@@ -108,7 +108,7 @@ DRV_SPI_INIT drvSPIInit2 =
     .dataDirection = HALF_DUPLEX,
 
     /* SPI Baud Rate Value */
-    .baudRate = 10000000,
+    .baudRate = 2000000,
 
     /* SPI Buffer Type */
     .bufferType  = DRV_SPI_BUFFER_TYPE_STANDARD,
@@ -209,12 +209,19 @@ void BSP_Initialize(void )
     // SDO2 is on Pin4/RB3 (no SDI)
     // SS2  is on Pin3/RB2
 
+    // first, turn OFF the SPI peripherals:
+    PLIB_SPI_Disable( SPI_ID_1 ) ;
+    PLIB_SPI_Disable( SPI_ID_2 ) ;
+
     //Initialize input SPI (connected to REPORT signal from Avalon Gen2 chips)
     appObject.spiReportModule = DRV_SPI_Initialize ( DRV_SPI_INDEX_0, (SYS_MODULE_INIT *)&drvSPIInit1 );
 
-    /* Remap the SPI1 pin */
+    /* Remap the SPI1 DATA INPUT pin */
     SYS_PORTS_RemapInput(PORTS_ID_0, INPUT_FUNC_SDI1, INPUT_PIN_RPB1);
     PLIB_SPI_PinEnable(SPI_ID_1, SPI_PIN_DATA_IN);
+    
+    // Set Pin for SPI1 clock
+    //PLIB_PORTS_PinDirectionInputSet( PORTS_ID_0, PORT_CHANNEL_B, PORTS_BIT_POS_14 );
 
     // Initialize output SPI (connected to CONFIG signal to Avalon Gen2 chips)
     appObject.spiConfigModule = DRV_SPI_Initialize ( DRV_SPI_INDEX_1, (SYS_MODULE_INIT *)&drvSPIInit2 );

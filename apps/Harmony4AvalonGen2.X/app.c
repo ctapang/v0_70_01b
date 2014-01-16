@@ -94,7 +94,7 @@ APP_DRV_OBJECTS appDrvObject;
 DRV_SPI_CLIENT_SETUP drvSPIClientCONFIGSetup =
 {
     /* Variable specifying the baud.  */
-    .baudRate = 4000000L,
+    .baudRate = 2000000L,
 
     /* SPI Input Sample Phase Selection */
     .inputSamplePhase = SPI_INPUT_SAMPLING_PHASE_IN_MIDDLE,
@@ -111,6 +111,28 @@ DRV_SPI_CLIENT_SETUP drvSPIClientCONFIGSetup =
 
     /* Bit position in the port */
     .chipSelectBitPos = PORTS_BIT_POS_13
+};
+
+DRV_SPI_CLIENT_SETUP drvSPIClientREPORTSetup =
+{
+    /* Variable specifying the baud.  */
+    .baudRate = 2000000L,
+
+    /* SPI Input Sample Phase Selection */
+    .inputSamplePhase = SPI_INPUT_SAMPLING_PHASE_IN_MIDDLE,
+
+    /* SPI Clock mode */
+    .clockMode = DRV_SPI_CLOCK_MODE_IDLE_HIGH_EDGE_RISE,
+
+    /* Set this bit if it has to be logic high to
+    assert the chip select */
+    .chipSelectLogicLevel = 0, // no slave select
+
+    /* PORT which the chip select pin belongs to */
+    .chipSelectPort = 2, // invalid port, not used for slave receive
+
+    /* Bit position in the port */
+    .chipSelectBitPos = 16 // invalid pin, not used for slave receive
 };
 
 // test data
@@ -182,6 +204,7 @@ void APP_Initialize ( void )
 
 // remove this method for the next revision of the PCB card
 uint8_t sendData[2 * SHA256_BLOCK_SIZE];
+SPI_DATA_TYPE indata[SHA256_DIGEST_SIZE];
 void invert_logic_64bytes(SPI_DATA_TYPE *output, SPI_DATA_TYPE *input)
 {
     SPI_DATA_TYPE allOnes = 0xFFFFFFFF;
@@ -193,13 +216,19 @@ void invert_logic_64bytes(SPI_DATA_TYPE *output, SPI_DATA_TYPE *input)
     }
 }
 
-SPI_DATA_TYPE * massage_data( const uint8_t * rawBuf, int size)
+SPI_DATA_TYPE * massage_data_out( const uint8_t * rawBuf, int size)
 {
     uint8_t temp[2 * SHA256_BLOCK_SIZE];
     sha256_padding( rawBuf, sendData, size);
     flip64bytes(temp, sendData);
     invert_logic_64bytes((SPI_DATA_TYPE *)sendData, (SPI_DATA_TYPE *)temp);
     return (SPI_DATA_TYPE *)sendData;
+}
+
+SPI_DATA_TYPE * massage_data_in( const uint8_t * state )
+{
+    flip32bytes( indata, state );
+    return indata;
 }
 
 /******************************************************************************
@@ -211,7 +240,9 @@ SPI_DATA_TYPE * massage_data( const uint8_t * rawBuf, int size)
  */
 
 static int q = 0, r = 0, s = 0;
+int i = 0;
 SPI_DATA_TYPE *dataToSend;
+bool done = false;
 
 void APP_Tasks ( void )
 {
@@ -227,6 +258,8 @@ void APP_Tasks ( void )
             _DRV_SPI_ClientHardwareSetup(appObject.spiConfigDrvHandle);
 
             appObject.spiReportDrvHandle = DRV_SPI_Open(DRV_SPI_INDEX_0, DRV_IO_INTENT_READ);
+            DRV_SPI_ClientSetup(appObject.spiReportDrvHandle, (DRV_SPI_CLIENT_SETUP *)&drvSPIClientREPORTSetup);
+            _DRV_SPI_ClientHardwareSetup(appObject.spiReportDrvHandle);
 
             // After initializing we set the state to "WaitingForCommand" and enable USB interrupts
             appObject.appState = WaitingForCommand; // wait for interrupt from USB
@@ -242,22 +275,35 @@ void APP_Tasks ( void )
             break;
 
         case PreCalculating:
-            dataToSend = massage_data( sha256_in, 3 );
+            dataToSend = massage_data_out( sha256_in, 3 );
             appDrvObject.transmitBufHandle = DRV_SPI_BufferAddWrite(appObject.spiConfigDrvHandle, dataToSend, 64);
 
             appDrvObject.receiveBufHandle = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state, 32);
+
             appObject.appState = WaitingForReport;
-            SYS_ASSERT((appObject.appState == WaitingForReport), "");
+
+            i = 0;
             break;
 
         case WaitingForReport:
             s++;
             // SPI interrupt came in? If so, process it here and then wait for next command
+
+            // for now interrupts are disabled, try looking at SPIRBF:
+            while (PLIB_SPI_ReceiverBufferIsFull(SPI_ID_1) && i < 8)
+            {
+                state[i++] = PLIB_SPI_BufferRead(SPI_ID_1);
+                appObject.appState = ReadReport;
+            }
             break;
 
         case ReadReport:
-
-            appObject.appState = WaitingForCommand;
+            if (!done)
+            {
+                massage_data_in( state );
+                done = true;
+            }
+            //appObject.appState = WaitingForCommand;
             break;
 
         case Idle:
