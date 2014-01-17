@@ -205,10 +205,10 @@ void APP_Initialize ( void )
 // remove this method for the next revision of the PCB card
 uint8_t sendData[2 * SHA256_BLOCK_SIZE];
 SPI_DATA_TYPE indata[SHA256_DIGEST_SIZE];
-void invert_logic_64bytes(SPI_DATA_TYPE *output, SPI_DATA_TYPE *input)
+void invert_logic(SPI_DATA_TYPE *output, SPI_DATA_TYPE *input, int size)
 {
-    SPI_DATA_TYPE allOnes = 0xFFFFFFFF;
-    int count = 64 / sizeof(SPI_DATA_TYPE);
+    SPI_DATA_TYPE allOnes = (SPI_DATA_TYPE)0xFFFFFFFF; // should work whatever SPI_DATA_TYPE is
+    int count = size / sizeof(SPI_DATA_TYPE);
     int i;
     for (i = 0; i < count; i++)
     {
@@ -220,14 +220,16 @@ SPI_DATA_TYPE * massage_data_out( const uint8_t * rawBuf, int size)
 {
     uint8_t temp[2 * SHA256_BLOCK_SIZE];
     sha256_padding( rawBuf, sendData, size);
-    flip64bytes(temp, sendData);
-    invert_logic_64bytes((SPI_DATA_TYPE *)sendData, (SPI_DATA_TYPE *)temp);
+    int byteCount = sizeof(sendData) / sizeof(SPI_DATA_TYPE);
+    flip4SPI(temp, sendData, byteCount);
+    // FIXME: remove call to invert_logic once hashing unit PCB is finalized
+    invert_logic((SPI_DATA_TYPE *)sendData, (SPI_DATA_TYPE *)temp, byteCount);
     return (SPI_DATA_TYPE *)sendData;
 }
 
-SPI_DATA_TYPE * massage_data_in( const uint8_t * state )
+SPI_DATA_TYPE * massage_data_in( const uint8_t * state, int size )
 {
-    flip32bytes( indata, state );
+    flip4SPI( indata, state, size );
     return indata;
 }
 
@@ -239,7 +241,7 @@ SPI_DATA_TYPE * massage_data_in( const uint8_t * state )
     See prototype in app.h.
  */
 
-static int q = 0, r = 0, s = 0;
+static int q = 0, r = 0, s = 0, t = 0;
 int i = 0;
 SPI_DATA_TYPE *dataToSend;
 bool done = false;
@@ -276,9 +278,9 @@ void APP_Tasks ( void )
 
         case PreCalculating:
             dataToSend = massage_data_out( sha256_in, 3 );
-            appDrvObject.transmitBufHandle = DRV_SPI_BufferAddWrite(appObject.spiConfigDrvHandle, dataToSend, 64);
+            appDrvObject.transmitBufHandle = DRV_SPI_BufferAddWrite(appObject.spiConfigDrvHandle, dataToSend, SHA256_BLOCK_SIZE);
 
-            appDrvObject.receiveBufHandle = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state, 32);
+            appDrvObject.receiveBufHandle = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state, SHA256_DIGEST_SIZE);
 
             appObject.appState = WaitingForReport;
 
@@ -286,24 +288,17 @@ void APP_Tasks ( void )
             break;
 
         case WaitingForReport:
-            s++;
             // SPI interrupt came in? If so, process it here and then wait for next command
 
-            // wait for receiver to be busy
-            //while (!PLIB_SPI_IsBusy(SPI_ID_1))
-                ;
-            // for now interrupts are disabled, try looking at SPIRBF:
-            while (!PLIB_SPI_ReceiverBufferIsFull(SPI_ID_1))
-                ;
-            if (i < 8)
-                state[i++] = PLIB_SPI_BufferRead(SPI_ID_1);
-            appObject.appState = ReadReport;
+            //if (i < 8)
+            //    state[i++] = PLIB_SPI_BufferRead(SPI_ID_1);
+            //appObject.appState = ReadReport;
             break;
 
         case ReadReport:
             if (!done)
             {
-                massage_data_in( state );
+                massage_data_in( state, SHA256_DIGEST_SIZE );
                 done = true;
             }
             //appObject.appState = WaitingForCommand;

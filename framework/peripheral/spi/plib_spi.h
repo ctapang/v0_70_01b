@@ -45,8 +45,8 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #define _PLIB_SPI_H
 
 
-//typedef unsigned char SPI_DATA_TYPE;
-typedef uint32_t SPI_DATA_TYPE;
+typedef unsigned char SPI_DATA_TYPE;
+//typedef uint32_t SPI_DATA_TYPE;
 
 // *****************************************************************************
 // *****************************************************************************

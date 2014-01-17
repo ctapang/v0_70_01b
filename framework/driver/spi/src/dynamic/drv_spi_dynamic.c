@@ -1120,12 +1120,11 @@ DRV_SPI_BUFFER_HANDLE DRV_SPI_BufferAddRead ( DRV_HANDLE handle, void *rxBuffer,
 
         while ( PLIB_SPI_TransmitBufferIsEmpty ( _DRV_SPI_PERIPHERAL_ID_GET( dObj->spiId ) ) )
         {
-            SPI_DATA_TYPE dummy = 0xaaaaaaaa;
+            SPI_DATA_TYPE dummy = (SPI_DATA_TYPE)0xaaaaaaaa; // should work whatever SPI_DATA_TYPE is
             PLIB_SPI_BufferWrite ( _DRV_SPI_PERIPHERAL_ID_GET ( dObj->spiId ), dummy );
         }
 
-        // FIXME: enable interrupts after testing SPIRBF loop
-        //_DRV_SPI_InterruptSourceEnable( _DRV_SPI_INT_SRC_GET( dObj->rxInterruptSource ) ) ;
+        _DRV_SPI_InterruptSourceEnable( _DRV_SPI_INT_SRC_GET( dObj->rxInterruptSource ) ) ;
         //_DRV_SPI_InterruptSourceEnable( _DRV_SPI_INT_SRC_GET( dObj->txInterruptSource ) ) ;
 
         return (DRV_SPI_BUFFER_HANDLE)spiDataObj;

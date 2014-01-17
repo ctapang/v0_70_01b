@@ -61,12 +61,15 @@ SPI2_Transmit_Handler(void)
 void __attribute__((interrupt(ipl3), vector(_SPI_1_VECTOR)))
 SPI1_Receive_Handler(void)
 {
-    _DRV_SPI_InterruptSourceClear( INT_SOURCE_SPI_1_TRANSMIT );
+    _DRV_SPI_InterruptSourceClear( INT_SOURCE_SPI_1_RECEIVE );
 
         //SYS_INT_SourceStatusClear(INT_SOURCE_SPI_1_RECEIVE);
     DRV_SPI_Tasks(appObject.spiReportModule);
 
-    if (appObject.appState == WaitingForReport)
+    DRV_SPI_OBJ             *dObj           = (DRV_SPI_OBJ*)appObject.spiReportModule;
+    DRV_SPI_BUFFER_OBJECT   *lBufferObj     = dObj->currentBufObj;
+
+    if (!lBufferObj->inUse && appObject.appState == WaitingForReport)
         appObject.appState = ReadReport;
 }
 

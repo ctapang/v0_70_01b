@@ -54,8 +54,8 @@ DRV_SPI_INIT drvSPIInit1 =
     /* SPI Protocol Type */
     .spiProtocolType = DRV_SPI_PROTOCOL_TYPE_STANDARD,
 
-    /* SPI Communication Width */
-    .commWidth = SPI_COMMUNICATION_WIDTH_32BITS,
+    /* SPI Communication Width (must match SPI_DATA_TYPE) */
+    .commWidth = SPI_COMMUNICATION_WIDTH_8BITS,
 
     .dataDirection = HALF_DUPLEX,
 
@@ -103,7 +103,7 @@ DRV_SPI_INIT drvSPIInit2 =
     .spiProtocolType = DRV_SPI_PROTOCOL_TYPE_STANDARD,
 
     /* SPI Communication Width */
-    .commWidth = SPI_COMMUNICATION_WIDTH_32BITS,
+    .commWidth = SPI_COMMUNICATION_WIDTH_8BITS,
 
     .dataDirection = HALF_DUPLEX,
 
@@ -219,9 +219,12 @@ void BSP_Initialize(void )
     /* Remap the SPI1 DATA INPUT pin */
     SYS_PORTS_RemapInput(PORTS_ID_0, INPUT_FUNC_SDI1, INPUT_PIN_RPB1);
     PLIB_SPI_PinEnable(SPI_ID_1, SPI_PIN_DATA_IN);
+    PLIB_PORTS_PinDirectionInputSet( PORTS_ID_0, PORT_CHANNEL_B, PORTS_BIT_POS_1 );
+    PLIB_PORTS_PinModePerPortSelect( PORTS_ID_0, PORT_CHANNEL_B, PORTS_BIT_POS_1, PORTS_PIN_MODE_DIGITAL );
     
     // Set Pin for SPI1 clock
-    //PLIB_PORTS_PinDirectionInputSet( PORTS_ID_0, PORT_CHANNEL_B, PORTS_BIT_POS_14 );
+    PLIB_PORTS_PinDirectionInputSet( PORTS_ID_0, PORT_CHANNEL_B, PORTS_BIT_POS_14 );
+    PLIB_PORTS_PinModePerPortSelect( PORTS_ID_0, PORT_CHANNEL_B, PORTS_BIT_POS_14, PORTS_PIN_MODE_DIGITAL );
 
     // Initialize output SPI (connected to CONFIG signal to Avalon Gen2 chips)
     appObject.spiConfigModule = DRV_SPI_Initialize ( DRV_SPI_INDEX_1, (SYS_MODULE_INIT *)&drvSPIInit2 );

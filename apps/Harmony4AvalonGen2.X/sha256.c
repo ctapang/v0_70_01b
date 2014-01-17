@@ -1,25 +1,23 @@
 /*
- * Author: Xiangfu Liu <xiangfu@openmobilefree.net>
- * Bitcoin:	1CanaaniJzgps8EV6Sfmpb7T8RutpaeyFn
- *
- * This is free and unencumbered software released into the public domain.
- * For details see the UNLICENSE file at the root of the source tree.
+ * Author: C. Tapang
+ * Copyright(R): Centerus Inc.
  */
 
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
 
-//#include "system_config.h"
+#include "peripheral/spi/plib_spi.h"
+#include "system/common/sys_common.h"
 #include "byte_manipulation.h"
 #include "sha256.h"
 
 
-inline uint32_t ReverseBits( uint32_t value )
+inline SPI_DATA_TYPE ReverseBits( SPI_DATA_TYPE value )
 {
-    uint32_t outValue = 0;
-    uint32_t probe = 1;
-    uint32_t bitSet = 0x80000000;
+    SPI_DATA_TYPE outValue = 0;
+    SPI_DATA_TYPE probe = 1;
+    SPI_DATA_TYPE bitSet = 1 << (8 * sizeof(SPI_DATA_TYPE) - 1); // 0x80000000;
     while(probe)
     {
         if (value & probe)
@@ -30,60 +28,16 @@ inline uint32_t ReverseBits( uint32_t value )
     return outValue;
 }
 
-inline uint8_t ReverseEightBits( uint8_t value )
+void flip4SPI(void *dest_p, const uint8_t *src_p, size_t len)
 {
-    uint8_t outValue = 0;
-    uint8_t probe = 1;
-    uint8_t bitSet = 0x80;
-    while(probe)
-    {
-        if (value & probe)
-            outValue |= bitSet;
-        probe <<= 1;
-        bitSet >>= 1;
-    }
-    return outValue;
-}
-
-void flip32bytes(void *dest_p, const uint8_t *src_p)
-{
-    uint32_t *dest = dest_p;
-    uint32_t *src = (uint32_t *)src_p;
+    SYS_ASSERT(((len % sizeof(SPI_DATA_TYPE)) == 0), "buffer length has to be a multiple of SPI_DATA_TYPE size");
+    SPI_DATA_TYPE *dest = dest_p;
+    SPI_DATA_TYPE *src = (SPI_DATA_TYPE *)src_p;
+    int count = len / sizeof(SPI_DATA_TYPE);
     int i;
-    for (i = 0; i < 8; i++)
+    for (i = 0; i < count; i++)
     {
         dest[i] = ReverseBits(src[i]);
-    }
-}
-
-void flip32bytesbybyte(void *dest_p, const uint8_t *src_p)
-{
-    uint8_t *dest = dest_p;
-    int i;
-    for (i = 0; i < 32; i++)
-    {
-        dest[i] = ReverseEightBits(src_p[i]);
-    }
-}
-
-void flip64bytes(void *dest_p, const uint8_t *src_p)
-{
-    uint32_t *dest = dest_p;
-    uint32_t *src = (uint32_t *)src_p;
-    int i;
-    for (i = 0; i < 16; i++)
-    {
-        dest[i] = ReverseBits(src[i]);
-    }
-}
-
-void flip64bytesbybyte(void *dest_p, const uint8_t *src_p)
-{
-    uint8_t *dest = dest_p;
-    int i;
-    for (i = 0; i < 64; i++)
-    {
-        dest[i] = ReverseEightBits(src_p[i]);
     }
 }
 
