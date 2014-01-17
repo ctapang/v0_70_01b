@@ -184,6 +184,42 @@ static void _DRV_SPI_SetupHardware ( const SPI_MODULE_ID plibId,
     _DRV_SPI_STATIC_INT_SRC( dObj->errInterruptSource =
     	_DRV_SPI_GET_INT_SRC_ERROR( spiInit->errInterruptSource ) );
 
+    // 1. disable all interrupts
+    PLIB_SPI_ErrorInterruptDisable ( _DRV_SPI_PERIPHERAL_ID_GET( plibId ) ,
+                            _DRV_SPI_STATIC_INT_SRC( dObj->errInterruptSource ) );
+    PLIB_INT_SourceDisable ( _DRV_SPI_PERIPHERAL_ID_GET( plibId ) ,
+                            _DRV_SPI_STATIC_INT_SRC( dObj->txInterruptSource ) );
+    PLIB_INT_SourceDisable ( _DRV_SPI_PERIPHERAL_ID_GET( plibId ) ,
+                            _DRV_SPI_STATIC_INT_SRC( dObj->rxInterruptSource ) );
+
+    // 2. turn it OFF
+    PLIB_SPI_Disable( _DRV_SPI_PERIPHERAL_ID_GET( plibId ) );
+
+    // 3. Clear rx buf
+    PLIB_SPI_BufferClear( _DRV_SPI_PERIPHERAL_ID_GET( plibId ) );
+
+    // 4. Clear outstanding interrupts
+    PLIB_INT_SourceFlagClear( _DRV_SPI_PERIPHERAL_ID_GET( plibId ),
+                        _DRV_SPI_STATIC_INT_SRC( dObj->errInterruptSource ) );
+    PLIB_INT_SourceFlagClear( _DRV_SPI_PERIPHERAL_ID_GET( plibId ),
+                        _DRV_SPI_STATIC_INT_SRC( dObj->txInterruptSource ) );
+    PLIB_INT_SourceFlagClear( _DRV_SPI_PERIPHERAL_ID_GET( plibId ),
+                        _DRV_SPI_STATIC_INT_SRC( dObj->rxInterruptSource ) );
+
+    // 5. Clear receiver overlow
+    PLIB_SPI_ReceiverOverflowClear( _DRV_SPI_PERIPHERAL_ID_GET( plibId ) );
+
+    // 6. Select slave or master mode
+    if( _DRV_SPI_USAGE_MODE_GET ( spiInit->spiMode ) == DRV_SPI_MODE_MASTER ) // DRV_SPI_MODE_SLAVE )
+    {
+        PLIB_SPI_SlaveSelectEnable ( _DRV_SPI_PERIPHERAL_ID_GET( plibId ) );
+    }
+    else
+    {
+	PLIB_SPI_SlaveSelectDisable ( _DRV_SPI_PERIPHERAL_ID_GET ( plibId ) );
+    }
+
+
     /* Power state initialization */
     if( _DRV_SPI_POWER_STATE_GET( spiInit->moduleInit.value ) == SYS_MODULE_POWER_IDLE_STOP )
     {
@@ -273,16 +309,6 @@ static void _DRV_SPI_SetupHardware ( const SPI_MODULE_ID plibId,
             PLIB_SPI_PinDisable( _DRV_SPI_PERIPHERAL_ID_GET(plibId), SPI_PIN_DATA_OUT);
     }
     dObj->spiMode = _DRV_SPI_USAGE_MODE_GET ( spiInit->spiMode );
-
-    /* Slave Select Handling */
-    if( _DRV_SPI_USAGE_MODE_GET ( spiInit->spiMode ) == DRV_SPI_MODE_MASTER ) // DRV_SPI_MODE_SLAVE )
-    {
-        PLIB_SPI_SlaveSelectEnable ( _DRV_SPI_PERIPHERAL_ID_GET( plibId ) );
-    }
-    else
-    {
-	PLIB_SPI_SlaveSelectDisable ( _DRV_SPI_PERIPHERAL_ID_GET ( plibId ) );
-    }
 
     /* Communication Width Selection */
     PLIB_SPI_CommunicationWidthSelect ( _DRV_SPI_PERIPHERAL_ID_GET ( plibId ),

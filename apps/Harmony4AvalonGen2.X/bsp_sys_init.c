@@ -72,10 +72,10 @@ DRV_SPI_INIT drvSPIInit1 =
     .txInterruptMode = SPI_FIFO_INTERRUPT_WHEN_TRANSMISSION_IS_COMPLETE,
 
     /* SPI Clock mode */
-    .clockMode = DRV_SPI_CLOCK_MODE_IDLE_HIGH_EDGE_RISE,
+    .clockMode = DRV_SPI_CLOCK_MODE_IDLE_HIGH_EDGE_FALL,
 
     /* SPI Input Sample Phase Selection. NOTE: ignored in this case (in slave mode) */
-    .inputSamplePhase = SPI_INPUT_SAMPLING_PHASE_IN_MIDDLE,
+    .inputSamplePhase = SPI_INPUT_SAMPLING_PHASE_AT_END,
 
     /* Transmit Interrupt Source for SPI module NOTE: no transmit */
     .txInterruptSource = INT_SOURCE_SPI_1_TRANSMIT,

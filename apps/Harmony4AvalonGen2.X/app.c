@@ -119,10 +119,10 @@ DRV_SPI_CLIENT_SETUP drvSPIClientREPORTSetup =
     .baudRate = 2000000L,
 
     /* SPI Input Sample Phase Selection */
-    .inputSamplePhase = SPI_INPUT_SAMPLING_PHASE_IN_MIDDLE,
+    .inputSamplePhase = SPI_INPUT_SAMPLING_PHASE_AT_END,
 
     /* SPI Clock mode */
-    .clockMode = DRV_SPI_CLOCK_MODE_IDLE_HIGH_EDGE_RISE,
+    .clockMode = DRV_SPI_CLOCK_MODE_IDLE_HIGH_EDGE_FALL,
 
     /* Set this bit if it has to be logic high to
     assert the chip select */
@@ -289,12 +289,15 @@ void APP_Tasks ( void )
             s++;
             // SPI interrupt came in? If so, process it here and then wait for next command
 
+            // wait for receiver to be busy
+            //while (!PLIB_SPI_IsBusy(SPI_ID_1))
+                ;
             // for now interrupts are disabled, try looking at SPIRBF:
-            while (PLIB_SPI_ReceiverBufferIsFull(SPI_ID_1) && i < 8)
-            {
+            while (!PLIB_SPI_ReceiverBufferIsFull(SPI_ID_1))
+                ;
+            if (i < 8)
                 state[i++] = PLIB_SPI_BufferRead(SPI_ID_1);
-                appObject.appState = ReadReport;
-            }
+            appObject.appState = ReadReport;
             break;
 
         case ReadReport:
