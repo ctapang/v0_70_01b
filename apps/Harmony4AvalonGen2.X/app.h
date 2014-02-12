@@ -63,6 +63,7 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 
 // Avalon Gen2 default clock rate
 #define ASIC_FREQUENCY 1500
+#define GEN2_INPUT_WORD_COUNT  19  // 2 clock, 3 data, 5 params, 8 data, 1 param
 
 // *****************************************************************************
 /* Application states

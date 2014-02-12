@@ -136,8 +136,24 @@ DRV_SPI_CLIENT_SETUP drvSPIClientREPORTSetup =
 };
 
 // test data
+uint8_t state1[SHA256_DIGEST_SIZE];
+uint8_t state2[SHA256_DIGEST_SIZE];
+uint8_t state3[SHA256_DIGEST_SIZE];
 
-uint8_t state[32];
+const uint8_t set_clock_low[] = {0x47, 0x00, 0x02, 0x33, 0, 0, 0, 0};
+const uint8_t set_clock_high[] = {0xC7, 0x00, 0x02, 0x03, 0, 0, 0, 0};
+
+const uint8_t division_of_labor[] = {
+        0x00, 0x00, 0x00, 0x00,
+        0x99, 0x99, 0x99, 0x19,
+        0x32, 0x33, 0x33, 0x33,
+        0xcb, 0xcc, 0xcc, 0x4c,
+        0x64, 0x66, 0x66, 0x66,
+        0xfd, 0xff, 0xff, 0x7f,
+        0x96, 0x99, 0x99, 0x99,
+        0x2f, 0x33, 0x33, 0xb3,
+        0xc8, 0xcc, 0xcc, 0xcc,
+        0x61, 0x66, 0x66, 0xe6 };
 
 const uint8_t sha256_in[] = {0x61, 0x62, 0x63};
 
@@ -167,6 +183,8 @@ const uint8_t sha256_in3[] = {
 	0xbc, 0xe8, 0xd5, 0x4b, 0x23, 0xbf, 0xa1, 0xe4,
 	0xdd, 0xd4, 0x3f, 0x5a, 0x92, 0x6e, 0x8a, 0x7a,
 	0xcd, 0x1c, 0xc2, 0xa5, 0x35, 0x07, 0x30, 0xd2};
+
+int test = 0;
 
 // *****************************************************************************
 // *****************************************************************************
@@ -202,9 +220,9 @@ void APP_Initialize ( void )
 
 // private methods
 
-// remove this method for the next revision of the PCB card
-uint8_t sendData[2 * SHA256_BLOCK_SIZE];
 SPI_DATA_TYPE indata[SHA256_DIGEST_SIZE];
+
+// remove this method for the next revision of the PCB card
 void invert_logic(SPI_DATA_TYPE *output, SPI_DATA_TYPE *input, int size)
 {
     SPI_DATA_TYPE allOnes = (SPI_DATA_TYPE)0xFFFFFFFF; // should work whatever SPI_DATA_TYPE is
@@ -216,15 +234,53 @@ void invert_logic(SPI_DATA_TYPE *output, SPI_DATA_TYPE *input, int size)
     }
 }
 
-SPI_DATA_TYPE * massage_data_out( const uint8_t * rawBuf, int size)
+uint32_t * re_arrange_words(uint32_t *data, uint32_t *a, uint32_t *e, int byteCount)
 {
+    int wordCount = byteCount / sizeof(SPI_DATA_TYPE);
+    uint32_t *outData = (uint32_t *)malloc(4 * GEN2_INPUT_WORD_COUNT);
+
+    memcpy((uint8_t*)outData, set_clock_high, 8);
+
+    // put data tail in reverse order
+    int i;
+    for (i = 0; i < 3; i++)
+        outData[i + 2] = data[i + 8];
+
+    outData[5] = a[1];
+    outData[6] = a[0];
+    outData[7] = e[2];
+    outData[8] = e[1];
+    outData[9] = e[0];
+
+    for (i = 10; i < 18; i++ )
+        outData[i] = data[i -10];
+
+    outData[i] = a[2];
+
+    return outData;
+}
+
+SPI_DATA_TYPE * massage_data_out( const uint8_t * rawBuf, int size, int *count)
+{
+    int byteCount = 4 * GEN2_INPUT_WORD_COUNT;
+    int dataSize = 2 * SHA256_BLOCK_SIZE;
+    uint32_t a[3], e[3];
     uint8_t temp[2 * SHA256_BLOCK_SIZE];
-    sha256_padding( rawBuf, sendData, size);
-    int byteCount = sizeof(sendData) / sizeof(SPI_DATA_TYPE);
-    flip4SPI(temp, sendData, byteCount);
+
+    uint8_t *data = malloc(dataSize); // this is freed in drv_spi_dynamic.c
+    memset(data, 0x00, dataSize);
+    SYS_ASSERT((size < dataSize), "input data size too large");
+    memcpy(data, rawBuf, size);
+    
+    sha256_precalc(data, a, e, byteCount);
+    uint32_t *arranged = re_arrange_words((uint32_t *)data, a, e, byteCount);
+    flip4SPI(temp, (uint8_t *)arranged, sizeof(arranged));
+    free(arranged);
     // FIXME: remove call to invert_logic once hashing unit PCB is finalized
-    invert_logic((SPI_DATA_TYPE *)sendData, (SPI_DATA_TYPE *)temp, byteCount);
-    return (SPI_DATA_TYPE *)sendData;
+    invert_logic((SPI_DATA_TYPE *)data, (SPI_DATA_TYPE *)temp, byteCount);
+    if (count != NULL)
+        *count = byteCount;
+    return (SPI_DATA_TYPE *)data;
 }
 
 SPI_DATA_TYPE * massage_data_in( const uint8_t * state, int size )
@@ -248,6 +304,8 @@ bool done = false;
 
 void APP_Tasks ( void )
 {
+    DRV_SPI_BUFFER_OBJECT *buf;
+    int count;
     
     /* check the application state*/
     switch (appObject.appState)
@@ -277,32 +335,59 @@ void APP_Tasks ( void )
             break;
 
         case PreCalculating:
-            dataToSend = massage_data_out( sha256_in, 3 );
-            appDrvObject.transmitBufHandle = DRV_SPI_BufferAddWrite(appObject.spiConfigDrvHandle, dataToSend, SHA256_BLOCK_SIZE);
+            switch(test)
+            {
+                case 0:
+                    dataToSend = massage_data_out( sha256_in, 3, &count );
+                    appDrvObject.transmitBufHandle = DRV_SPI_BufferAddWrite(appObject.spiConfigDrvHandle, dataToSend, count);
+                    appDrvObject.receiveBufHandle = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state1, SHA256_DIGEST_SIZE);
+                    break;
+                case 1:
+                    dataToSend = massage_data_out( sha256_in2, ARRAY_SIZE(sha256_in2), &count );
+                    appDrvObject.transmitBufHandle = DRV_SPI_BufferAddWrite(appObject.spiConfigDrvHandle, dataToSend, count);
+                    appDrvObject.receiveBufHandle = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state2, SHA256_DIGEST_SIZE);
+                    break;
+                case 2:
+                    dataToSend = massage_data_out( sha256_in3,  ARRAY_SIZE(sha256_in3 ), &count );
+                    appDrvObject.transmitBufHandle = DRV_SPI_BufferAddWrite(appObject.spiConfigDrvHandle, dataToSend, count);
+                    appDrvObject.receiveBufHandle = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state3, SHA256_DIGEST_SIZE);
+                    break;
+                default:
+                    break;
+            }
 
-            appDrvObject.receiveBufHandle = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state, SHA256_DIGEST_SIZE);
 
             appObject.appState = WaitingForReport;
-
-            i = 0;
             break;
 
         case WaitingForReport:
             // SPI interrupt came in? If so, process it here and then wait for next command
-
-            //if (i < 8)
-            //    state[i++] = PLIB_SPI_BufferRead(SPI_ID_1);
-            //appObject.appState = ReadReport;
+            if (DRV_SPI_BufferStatus (appDrvObject.receiveBufHandle) == DRV_SPI_BUFFER_EVENT_COMPLETE)
+            {
+                _DRV_SPI_QueueCleanup( (DRV_SPI_OBJ *)appObject.spiConfigDrvHandle );
+                appObject.appState = ReadReport;
+            }
             break;
 
         case ReadReport:
-            if (!done)
+            //buf = (DRV_SPI_BUFFER_OBJECT *)appDrvObject.receiveBufHandle;
+            switch (test)
             {
-                massage_data_in( state, SHA256_DIGEST_SIZE );
-                done = true;
+                case 0:
+                    massage_data_in( state1, RCV_BUF_SIZE_IN_BYTES );
+                    break;
+                case 1:
+                    massage_data_in( state2, RCV_BUF_SIZE_IN_BYTES );
+                    break;
+                case 2:
+                    massage_data_in( state3, RCV_BUF_SIZE_IN_BYTES );
+                    break;
+                default:
+                    break;
             }
-            //appObject.appState = WaitingForCommand;
-            break;
+            appObject.appState = WaitingForCommand;
+            test++;
+             break;
 
         case Idle:
             break;

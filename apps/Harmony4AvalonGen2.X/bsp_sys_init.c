@@ -55,7 +55,7 @@ DRV_SPI_INIT drvSPIInit1 =
     .spiProtocolType = DRV_SPI_PROTOCOL_TYPE_STANDARD,
 
     /* SPI Communication Width (must match SPI_DATA_TYPE) */
-    .commWidth = SPI_COMMUNICATION_WIDTH_8BITS,
+    .commWidth = SPI_COMMUNICATION_WIDTH_32BITS,
 
     .dataDirection = HALF_DUPLEX,
 
@@ -103,7 +103,7 @@ DRV_SPI_INIT drvSPIInit2 =
     .spiProtocolType = DRV_SPI_PROTOCOL_TYPE_STANDARD,
 
     /* SPI Communication Width */
-    .commWidth = SPI_COMMUNICATION_WIDTH_8BITS,
+    .commWidth = SPI_COMMUNICATION_WIDTH_32BITS,
 
     .dataDirection = HALF_DUPLEX,
 

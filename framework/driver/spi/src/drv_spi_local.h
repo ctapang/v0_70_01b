@@ -467,6 +467,7 @@ extern DRV_SPI_CLIENT_OBJ     gDrvSPIClientObj5;
 extern DRV_SPI_CLIENT_OBJ     gDrvSPIClientObj6;
 
 DRV_SPI_BUFFER_OBJECT* _DRV_SPI_QueueSlotGet ( DRV_SPI_OBJ *dObj );
+void _DRV_SPI_QueueCleanup( DRV_SPI_OBJ *dObj );
 bool _DRV_SPI_IsQueueNotEmpty ( DRV_HANDLE handle );
 DRV_SPI_BUFFER_OBJECT* _DRV_SPI_QueuePop ( SYS_MODULE_OBJ object );
 //static void _DRV_SPI_ClientHardwareSetup ( DRV_HANDLE handle );

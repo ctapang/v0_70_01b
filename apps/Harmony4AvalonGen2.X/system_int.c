@@ -65,13 +65,7 @@ SPI1_Receive_Handler(void)
 
         //SYS_INT_SourceStatusClear(INT_SOURCE_SPI_1_RECEIVE);
     DRV_SPI_Tasks(appObject.spiReportModule);
-
-    DRV_SPI_OBJ             *dObj           = (DRV_SPI_OBJ*)appObject.spiReportModule;
-    DRV_SPI_BUFFER_OBJECT   *lBufferObj     = dObj->currentBufObj;
-
-    if (!lBufferObj->inUse && appObject.appState == WaitingForReport)
-        appObject.appState = ReadReport;
-}
+ }
 
 void __attribute__((interrupt(ipl1)))
 _DefaultInterrupt(void)

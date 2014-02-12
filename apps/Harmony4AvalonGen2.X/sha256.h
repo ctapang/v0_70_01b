@@ -33,7 +33,7 @@ typedef struct pic_sha256 {
 } pic32_sha256;
 
 void flip4SPI(void *dest_p, const uint8_t *src_p, size_t len);
-void sha256_padding(const uint8_t *input, uint8_t *output, unsigned int count);
-//void sha256_precalc(const uint8_t *h, const uint8_t *input, uint8_t *output, unsigned int count);
+int sha256_padding(const uint8_t *input, uint8_t *output, unsigned int count);
+void sha256_precalc(const uint8_t *input, uint32_t *aa, uint32_t *ee, unsigned int count);
 
 #endif	/* _SHA256_H_ */
