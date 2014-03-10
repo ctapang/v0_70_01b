@@ -60,7 +60,7 @@ DRV_SPI_INIT drvSPIInit1 =
     .dataDirection = HALF_DUPLEX,
 
     /* SPI Baud Rate Value */
-    .baudRate = 2000000,
+    .baudRate = 2000000L,
 
     /* SPI Buffer Type */
     .bufferType  = DRV_SPI_BUFFER_TYPE_STANDARD,
@@ -75,7 +75,7 @@ DRV_SPI_INIT drvSPIInit1 =
     .clockMode = DRV_SPI_CLOCK_MODE_IDLE_HIGH_EDGE_FALL,
 
     /* SPI Input Sample Phase Selection. NOTE: ignored in this case (in slave mode) */
-    .inputSamplePhase = SPI_INPUT_SAMPLING_PHASE_AT_END,
+    .inputSamplePhase = SPI_INPUT_SAMPLING_PHASE_IN_MIDDLE,
 
     /* Transmit Interrupt Source for SPI module NOTE: no transmit */
     .txInterruptSource = INT_SOURCE_SPI_1_TRANSMIT,

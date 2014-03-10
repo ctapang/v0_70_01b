@@ -61,7 +61,7 @@ SPI2_Transmit_Handler(void)
 void __attribute__((interrupt(ipl3), vector(_SPI_1_VECTOR)))
 SPI1_Receive_Handler(void)
 {
-    _DRV_SPI_InterruptSourceClear( INT_SOURCE_SPI_1_RECEIVE );
+    //_DRV_SPI_InterruptSourceClear( INT_SOURCE_SPI_1_RECEIVE );
 
         //SYS_INT_SourceStatusClear(INT_SOURCE_SPI_1_RECEIVE);
     DRV_SPI_Tasks(appObject.spiReportModule);

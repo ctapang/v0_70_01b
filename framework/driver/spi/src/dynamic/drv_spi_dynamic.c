@@ -591,6 +591,10 @@ SYS_STATUS DRV_SPI_Status ( SYS_MODULE_OBJ object )
 */
 
 
+// debug
+uint32_t buf[4];
+
+
 __attribute__((section("driver")))
 void DRV_SPI_Tasks ( SYS_MODULE_OBJ object )
 {
@@ -603,13 +607,17 @@ void DRV_SPI_Tasks ( SYS_MODULE_OBJ object )
 
     static int i = 0, j = 0, k = 0, m = 0, p = 0, r = 0, S = 0;
 
+    int q;
+    for(q = 0; q < 4; q++)
+        buf[q] = 0x00000000L;
+
     switch ( dObj->task )
     {
         case DRV_SPI_TASK_PROCESS_QUEUE:
             i++;
-            if ( ( dObj->queueHead != NULL ) && ( PLIB_SPI_TransmitBufferIsEmpty ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ) ) ) )
+            if (  dObj->queueHead != NULL ) //&& (( PLIB_SPI_TransmitBufferIsEmpty ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ) ) ) ||
+                    //(PLIB_SPI_ReceiverBufferIsFull ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ) ))))
             {
-                j++;
                 /* Pop the first element from the queue */
                 lBufferObj   = dObj->queueHead;
                 dObj->currentBufObj = lBufferObj;
@@ -627,13 +635,15 @@ void DRV_SPI_Tasks ( SYS_MODULE_OBJ object )
                 if ( lBufferObj->operation == DRV_SPI_OP_READ )
                 {
                     dObj->task = DRV_SPI_TASK_PROCESS_READ_ONLY;
-                    if (SYS_INT_SourceStatusGet(INT_SOURCE_SPI_1_TRANSMIT))
-                        PLIB_SPI_BufferWrite( _DRV_SPI_PERIPHERAL_ID_GET( spiId ), dummy ) ;
-                    else
-                    {
-                        *lBufferObj->rxBuffer++ = PLIB_SPI_BufferRead( _DRV_SPI_PERIPHERAL_ID_GET( spiId ) );
-                        lBufferObj->transferSize--;
-                    }
+                    SYS_ASSERT((lBufferObj->rxBuffer != NULL), "tx buf can't be null");
+//                    j = 0;
+//                    while ( PLIB_SPI_ReceiverBufferIsFull ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ) ) )
+//                    {
+//                        buf[j] = PLIB_SPI_BufferRead ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ) );
+//                        if (++j >= 4)
+//                            break;
+//                    }
+//                    i = 0;
                 }
                 else if ( lBufferObj->operation == DRV_SPI_OP_WRITE )
                 {
@@ -641,12 +651,18 @@ void DRV_SPI_Tasks ( SYS_MODULE_OBJ object )
                     SYS_ASSERT((lBufferObj->txBuffer[0] != 0), "Buffer has zeroes in first word");
                 }
             }
-            else 
+            else // spurious interrupt
             {
-                if ( PLIB_SPI_ReceiverBufferIsFull ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ) ) )
+                while ( PLIB_SPI_ReceiverBufferIsFull ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ) ) )
+                {
                     PLIB_SPI_BufferRead ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ) );
-                if ( PLIB_SPI_TransmitBufferIsEmpty ( _DRV_SPI_PERIPHERAL_ID_GET( spiId ) ) )
+                }
+                while ( PLIB_SPI_TransmitBufferIsEmpty ( _DRV_SPI_PERIPHERAL_ID_GET( spiId ) ) )
+                {
                     PLIB_SPI_BufferWrite ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ), 0x00000000 );
+                }
+                _DRV_SPI_InterruptSourceClear ( _DRV_SPI_INT_SRC_GET ( dObj->rxInterruptSource ) ) ;
+                _DRV_SPI_InterruptSourceClear ( _DRV_SPI_INT_SRC_GET ( dObj->txInterruptSource ) ) ;
             }
             break;
         case DRV_SPI_TASK_PROCESS_READ_ONLY:
@@ -900,7 +916,7 @@ DRV_HANDLE DRV_SPI_Open ( const SYS_MODULE_INDEX   drvIndex,
             }
             /* To Do: OSAL - Unlock Mutex */
 
-            /* Return the client object */
+            /* Return the client object ? */
             return ( DRV_HANDLE ) clientObj;
         }
         clientObj++;
@@ -1041,9 +1057,9 @@ void _DRV_SPI_ClientHardwareSetup ( DRV_HANDLE handle )
         PLIB_SPI_ClockPolaritySelect( _DRV_SPI_PERIPHERAL_ID_GET( spiId ),
                 SPI_CLOCK_POLARITY_IDLE_LOW );
 
-    /* Output Data Phase */
-    PLIB_SPI_OutputDataPhaseSelect( _DRV_SPI_PERIPHERAL_ID_GET( spiId ),
-            SPI_OUTPUT_DATA_PHASE_ON_ACTIVE_TO_IDLE_CLOCK );
+        /* Output Data Phase */
+        PLIB_SPI_OutputDataPhaseSelect( _DRV_SPI_PERIPHERAL_ID_GET( spiId ),
+        SPI_OUTPUT_DATA_PHASE_ON_ACTIVE_TO_IDLE_CLOCK );
 
     }
     else if( DRV_SPI_CLOCK_MODE_IDLE_HIGH_EDGE_FALL == _DRV_SPI_CLIENT_OBJ(clientObj, clockMode) )
@@ -1077,6 +1093,8 @@ void _DRV_SPI_ClientHardwareSetup ( DRV_HANDLE handle )
     // Below for PIC32
     PLIB_SPI_BaudRateSet( _DRV_SPI_PERIPHERAL_ID_GET( spiId ), SYS_CLK_ClockFrequencyGet(CLK_PERIPHERAL),
                 _DRV_SPI_CLIENT_OBJ(clientObj, baudRate) );
+
+     gDrvSPIObj[_DRV_SPI_PERIPHERAL_ID_GET( spiId )].lastClientHandle = handle ;
 
     /* Restart the device */
     PLIB_SPI_Enable( _DRV_SPI_PERIPHERAL_ID_GET( spiId ) );
@@ -1144,6 +1162,13 @@ DRV_SPI_BUFFER_HANDLE DRV_SPI_BufferAddRead ( DRV_HANDLE handle, void *rxBuffer,
             SPI_DATA_TYPE dummy = (SPI_DATA_TYPE)0xaaaaaaaa; // should work whatever SPI_DATA_TYPE is
             PLIB_SPI_BufferWrite ( _DRV_SPI_PERIPHERAL_ID_GET ( dObj->spiId ), dummy );
         }
+
+        while ( PLIB_SPI_ReceiverBufferIsFull ( _DRV_SPI_PERIPHERAL_ID_GET ( dObj->spiId ) ) )
+        {
+            PLIB_SPI_BufferRead ( _DRV_SPI_PERIPHERAL_ID_GET ( dObj->spiId ) ); // discard
+        }
+
+        _DRV_SPI_InterruptSourceClear( _DRV_SPI_INT_SRC_GET ( dObj->rxInterruptSource ) ) ;
 
         _DRV_SPI_InterruptSourceEnable( _DRV_SPI_INT_SRC_GET( dObj->rxInterruptSource ) ) ;
         //_DRV_SPI_InterruptSourceEnable( _DRV_SPI_INT_SRC_GET( dObj->txInterruptSource ) ) ;
@@ -1460,28 +1485,30 @@ DRV_SPI_BUFFER_OBJECT* _DRV_SPI_QueueSlotGet ( DRV_SPI_OBJ *dObj )
 
 // *****************************************************************************
 /* Function:
-    void _DRV_SPI_QueueCleanup ( DRV_SPI_OBJ *dObj )
+    void _DRV_SPI_QueueCleanup ( DRV_HANDLE *dObj )
+ * Note: don't use this. It does not work because txBuffer is being incremented in
+ * the Task method, and so txBuffer does not point to the heap memory anymore
+ * when this method runs.
 
   Summary:
-    Adds an element to the queue.
+    Removes all inactive buffers in queue.
 
   Description:
-    This API adds an element to the queue.
+    This API removes all inactive elements from the queue.
 
   Parameters:
-    spiDataObj   - Pointer to the structure which holds the data which is to be
-    				added to the queue.
+    dObj   - Actually a client object.
 
   Returns:
-    DRV_SPI_BUFFER_HANDLE - Handle, a pointer to the allocated element in the
-    						queue.
+    None.
 */
 __attribute__((section("driver")))
-void _DRV_SPI_QueueCleanup ( DRV_SPI_OBJ *dObj )
+void _DRV_SPI_QueueCleanup ( DRV_HANDLE *dObj )
 {
     int index;
     DRV_SPI_BUFFER_OBJECT *lQueueObj;
-    SYS_MODULE_INDEX drvIndex = dObj->drvIndex;
+    DRV_SPI_CLIENT_OBJ *clientObj = (DRV_SPI_CLIENT_OBJ*) dObj;
+    SYS_MODULE_INDEX drvIndex = clientObj->driverObject->drvIndex;
 
     // clean up used buffers (free heap memory)
     for ( index=0; index<DRV_SPI_BUFFER_OBJ_SIZE;index++ )

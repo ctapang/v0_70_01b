@@ -49,8 +49,6 @@
 
 // this either belongs here or in app.h; we put it here because it's hw related
 // ASIC_COUNT  is the count of avalon gen2 chips on the mining card
-#define ASIC_COUNT 10
-#define RCV_BUF_SIZE_IN_BYTES sizeof(SPI_DATA_TYPE) * ASIC_COUNT
 
 // *****************************************************************************
 /* Input Constant

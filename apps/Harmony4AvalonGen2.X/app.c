@@ -119,10 +119,10 @@ DRV_SPI_CLIENT_SETUP drvSPIClientREPORTSetup =
     .baudRate = 2000000L,
 
     /* SPI Input Sample Phase Selection */
-    .inputSamplePhase = SPI_INPUT_SAMPLING_PHASE_AT_END,
+    .inputSamplePhase = SPI_INPUT_SAMPLING_PHASE_IN_MIDDLE,
 
     /* SPI Clock mode */
-    .clockMode = DRV_SPI_CLOCK_MODE_IDLE_HIGH_EDGE_FALL,
+    .clockMode = DRV_SPI_CLOCK_MODE_IDLE_LOW_EDGE_RISE,
 
     /* Set this bit if it has to be logic high to
     assert the chip select */
@@ -141,7 +141,10 @@ uint8_t state2[SHA256_DIGEST_SIZE];
 uint8_t state3[SHA256_DIGEST_SIZE];
 
 const uint8_t set_clock_low[] = {0x47, 0x00, 0x02, 0x33, 0, 0, 0, 0};
-const uint8_t set_clock_high[] = {0xC7, 0x00, 0x02, 0x03, 0, 0, 0, 0};
+const uint8_t set_clock_medium[] = {0x67, 0x00, 0x01, 0x03, 0, 0, 0, 0};
+const uint8_t set_clock_high[] = {0x67, 0x00, 0x01, 0x05, 0, 0, 0, 0};
+const uint8_t set_clock_highest[] = {0x67, 0x00, 0x01, 0x0F, 0, 0, 0, 0};
+const uint8_t set_clock_unchanged[] = {0x01, 0x00, 0x00, 0x00, 0, 0, 0, 0};
 
 const uint8_t division_of_labor[] = {
         0x00, 0x00, 0x00, 0x00,
@@ -183,6 +186,33 @@ const uint8_t sha256_in3[] = {
 	0xbc, 0xe8, 0xd5, 0x4b, 0x23, 0xbf, 0xa1, 0xe4,
 	0xdd, 0xd4, 0x3f, 0x5a, 0x92, 0x6e, 0x8a, 0x7a,
 	0xcd, 0x1c, 0xc2, 0xa5, 0x35, 0x07, 0x30, 0xd2};
+
+const uint32_t testChips[] = {
+    0x07C10067,
+    //0x00000001,
+    0x00000000,
+
+    0x4ac1d001,
+    0x88517050,
+    0x087e051a,
+
+    0x05b168ae,
+    0x62a5f25c,
+    0x81677107,
+    0x12cdfd7b,
+    0xfa77fe7d,
+
+    0x9cb18a17,
+    0x65c90d1e,
+    0x8f41371d,
+    0x974bf4bb,
+    0x7145fd6d,
+    0xc44192c0,
+    0x12146495,
+    0xd8f8ef67,
+
+    0x220f1dbd
+};
 
 int test = 0;
 
@@ -237,14 +267,15 @@ void invert_logic(SPI_DATA_TYPE *output, SPI_DATA_TYPE *input, int size)
 uint32_t * re_arrange_words(uint32_t *data, uint32_t *a, uint32_t *e, int byteCount)
 {
     int wordCount = byteCount / sizeof(SPI_DATA_TYPE);
-    uint32_t *outData = (uint32_t *)malloc(4 * GEN2_INPUT_WORD_COUNT);
+    uint32_t *outData = (uint32_t *)malloc(ARRANGED_SIZE_IN_BYTES);
+    uint32_t *divlabor = (uint32_t *)division_of_labor;
 
-    memcpy((uint8_t*)outData, set_clock_high, 8);
+    memcpy((uint8_t*)outData, set_clock_highest, 8);
 
     // put data tail in reverse order
-    int i;
-    for (i = 0; i < 3; i++)
-        outData[i + 2] = data[i + 8];
+    int i, j;
+    for (i = 2, j = 0; j < 3; i++, j++)
+        outData[i] = data[j];
 
     outData[5] = a[1];
     outData[6] = a[0];
@@ -252,10 +283,18 @@ uint32_t * re_arrange_words(uint32_t *data, uint32_t *a, uint32_t *e, int byteCo
     outData[8] = e[1];
     outData[9] = e[0];
 
-    for (i = 10; i < 18; i++ )
-        outData[i] = data[i -10];
+    for (i = 10, j = 3; i < 18; i++, j++ )
+        outData[i] = data[j];
 
     outData[i] = a[2];
+
+    // initial nonces, 10 words
+    for (i = 19, j = 0; i < 29; i++, j++)
+    {
+        outData[i] = divlabor[j];
+    }
+
+    // 29 words total = 116 bytes = 928 bits
 
     return outData;
 }
@@ -274,12 +313,28 @@ SPI_DATA_TYPE * massage_data_out( const uint8_t * rawBuf, int size, int *count)
     
     sha256_precalc(data, a, e, byteCount);
     uint32_t *arranged = re_arrange_words((uint32_t *)data, a, e, byteCount);
-    flip4SPI(temp, (uint8_t *)arranged, sizeof(arranged));
+    flip4SPI(temp, (uint8_t *)arranged, ARRANGED_SIZE_IN_BYTES);
     free(arranged);
     // FIXME: remove call to invert_logic once hashing unit PCB is finalized
-    invert_logic((SPI_DATA_TYPE *)data, (SPI_DATA_TYPE *)temp, byteCount);
+    invert_logic((SPI_DATA_TYPE *)data, (SPI_DATA_TYPE *)temp, ARRANGED_SIZE_IN_BYTES);
     if (count != NULL)
-        *count = byteCount;
+        *count = ARRANGED_SIZE_IN_BYTES;
+    return (SPI_DATA_TYPE *)data;
+}
+
+SPI_DATA_TYPE * massage_for_send( const uint8_t * rawBuf, int size, int *count)
+{
+    uint8_t temp1[ARRANGED_SIZE_IN_BYTES];
+    uint8_t temp2[ARRANGED_SIZE_IN_BYTES];
+    uint8_t *data = malloc(ARRANGED_SIZE_IN_BYTES); // this is freed in drv_spi_dynamic.c
+
+    memcpy(temp1, rawBuf, size);
+    memcpy(temp1 + size, (uint8_t *)division_of_labor, 4 * ASIC_COUNT);
+    flip4SPI(temp2, temp1, ARRANGED_SIZE_IN_BYTES);
+    // FIXME: remove call to invert_logic once hashing unit PCB is finalized
+    invert_logic((SPI_DATA_TYPE *)data, (SPI_DATA_TYPE *)temp2, ARRANGED_SIZE_IN_BYTES);
+    if (count != NULL)
+        *count = ARRANGED_SIZE_IN_BYTES;
     return (SPI_DATA_TYPE *)data;
 }
 
@@ -311,18 +366,27 @@ void APP_Tasks ( void )
     switch (appObject.appState)
     {
         case Initializing:
+            SYS_ASSERT((sha256_test() == 0), "sha256 failed, cannot start");
+            
             appObject.spiConfigDrvHandle = DRV_SPI_Open(DRV_SPI_INDEX_1, DRV_IO_INTENT_WRITE);
+            SYS_ASSERT(appObject.spiConfigDrvHandle != DRV_HANDLE_INVALID, "Invalid handle from Open");
 
             // Setup SPI clients
             DRV_SPI_ClientSetup(appObject.spiConfigDrvHandle, (DRV_SPI_CLIENT_SETUP *)&drvSPIClientCONFIGSetup);
+            // This SPI module has only one client, so we can set it up here permanently.
             _DRV_SPI_ClientHardwareSetup(appObject.spiConfigDrvHandle);
 
             appObject.spiReportDrvHandle = DRV_SPI_Open(DRV_SPI_INDEX_0, DRV_IO_INTENT_READ);
+            SYS_ASSERT(appObject.spiReportDrvHandle != DRV_HANDLE_INVALID, "Invalid handle from Open");
+
             DRV_SPI_ClientSetup(appObject.spiReportDrvHandle, (DRV_SPI_CLIENT_SETUP *)&drvSPIClientREPORTSetup);
+            // This SPI module has only one client, so we can set it up here permanently.
             _DRV_SPI_ClientHardwareSetup(appObject.spiReportDrvHandle);
 
             // After initializing we set the state to "WaitingForCommand" and enable USB interrupts
             appObject.appState = WaitingForCommand; // wait for interrupt from USB
+
+            //test = 1; // start with test 1
             break;
 
         case WaitingForCommand:
@@ -338,16 +402,21 @@ void APP_Tasks ( void )
             switch(test)
             {
                 case 0:
-                    dataToSend = massage_data_out( sha256_in, 3, &count );
+                    dataToSend = massage_for_send( (uint8_t *)testChips, 4 * GEN2_INPUT_WORD_COUNT, &count );
+                    appDrvObject.transmitBufHandle = DRV_SPI_BufferAddWrite(appObject.spiConfigDrvHandle, dataToSend, count);
+                    appDrvObject.receiveBufHandle = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state1, 4 /*SHA256_DIGEST_SIZE */);
+                    break;
+                case 1:
+                    dataToSend = massage_data_out( sha256_in, ARRAY_SIZE(sha256_in), &count );
                     appDrvObject.transmitBufHandle = DRV_SPI_BufferAddWrite(appObject.spiConfigDrvHandle, dataToSend, count);
                     appDrvObject.receiveBufHandle = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state1, SHA256_DIGEST_SIZE);
                     break;
-                case 1:
+                case 2:
                     dataToSend = massage_data_out( sha256_in2, ARRAY_SIZE(sha256_in2), &count );
                     appDrvObject.transmitBufHandle = DRV_SPI_BufferAddWrite(appObject.spiConfigDrvHandle, dataToSend, count);
                     appDrvObject.receiveBufHandle = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state2, SHA256_DIGEST_SIZE);
                     break;
-                case 2:
+                case 3:
                     dataToSend = massage_data_out( sha256_in3,  ARRAY_SIZE(sha256_in3 ), &count );
                     appDrvObject.transmitBufHandle = DRV_SPI_BufferAddWrite(appObject.spiConfigDrvHandle, dataToSend, count);
                     appDrvObject.receiveBufHandle = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state3, SHA256_DIGEST_SIZE);
@@ -364,7 +433,7 @@ void APP_Tasks ( void )
             // SPI interrupt came in? If so, process it here and then wait for next command
             if (DRV_SPI_BufferStatus (appDrvObject.receiveBufHandle) == DRV_SPI_BUFFER_EVENT_COMPLETE)
             {
-                _DRV_SPI_QueueCleanup( (DRV_SPI_OBJ *)appObject.spiConfigDrvHandle );
+                free(dataToSend);
                 appObject.appState = ReadReport;
             }
             break;
@@ -374,12 +443,13 @@ void APP_Tasks ( void )
             switch (test)
             {
                 case 0:
+                case 1:
                     massage_data_in( state1, RCV_BUF_SIZE_IN_BYTES );
                     break;
-                case 1:
+                case 2:
                     massage_data_in( state2, RCV_BUF_SIZE_IN_BYTES );
                     break;
-                case 2:
+                case 3:
                     massage_data_in( state3, RCV_BUF_SIZE_IN_BYTES );
                     break;
                 default:
@@ -387,7 +457,7 @@ void APP_Tasks ( void )
             }
             appObject.appState = WaitingForCommand;
             test++;
-             break;
+            break;
 
         case Idle:
             break;
