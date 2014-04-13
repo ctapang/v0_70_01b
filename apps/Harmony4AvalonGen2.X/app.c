@@ -457,9 +457,9 @@ void APP_Tasks ( void )
             // SPI interrupt came in? If so, process it here and then read report
             if (DRV_SPI_BufferStatus (appDrvObject.receiveBufHandle) == DRV_SPI_BUFFER_EVENT_COMPLETE)
             {
-                SYS_TMR_RemoveCallback(timer_handle);
+                //SYS_TMR_RemoveCallback(timer_handle);
                 free(dataToSend);
-                appObject.appState = ReadReport;
+                //appObject.appState = ReadReport;
             }
             break;
 

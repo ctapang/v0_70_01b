@@ -463,7 +463,7 @@ void SYS_TMR_Tasks ( SYS_MODULE_OBJ object )
                 sSysTmrObject.sysTmrOperatingFreq = DRV_TMR_OperatingFrequencyGet (sSysTmrObject.clientHandle);
 
                 /* Get the period value */
-                period = (uint32_t) (  sSysTmrObject.alarmPeriod * sSysTmrObject.sysTmrOperatingFreq  );
+                period = (uint32_t) (  (sSysTmrObject.alarmPeriod * sSysTmrObject.sysTmrOperatingFreq) / 1000  );
 
                 /* Set the alarm counter value */
                 _SYS_TMR_PeriodSet ( sSysTmrObject.clientHandle, period );

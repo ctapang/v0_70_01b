@@ -198,7 +198,7 @@ SYS_TMR_INIT TimerInitConfig;
 #define APP_TMR_500mS   0x0001312D
 
 
-#define ONE_SECOND 156250
+#define ONE_SECOND  5000000 // 156250
 #define ONE_MILLISEC (ONE_SECOND/1000)
 
 DRV_TMR_INIT   timerInit =
@@ -206,9 +206,9 @@ DRV_TMR_INIT   timerInit =
     .moduleInit.value = SYS_MODULE_POWER_RUN_FULL,
     .tmrId = TMR_ID_2,
     .clockSource = TMR_CLOCK_SOURCE_PERIPHERAL_CLOCK,
-    .timerPeriod = ONE_SECOND,
-    //.prescale = TMR_PRESCALE_VALUE_8,
-    .prescale = TMR_PRESCALE_VALUE_256,
+    .timerPeriod = (ONE_SECOND >> 3), // changing this has NO effect
+    .prescale = TMR_PRESCALE_VALUE_8,
+    //.prescale = TMR_PRESCALE_VALUE_256,
     .sourceEdge = TMR_CLOCK_SOURCE_EDGE_NONE,
     .postscale = TMR_POSTSCALE_NOT_SUPPORTED,
     .syncMode = DRV_TMR_SYNC_MODE_SYNCHRONOUS_INTERNAL,
@@ -314,7 +314,7 @@ bool TickInit()
 {
     TimerInitConfig.moduleInit.value = SYS_MODULE_POWER_RUN_FULL;
     TimerInitConfig.drvIndex = DRV_TMR_INDEX_0;
-    TimerInitConfig.alarmPeriod = 1; // one second
+    TimerInitConfig.alarmPeriod = 1; // this is fixed to 1 millisec (can't use any other value)
 
     clkObject.peripheralClock = SYS_FREQUENCY;
 
@@ -331,8 +331,8 @@ bool TickInit()
     }
 
     // The first param must be a multiple of TimerInitConfig.alarmPeriod (see above).
-    // Call the handler once every two seconds.
-    TimerObjectHandle = SYS_TMR_CallbackPeriodic (2, &TimerHandler);
+    // Call the handler once every 1 second.
+    TimerObjectHandle = SYS_TMR_CallbackPeriodic (1000, &TimerHandler);
 
 
      /* set priority for Timer 3 interrupt source */
