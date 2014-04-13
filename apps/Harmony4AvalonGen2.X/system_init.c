@@ -84,7 +84,7 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 
 // DEVCFG0
 #pragma config JTAGEN = OFF             // JTAG Enable (JTAG Port Disabled)
-#pragma config ICESEL = ICS_PGx2        // ICE/ICD Comm Channel Select (Communicate on PGEC2/PGED2)
+#pragma config ICESEL = ICS_PGx3        // ICE/ICD Comm Channel Select (Communicate on PGEC3/PGED3)
 #pragma config PWP = OFF                // Program Flash Write Protect (Disable)
 #pragma config BWP = OFF                // Boot Flash Write Protect bit (Protection Disabled)
 #pragma config CP = OFF                 // Code Protect (Protection Disabled)
@@ -190,7 +190,8 @@ SYS_TMR_INIT TimerInitConfig;
 // PLLODIV = 2, Freq = 40MHz
 // PBDIV = 1,   Freq = 40MHz
 // TMR Module I/P = 40MHz
-// TMR Prescaler = 1:256 = 156,250Hz // 312500Hz
+// TMR Prescaler = 1:8 = 5MHz
+// TMR Prescaler = 1:256 = 156,250Hz
 // TMR Step = 6.4uS/Count
 #define APP_TMR_1S      0x0002625A
 
@@ -198,14 +199,15 @@ SYS_TMR_INIT TimerInitConfig;
 
 
 #define ONE_SECOND 156250
-#define TEN_SECONDS 10
+#define ONE_MILLISEC (ONE_SECOND/1000)
 
 DRV_TMR_INIT   timerInit =
 {
     .moduleInit.value = SYS_MODULE_POWER_RUN_FULL,
     .tmrId = TMR_ID_2,
     .clockSource = TMR_CLOCK_SOURCE_PERIPHERAL_CLOCK,
-    .timerPeriod = ONE_SECOND, // FIXME: see alarmPeriod below (this is not really needed because sys_tmr.c calculates this.)
+    .timerPeriod = ONE_SECOND,
+    //.prescale = TMR_PRESCALE_VALUE_8,
     .prescale = TMR_PRESCALE_VALUE_256,
     .sourceEdge = TMR_CLOCK_SOURCE_EDGE_NONE,
     .postscale = TMR_POSTSCALE_NOT_SUPPORTED,
@@ -287,7 +289,7 @@ void SYS_Initialize ( void* data )
     SYSTEMConfigPerformance(SYS_FREQUENCY);
 
     //Initialize the USB device layer (this also calls DRV_USB_Initialize)
-    //USB_DEVICE_Initialize(  0, (SYS_MODULE_INIT *)&usbCDInitData  );
+    USB_DEVICE_Initialize(  0, (SYS_MODULE_INIT *)&usbCDInitData  );
 
     //Interrupt
     SYS_INT_Initialize();
@@ -358,7 +360,7 @@ extern void BSP_Toggle_Red_LED();
 
 void TimerHandler(void)
 {
-    BSP_Toggle_Green_LED();
+    BSP_Toggle_Red_LED();
     //j++;
     //if (j > 32)
     //    j = 0;

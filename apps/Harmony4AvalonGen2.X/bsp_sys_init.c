@@ -161,6 +161,7 @@ DRV_SPI_INIT drvSPIInit2 =
 
 void SpinDelay(uint16_t delay);
 void BSP_SetVoltage(char level);
+void Reset_All_Avalon_Chips();
 
 void BSP_Initialize(void )
 {
@@ -197,6 +198,8 @@ void BSP_Initialize(void )
 
     // Light up RED LED
     PLIB_PORTS_PinClear( PORTS_ID_0, PORT_CHANNEL_B, BSP_Red_LED);
+
+    Reset_All_Avalon_Chips();
 
     // Set SPI (both ports)
     //
@@ -341,10 +344,20 @@ void BSP_Toggle_Red_LED()
 
 void BSP_Toggle_Green_LED()
 {
+    SpinDelay((uint16_t)40);
     bool lighted = PLIB_PORTS_PinGet(PORTS_ID_0, PORT_CHANNEL_B, BSP_Green_LED);
     PLIB_PORTS_PinToggle( PORTS_ID_0, PORT_CHANNEL_B, BSP_Green_LED);
     SpinDelay((uint16_t)20);
-    SYS_ASSERT((lighted != PLIB_PORTS_PinGet(PORTS_ID_0, PORT_CHANNEL_B, BSP_Green_LED)), "Green LED did not toggle");
+    //SYS_ASSERT((lighted != PLIB_PORTS_PinGet(PORTS_ID_0, PORT_CHANNEL_B, BSP_Green_LED)), "Green LED did not toggle");
+}
+
+void Reset_All_Avalon_Chips()
+{
+    // Reset Avalon Gen2 chips, then turn ON green light by raising reset line
+    PLIB_PORTS_PinClear( PORTS_ID_0, PORT_CHANNEL_B, BSP_Green_LED);
+    bool lighted = PLIB_PORTS_PinGet(PORTS_ID_0, PORT_CHANNEL_B, BSP_Green_LED);
+    if (!lighted)
+        BSP_Toggle_Green_LED();
 }
 
 

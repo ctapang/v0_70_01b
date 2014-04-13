@@ -161,9 +161,9 @@ typedef enum
 // *****************************************************************************
 /* The section below identifies digital outpus connected to LEDs. */
 
-#define BSP_Red_LED                 PORTS_BIT_POS_3   // Pin 4 RB3
+#define BSP_Green_LED               PORTS_BIT_POS_3   // Pin 4 RB3
 
-#define BSP_Green_LED               PORTS_BIT_POS_7   // Pin 13 RB7
+#define BSP_Red_LED                 PORTS_BIT_POS_7   // Pin 13 RB7
 
 
 // *****************************************************************************

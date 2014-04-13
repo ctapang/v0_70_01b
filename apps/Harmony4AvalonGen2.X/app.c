@@ -48,6 +48,9 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #include "app.h"
 #include "byte_manipulation.h"
 #include "sha256.h"
+#include "GenericTypeDefs.h"
+
+extern DWORD DivisionOfLabor[10];
 
 
 // *****************************************************************************
@@ -91,6 +94,11 @@ APP_DATA appObject =
 
 APP_DRV_OBJECTS appDrvObject;
 
+// "Config" message link to the A3255 chips
+// Note that although the link has queuing capability, we are not using
+// that capability because we have to wait for the "Report" signal from
+// the chips (on the other SPI channel) before we can issue the next
+// "Config" message.
 DRV_SPI_CLIENT_SETUP drvSPIClientCONFIGSetup =
 {
     /* Variable specifying the baud.  */
@@ -140,55 +148,35 @@ uint8_t state1[SHA256_DIGEST_SIZE];
 uint8_t state2[SHA256_DIGEST_SIZE];
 uint8_t state3[SHA256_DIGEST_SIZE];
 
-const uint8_t set_clock_low[] = {0x47, 0x00, 0x02, 0x33, 0, 0, 0, 0};
-const uint8_t set_clock_medium[] = {0x67, 0x00, 0x01, 0x03, 0, 0, 0, 0};
-const uint8_t set_clock_high[] = {0x67, 0x00, 0x01, 0x05, 0, 0, 0, 0};
-const uint8_t set_clock_highest[] = {0x67, 0x00, 0x01, 0x0F, 0, 0, 0, 0};
+// bit 0*1 2 3 4*5 6 7 ... 15 16*17 18 19 20*21 22 23 24*25 26 27 28*29 30 .. 63
+//     | | | | | | | |      |  |  |  |  |  |  |  |  |  |  |  |  |  |  | reserved
+//     | | | | | | | | rsvd |  |----- R ---|  |------ F --------|  OD OD
+//     | | | | | | +- output clock to pin if set
+//     | | | | | +- use external clock XCLKIN for clock if set
+//     | | | | +- divide by 2 if set
+//     | | | +- clock gating if set
+//     | | +- make clock divider settings (R, F, and OD) effective if set
+//     | +- make all clock configuration settings effective if set
+//     +- must always be set
+//
+//const uint8_t set_clock_low[] = {0x27, 0x00, 0x02, 0x33, 0, 0, 0, 0};
+const uint8_t set_clock_lowest[] = {0x27, 0x00, 0x03, 0x0F, 0, 0, 0, 0};  // chips cool to the touch, 355mSecs
+const uint8_t set_clock_low[] = {0x07, 0x00, 0x20, 0x07, 0, 0, 0, 0};//
+const uint8_t set_clock_medium_low[] = {0x07, 0x00, 0x10, 0x07, 0, 0, 0, 0};// 106mSecs          (3.5 x 50)
+const uint8_t set_clock_medium[] = {0x07, 0x00, 0x08, 0x07, 0, 0, 0, 0};    //                   (07 x 50)
+const uint8_t set_clock_medium_high[] = {0x07, 0x00, 0x04, 0x07, 0, 0, 0, 0}; //warm, 31.5mSecs  (14 x 50)
+const uint8_t set_clock_high[] = {0x07, 0x00, 0x06, 0x0F, 0, 0, 0, 0}; // not too hot, 21mSecs   (20 x 50)
+const uint8_t set_clock_highest[] = {0x07, 0x00, 0x04, 0x0F, 0, 0, 0, 0}; // 15.1mSecs           (30 x 50)
 const uint8_t set_clock_unchanged[] = {0x01, 0x00, 0x00, 0x00, 0, 0, 0, 0};
 
-const uint8_t division_of_labor[] = {
-        0x00, 0x00, 0x00, 0x00,
-        0x99, 0x99, 0x99, 0x19,
-        0x32, 0x33, 0x33, 0x33,
-        0xcb, 0xcc, 0xcc, 0x4c,
-        0x64, 0x66, 0x66, 0x66,
-        0xfd, 0xff, 0xff, 0x7f,
-        0x96, 0x99, 0x99, 0x99,
-        0x2f, 0x33, 0x33, 0xb3,
-        0xc8, 0xcc, 0xcc, 0xcc,
-        0x61, 0x66, 0x66, 0xe6 };
+DWORD asic_clock_rate_in_MHz = 1500; // in MHz
+const uint8_t *coded_clock_rate = set_clock_highest;
+DWORD timeout_in_msec = 4294967 / (1500 * ASIC_COUNT);
 
-const uint8_t sha256_in[] = {0x61, 0x62, 0x63};
-
-/* The correct result is: */
-/* ba 78 16 bf 8f 01 cf ea  41 41 40 de 5d ae 22 23 */
-/* b0 03 61 a3 96 17 7a 9c  b4 10 ff 61 f2 00 15 ad */
-
-const uint8_t sha256_in2[] = {
-	0x61, 0x62, 0x63, 0x64, 0x62, 0x63, 0x64, 0x65,
-	0x63, 0x64, 0x65, 0x66, 0x64, 0x65, 0x66, 0x67,
-	0x65, 0x66, 0x67, 0x68, 0x66, 0x67, 0x68, 0x69,
-	0x67, 0x68, 0x69, 0x6A, 0x68, 0x69, 0x6A, 0x6B,
-	0x69, 0x6A, 0x6B, 0x6C, 0x6A, 0x6B, 0x6C, 0x6D,
-	0x6B, 0x6C, 0x6D, 0x6E, 0x6C, 0x6D, 0x6E, 0x6F,
-	0x6D, 0x6E, 0x6F, 0x70, 0x6E, 0x6F, 0x70, 0x71};
-
-/* The correct result is: */
-/* 24 8d 6a 61 d2 06 38 b8  e5 c0 26 93 0c 3e 60 39 */
-/* a3 3c e4 59 64 ff 21 67  f6 ec ed d4 19 db 06 c1 */
-
-const uint8_t sha256_in3[] = {
-	0x00, 0x00, 0x00, 0x02, 0xd5, 0xa0, 0xf8, 0xa5,
-	0xb8, 0x2b, 0x43, 0xd5, 0x80, 0x90, 0xd4, 0x8d,
-	0x41, 0xa0, 0x83, 0xe5, 0x71, 0x52, 0x80, 0x62,
-	0xe8, 0xe3, 0xae, 0x5a, 0x00, 0x00, 0x00, 0x03,
-	0x00, 0x00, 0x00, 0x00, 0x36, 0x9d, 0xab, 0x3f,
-	0xbc, 0xe8, 0xd5, 0x4b, 0x23, 0xbf, 0xa1, 0xe4,
-	0xdd, 0xd4, 0x3f, 0x5a, 0x92, 0x6e, 0x8a, 0x7a,
-	0xcd, 0x1c, 0xc2, 0xa5, 0x35, 0x07, 0x30, 0xd2};
 
 const uint32_t testChips[] = {
-    0x07C10067,
+    //0x07C10067,
+    0x05010067,
     //0x00000001,
     0x00000000,
 
@@ -214,20 +202,62 @@ const uint32_t testChips[] = {
     0x220f1dbd
 };
 
-int test = 0;
 
 // *****************************************************************************
 // *****************************************************************************
 // Section: Application Local Routines
 // *****************************************************************************
 // *****************************************************************************
+void Set_Clock_Rate(DWORD freqInMHz)
+{
+    SYS_ASSERT((freqInMHz <= 1500), "cannot set clock: too high");
+    if (freqInMHz > 1100)
+    {
+        coded_clock_rate = set_clock_highest;
+        asic_clock_rate_in_MHz = 30 * 50;
+    }
+    else if (freqInMHz > 800)
+    {
+        coded_clock_rate = set_clock_high;
+        asic_clock_rate_in_MHz = 20 * 50;
+    }
+    else if (freqInMHz > 400)
+    {
+        coded_clock_rate = set_clock_medium_high;
+        asic_clock_rate_in_MHz = 14 * 50;
+    }
+    else if (freqInMHz > 200)
+    {
+        coded_clock_rate = set_clock_medium;
+        asic_clock_rate_in_MHz = 7 * 50;
+    }
+    else if (freqInMHz > 150)
+    {
+        coded_clock_rate = set_clock_medium_low;
+        asic_clock_rate_in_MHz = 3 * 50 + 25;
+    }
+    else if (freqInMHz > 80)
+    {
+        coded_clock_rate = set_clock_low;
+        asic_clock_rate_in_MHz = 50 + 38;
+    }
+    else
+    {
+        coded_clock_rate = set_clock_lowest;
+        asic_clock_rate_in_MHz = 50;
+    }
+    timeout_in_msec = 4294967 / (asic_clock_rate_in_MHz * ASIC_COUNT);
+}
 
 // *****************************************************************************
 // *****************************************************************************
 // Section: Application Callback Routines
 // *****************************************************************************
 // *****************************************************************************
-
+void ASIC_wait_callback()
+{
+    appObject.appState = ReadReport;
+}
 
 
 // *****************************************************************************
@@ -268,7 +298,7 @@ uint32_t * re_arrange_words(uint32_t *data, uint32_t *a, uint32_t *e, int byteCo
 {
     int wordCount = byteCount / sizeof(SPI_DATA_TYPE);
     uint32_t *outData = (uint32_t *)malloc(ARRANGED_SIZE_IN_BYTES);
-    uint32_t *divlabor = (uint32_t *)division_of_labor;
+    uint32_t *divlabor = (uint32_t *)DivisionOfLabor;
 
     memcpy((uint8_t*)outData, set_clock_highest, 8);
 
@@ -322,6 +352,11 @@ SPI_DATA_TYPE * massage_data_out( const uint8_t * rawBuf, int size, int *count)
     return (SPI_DATA_TYPE *)data;
 }
 
+//void SendAsicData(WORKTASK *work)
+//{
+//
+//}
+
 SPI_DATA_TYPE * massage_for_send( const uint8_t * rawBuf, int size, int *count)
 {
     uint8_t temp1[ARRANGED_SIZE_IN_BYTES];
@@ -329,7 +364,8 @@ SPI_DATA_TYPE * massage_for_send( const uint8_t * rawBuf, int size, int *count)
     uint8_t *data = malloc(ARRANGED_SIZE_IN_BYTES); // this is freed in drv_spi_dynamic.c
 
     memcpy(temp1, rawBuf, size);
-    memcpy(temp1 + size, (uint8_t *)division_of_labor, 4 * ASIC_COUNT);
+    memcpy(temp1, coded_clock_rate, 8);
+    memcpy(temp1 + size, (uint8_t *)DivisionOfLabor, 4 * ASIC_COUNT);
     flip4SPI(temp2, temp1, ARRANGED_SIZE_IN_BYTES);
     // FIXME: remove call to invert_logic once hashing unit PCB is finalized
     invert_logic((SPI_DATA_TYPE *)data, (SPI_DATA_TYPE *)temp2, ARRANGED_SIZE_IN_BYTES);
@@ -342,6 +378,12 @@ SPI_DATA_TYPE * massage_data_in( const uint8_t * state, int size )
 {
     flip4SPI( indata, state, size );
     return indata;
+}
+
+void Wait4AsicsDone()
+{
+    if (appObject.appState == WaitingForReport)
+        appObject.appState = ReadReport;
 }
 
 /******************************************************************************
@@ -361,12 +403,15 @@ void APP_Tasks ( void )
 {
     DRV_SPI_BUFFER_OBJECT *buf;
     int count;
+    SYS_TMR_HANDLE timer_handle = NULL;
     
     /* check the application state*/
     switch (appObject.appState)
     {
         case Initializing:
             SYS_ASSERT((sha256_test() == 0), "sha256 failed, cannot start");
+
+            Set_Clock_Rate(500);
             
             appObject.spiConfigDrvHandle = DRV_SPI_Open(DRV_SPI_INDEX_1, DRV_IO_INTENT_WRITE);
             SYS_ASSERT(appObject.spiConfigDrvHandle != DRV_HANDLE_INVALID, "Invalid handle from Open");
@@ -385,8 +430,6 @@ void APP_Tasks ( void )
 
             // After initializing we set the state to "WaitingForCommand" and enable USB interrupts
             appObject.appState = WaitingForCommand; // wait for interrupt from USB
-
-            //test = 1; // start with test 1
             break;
 
         case WaitingForCommand:
@@ -399,38 +442,16 @@ void APP_Tasks ( void )
             break;
 
         case PreCalculating:
-            switch(test)
-            {
-                case 0:
-                    dataToSend = massage_for_send( (uint8_t *)testChips, 4 * GEN2_INPUT_WORD_COUNT, &count );
-                    appDrvObject.transmitBufHandle = DRV_SPI_BufferAddWrite(appObject.spiConfigDrvHandle, dataToSend, count);
-                    appDrvObject.receiveBufHandle = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state1, 4 /*SHA256_DIGEST_SIZE */);
-                    break;
-                case 1:
-                    dataToSend = massage_data_out( sha256_in, ARRAY_SIZE(sha256_in), &count );
-                    appDrvObject.transmitBufHandle = DRV_SPI_BufferAddWrite(appObject.spiConfigDrvHandle, dataToSend, count);
-                    appDrvObject.receiveBufHandle = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state1, SHA256_DIGEST_SIZE);
-                    break;
-                case 2:
-                    dataToSend = massage_data_out( sha256_in2, ARRAY_SIZE(sha256_in2), &count );
-                    appDrvObject.transmitBufHandle = DRV_SPI_BufferAddWrite(appObject.spiConfigDrvHandle, dataToSend, count);
-                    appDrvObject.receiveBufHandle = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state2, SHA256_DIGEST_SIZE);
-                    break;
-                case 3:
-                    dataToSend = massage_data_out( sha256_in3,  ARRAY_SIZE(sha256_in3 ), &count );
-                    appDrvObject.transmitBufHandle = DRV_SPI_BufferAddWrite(appObject.spiConfigDrvHandle, dataToSend, count);
-                    appDrvObject.receiveBufHandle = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state3, SHA256_DIGEST_SIZE);
-                    break;
-                default:
-                    break;
-            }
+            dataToSend = massage_for_send( (uint8_t *)testChips, 4 * GEN2_INPUT_WORD_COUNT, &count );
+            appDrvObject.transmitBufHandle = DRV_SPI_BufferAddWrite(appObject.spiConfigDrvHandle, dataToSend, count);
+            appDrvObject.receiveBufHandle = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state1, 4 /*SHA256_DIGEST_SIZE */);
 
-
+            timer_handle = SYS_TMR_CallbackSingle (timeout_in_msec, Wait4AsicsDone);
             appObject.appState = WaitingForReport;
             break;
 
         case WaitingForReport:
-            // SPI interrupt came in? If so, process it here and then wait for next command
+            // SPI interrupt came in? If so, process it here and then read report
             if (DRV_SPI_BufferStatus (appDrvObject.receiveBufHandle) == DRV_SPI_BUFFER_EVENT_COMPLETE)
             {
                 free(dataToSend);
@@ -439,24 +460,9 @@ void APP_Tasks ( void )
             break;
 
         case ReadReport:
-            //buf = (DRV_SPI_BUFFER_OBJECT *)appDrvObject.receiveBufHandle;
-            switch (test)
-            {
-                case 0:
-                case 1:
-                    massage_data_in( state1, RCV_BUF_SIZE_IN_BYTES );
-                    break;
-                case 2:
-                    massage_data_in( state2, RCV_BUF_SIZE_IN_BYTES );
-                    break;
-                case 3:
-                    massage_data_in( state3, RCV_BUF_SIZE_IN_BYTES );
-                    break;
-                default:
-                    break;
-            }
+            massage_data_in( state1, RCV_BUF_SIZE_IN_BYTES );
+
             appObject.appState = WaitingForCommand;
-            test++;
             break;
 
         case Idle:
@@ -468,7 +474,6 @@ void APP_Tasks ( void )
     }
 
 }
-
 
 /*******************************************************************************
  End of File
