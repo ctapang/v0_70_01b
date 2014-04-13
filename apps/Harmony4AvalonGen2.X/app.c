@@ -380,10 +380,15 @@ SPI_DATA_TYPE * massage_data_in( const uint8_t * state, int size )
     return indata;
 }
 
-void Wait4AsicsDone()
+SYS_TMR_HANDLE timer_handle = NULL;
+SPI_DATA_TYPE *dataToSend;
+
+void DoneWaiting4Asics()
 {
+    timer_handle = SYS_TMR_HANDLE_INVALID;
     if (appObject.appState == WaitingForReport)
         appObject.appState = ReadReport;
+    free(dataToSend);
 }
 
 /******************************************************************************
@@ -396,14 +401,12 @@ void Wait4AsicsDone()
 
 static int q = 0, r = 0, s = 0, t = 0;
 int i = 0;
-SPI_DATA_TYPE *dataToSend;
 bool done = false;
 
 void APP_Tasks ( void )
 {
     DRV_SPI_BUFFER_OBJECT *buf;
     int count;
-    SYS_TMR_HANDLE timer_handle = NULL;
     
     /* check the application state*/
     switch (appObject.appState)
@@ -446,7 +449,7 @@ void APP_Tasks ( void )
             appDrvObject.transmitBufHandle = DRV_SPI_BufferAddWrite(appObject.spiConfigDrvHandle, dataToSend, count);
             appDrvObject.receiveBufHandle = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state1, 4 /*SHA256_DIGEST_SIZE */);
 
-            timer_handle = SYS_TMR_CallbackSingle (timeout_in_msec, Wait4AsicsDone);
+            timer_handle = SYS_TMR_CallbackSingle (timeout_in_msec, DoneWaiting4Asics);
             appObject.appState = WaitingForReport;
             break;
 
@@ -454,6 +457,7 @@ void APP_Tasks ( void )
             // SPI interrupt came in? If so, process it here and then read report
             if (DRV_SPI_BufferStatus (appDrvObject.receiveBufHandle) == DRV_SPI_BUFFER_EVENT_COMPLETE)
             {
+                SYS_TMR_RemoveCallback(timer_handle);
                 free(dataToSend);
                 appObject.appState = ReadReport;
             }

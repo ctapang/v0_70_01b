@@ -702,6 +702,22 @@ void SYS_TMR_CallbackStop (SYS_TMR_HANDLE handle)
 
 } /* SYS_TMR_CallbackStop */
 
+void SYS_TMR_RemoveCallback(SYS_TMR_HANDLE handle)
+{
+    SYS_TMR_CallbackStop(handle);
+
+    QUEUE_ELEMENT_OBJECT * queueObject;
+    SYS_TMR_CALLBACK_OBJECT * object;
+
+    /* Check for handle validity */
+    if (SYS_TMR_HANDLE_INVALID == handle)
+        return;
+
+    queueObject = &sSysTMRQueueObjects[handle];
+
+    SYS_TMR_CallbackDeregister(queueObject);
+}
+
 
 // *****************************************************************************
 /* Function:

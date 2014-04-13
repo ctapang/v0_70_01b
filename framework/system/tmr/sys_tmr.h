@@ -610,6 +610,7 @@ SYS_TMR_HANDLE SYS_TMR_CallbackPeriodic( unsigned int       period,
 
 void SYS_TMR_CallbackStop( SYS_TMR_HANDLE handle );
 
+void SYS_TMR_RemoveCallback(SYS_TMR_HANDLE handle);
 
 // *****************************************************************************
 /* Function:
