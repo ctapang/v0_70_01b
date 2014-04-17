@@ -51,6 +51,7 @@ DWORD PrecalcHashes[6];
 
 #define r(x) ((x-n)&7)
 
+
 DWORD rotate(DWORD x, BYTE y)
 {
     return ((x<<y) | (x>>(32-y)));
@@ -248,37 +249,16 @@ void PrepareWorkStatus(void)
 }
 
 
-void ResultRx(void)
+void ResultRx(BYTE *nonce)
 {
-    TimeOut = 0;
-
-    while(ResultQC < 4) {
-        //if(RCIF) {
-        //    ResultQue[2+ResultQC++] = RCREG;
-            TimeOut = 0;
-        //}
-        if(TimeOut++ > 32) {
-            Status.Noise++;
-            goto outrx;
-        }
-        //if(RCSTAbits.OERR) { // error occured, either overun or no more bits
-            if(Status.State == 'W') {
-                Status.ErrorCount++;
-            }
-            goto outrx;
-        //}
-    }
-    
     if(Status.State == 'W') {
         ResultQue[0] = '=';
         ResultQue[1] = Status.WorkID;
-        //SendCmdReply(&ResultQue, &ResultQue+1, sizeof(ResultQue)-1);
-    }
 
-outrx:
-    //RESET_RX();
-    ResultQC = 0;
-    //IOCBF = 0;
+        // FIXME: deal with endianness
+        memcpy(&ResultQue + 2, nonce, sizeof(DWORD));
+        SendCmdReply((char *)ResultQue, (BYTE *)(ResultQue+1), sizeof(ResultQue)-1);
+    }
 }
 
 

@@ -52,7 +52,7 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #include "condominer.h"
 
 extern DWORD DivisionOfLabor[10];
-
+extern WORKSTATUS Status;
 
 // *****************************************************************************
 // *****************************************************************************
@@ -283,7 +283,7 @@ void APP_Initialize ( void )
 
 // private methods
 
-SPI_DATA_TYPE indata[SHA256_DIGEST_SIZE];
+BYTE indata[sizeof(DWORD)];
 
 // remove this method for the next revision of the PCB card
 void invert_logic(SPI_DATA_TYPE *output, SPI_DATA_TYPE *input, int size)
@@ -378,7 +378,7 @@ SPI_DATA_TYPE * massage_for_send( const uint8_t * rawBuf, int size, int *count)
     return (SPI_DATA_TYPE *)outdata;
 }
 
-SPI_DATA_TYPE * massage_data_in( const uint8_t * state, int size )
+BYTE * massage_data_in( const uint8_t * state, int size )
 {
     flip4SPI( indata, state, size );
     return indata;
@@ -395,10 +395,14 @@ void DoneWaiting4Asics()
 {
     tc++;
     timer_handle = SYS_TMR_HANDLE_INVALID;
-    if (appObject.appState == WaitingForReport)
+    if (Status.State == 'W')
     {
         to++;
-        appObject.appState = ReadReport;
+        if(Status.WorkQC > 0)
+            Status.State = 'P';
+        else
+            Status.State = 'R';
+        
         // Reset bufering mechanism. We have direct access to the actual buffers,
         // and so we don't access the actual buffers through the buffering mechanism.
         DRV_SPI_AbortCurrentReadAndResetBuffers(appObject.spiReportDrvHandle);
@@ -428,26 +432,57 @@ void APP_SPIBufferEventHandler( DRV_SPI_BUFFER_EVENT event,
     {
         if (handle == appDrvObject.receiveBufHandle[0])
         {
+            // Process this report
+            if (state1[0] != 0 || state1[1] != 0 || state1[2] != 0 || state1[3] != 0)
+                massage_data_in( state1, sizeof(DWORD)); // puts report in indata
+            else if (Status.State == 'W')
+                Status.ErrorCount++;
+
+            // now prepare the next receive buf
             state2[0] = 0; state2[1] = 0; state2[2] = 0; state2[3] = 0;
             appDrvObject.receiveBufHandle[1] = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state2, sizeof(DWORD));
         }
         else if (handle == appDrvObject.receiveBufHandle[1])
         {
+            // Process this report
+            if (state2[0] != 0 || state2[1] != 0 || state2[2] != 0 || state2[3] != 0)
+                massage_data_in( state2, sizeof(DWORD)); // puts report in indata
+            else if (Status.State == 'W')
+                Status.ErrorCount++;
+
+            // now prepare the next receive buf
             state3[0] = 0; state3[1] = 0; state3[2] = 0; state3[3] = 0;
             appDrvObject.receiveBufHandle[2] = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state3, sizeof(DWORD));
         }
         else if (handle == appDrvObject.receiveBufHandle[2])
         {
+            // Process this report
+            if (state3[0] != 0 || state3[1] != 0 || state3[2] != 0 || state3[3] != 0)
+                massage_data_in( state3, sizeof(DWORD)); // puts report in indata
+            else if (Status.State == 'W')
+                Status.ErrorCount++;
+
+            // now prepare the next receive buf
             state4[0] = 0; state4[1] = 0; state4[2] = 0; state4[3] = 0;
             appDrvObject.receiveBufHandle[3] = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state4, sizeof(DWORD));
         }
         else if (handle == appDrvObject.receiveBufHandle[3])
         {
+            // Process this report
+            if (state4[0] != 0 || state4[1] != 0 || state4[2] != 0 || state4[3] != 0)
+                massage_data_in( state4, sizeof(DWORD)); // puts report in indata
+            else if (Status.State == 'W')
+                Status.ErrorCount++;
+
+            // now prepare the next receive buf
             state1[0] = 0; state1[1] = 0; state1[2] = 0; state1[3] = 0;
             appDrvObject.receiveBufHandle[0] = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state1, sizeof(DWORD));
         }
         // Don't free this buffer here. Free them all at the same instant in DoneWaiting4Asics above.
         //DRV_SPI_FreeBuffer(appObject.spiReportDrvHandle, handle);
+
+        if (appObject.appState == WaitingForReport)
+            appObject.appState = ReadReport;
     }
     SYS_ASSERT((timer_handle != SYS_TMR_HANDLE_INVALID), "timeout timer invalid during buffer completion event (exit)");
 }
@@ -503,7 +538,6 @@ void APP_Tasks ( void )
             // If a packet came in, process the command here
             // set appState to "PreCalculating" when done analyzing command
             appObject.appState = PreCalculating;
-            SYS_ASSERT((appObject.appState == PreCalculating), "");
             break;
 
         case PreCalculating:
@@ -516,6 +550,7 @@ void APP_Tasks ( void )
             timer_handle = SYS_TMR_CallbackSingle (timeout_in_msec, DoneWaiting4Asics);
             SYS_ASSERT((timer_handle != SYS_TMR_HANDLE_INVALID), "Cannot setup Asic wait timeout");
             appObject.appState = WaitingForReport;
+            Status.State = 'W';
             seq[j++] = tc;
             break;
 
@@ -530,20 +565,18 @@ void APP_Tasks ( void )
                 // If we are only interested in the first golden nonce from the Asics, move on to the next state.
                 //appObject.appState = ReadReport;
             }
+
+            // When work is DONE (timeout occurred), get next work item.
+            if (Status.State == 'R')
+                appObject.appState = WaitingForCommand;
+            else if (Status.State == 'P')
+                appObject.appState = PreCalculating;
             break;
-
         case ReadReport:
-            SYS_ASSERT((state1[0] != 0 || state1[1] != 0 || state1[2] != 0 || state1[3] != 0), "we must get at least one report from the Asics");
-            if (state1[0] != 0 || state1[1] != 0 || state1[2] != 0 || state1[3] != 0)
-                massage_data_in( state1, RCV_BUF_SIZE_IN_BYTES );
-            if (state2[0] != 0 || state2[1] != 0 || state2[2] != 0 || state2[3] != 0)
-                massage_data_in( state2, sizeof(DWORD));
-            if (state3[0] != 0 || state3[1] != 0 || state3[2] != 0 || state3[3] != 0)
-                massage_data_in( state3, sizeof(DWORD));
-            if (state4[0] != 0 || state4[1] != 0 || state4[2] != 0 || state4[3] != 0)
-                massage_data_in( state4, sizeof(DWORD));
+            // send this result back to cgminer
+            ResultRx(indata);
 
-            appObject.appState = WaitingForCommand;
+            appObject.appState = WaitingForReport;
             break;
 
         case Idle:

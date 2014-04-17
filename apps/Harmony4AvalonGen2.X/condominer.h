@@ -58,7 +58,7 @@ WORKTASK *AssembleWorkForAsics(void);
 
 void PrepareWorkStatus(void);
 
-void ResultRx(void);
+void ResultRx(BYTE *nonce);
 //void WorkTick(void);
 
 //void InitTempSensor(void);
