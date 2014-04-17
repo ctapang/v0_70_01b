@@ -31,48 +31,23 @@ DWORD DivisionOfLabor[10] = {
     0xe6666661
 };
 BYTE WorkNow, BankSize, ResultQC, SlowTick, TimeOut, TempTarget;
-BYTE HashTime = 256 - ((WORD)TICK_TOTAL/DEFAULT_HASHCLOCK);
+//BYTE HashTime = 256 - ((WORD)TICK_TOTAL/DEFAULT_HASHCLOCK);
 volatile WORKSTATUS Status = {'I',0,0,0,0,0,0,0,0, WORK_TICKS, 0 };
-WORKCFG Cfg = { DEFAULT_HASHCLOCK, DEFAULT_TEMP_TARGET, 0, 0, 0 };
+WORKCFG Cfg = { 1500, 0, 0, 0, 0 };
 WORKTASK WorkQue[MAX_WORK_COUNT];
 volatile BYTE ResultQue[6];
-DWORD ClockCfg[2] = { (((DWORD)DEFAULT_HASHCLOCK) << 18) | CLOCK_LOW_CHG, CLOCK_HIGH_CFG };
+//DWORD ClockCfg[2] = { (((DWORD)DEFAULT_HASHCLOCK) << 18) | CLOCK_LOW_CHG, CLOCK_HIGH_CFG };
 INT16 Step, Error, LastError;
 
 DWORD NonceRanges[10];
+
+const IDENTITY ID = { 1, "Swauk1", 0xA51C };
 
 DWORD PrecalcHashes[6];
 
 /*bank2*/ DWORD send32_data; // place in same bank as latc registers!
 /*bank2*/ BYTE send32_count; // count DWORDS
 /*bank2*/ BYTE last_bit0, last_bit1;
-
-void Send32(void)
-{
-   // Send send32_data which has send32_count DWORDs
-}
-
-void SendAsicData(WORKTASK *work)
-{
-    //GIE = 0;
-    //last_bit0 = DATA_ZERO; last_bit1 = DATA_ONE;
-    send32_data = (DWORD)&ClockCfg; send32_count = 2;
-    Send32();
-    send32_data = (DWORD)&work->Merkle; send32_count = 3;
-    Send32();
-    send32_data = (DWORD)&PrecalcHashes[1]; send32_count = 5;
-    Send32();
-    send32_data = (DWORD)&work->MidState; send32_count = 8;
-    Send32();
-    send32_data = (DWORD)&PrecalcHashes; send32_count = 1;
-    Send32();
-    last_bit0 = last_bit1 = DATA_SPLIT;
-    send32_data = (DWORD)&NonceRanges; send32_count = BankSize;
-    Send32();
-    //HASH_IDLE();
-    //GIE = 1;
-    ClockCfg[0] = ClockCfg[0] & ~CLOCK_NOCHG_MASK;
-}
 
 #define r(x) ((x-n)&7)
 
@@ -199,7 +174,7 @@ void ProcessCmd(char *cmd)
             if( Status.WorkQC < MAX_WORK_COUNT-1 ) {
                 WorkQue[ (WorkNow + Status.WorkQC++) & WORKMASK ] = *(WORKTASK *)(cmd+2);
                 if(Status.State == 'R') {
-                    AsicPushWork();
+                    AssembleWorkForAsics();
                 }
             }
             SendCmdReply(cmd, (char *)&Status, sizeof(Status));
@@ -219,24 +194,8 @@ void ProcessCmd(char *cmd)
             Status.Noise = Status.ErrorCount = 0;
             break;
         case 'C': // set config values 
-            if( *(WORD *)&cmd[2] != 0 ) {
+            if( *(WORD *)&cmd[2] != 0 )
                 Cfg = *(WORKCFG *)(cmd+2);
-                if(Cfg.HashClock < MIN_HASH_CLOCK)
-                    Cfg.HashClock = MIN_HASH_CLOCK;
-                if(Cfg.HashClock <= HALF_HASH_CLOCK && Cfg.HashClock >= MAX_HASH_CLOCK/2)
-                    Cfg.HashClock = MAX_HASH_CLOCK/2-1;
-                if(Cfg.HashClock >= MAX_HASH_CLOCK)
-                    Cfg.HashClock = MAX_HASH_CLOCK-1;
-                if(Cfg.HashClock <= HALF_HASH_CLOCK)
-                    ClockCfg[0] = (((DWORD)Cfg.HashClock*2) << 18) | CLOCK_HALF_CHG;
-                else
-                    ClockCfg[0] = ((DWORD)Cfg.HashClock << 18) | CLOCK_LOW_CHG;
-                HashTime = 256 - ((WORD)TICK_TOTAL/Cfg.HashClock);
-                if(Cfg.TempTarget != 0)
-                    TempTarget = Cfg.TempTarget;
-                else
-                    Cfg.TempTarget = DEFAULT_TEMP_TARGET;
-            }
             SendCmdReply(cmd, (char *)&Cfg, sizeof(Cfg));
             break;
         case 'E': // enable/disable work
@@ -257,19 +216,21 @@ void ProcessCmd(char *cmd)
     //LED_On();
 }
 
-void AsicPushWork(void)
+WORKTASK *AssembleWorkForAsics(void)
 {
     AsicPreCalc(&WorkQue[WorkNow]);
     Status.WorkID = WorkQue[WorkNow].WorkID;
-    SendAsicData(&WorkQue[WorkNow]);
+    //SendAsicData(&WorkQue[WorkNow]);
+    WORKTASK *retVal = &WorkQue[WorkNow];
     WorkNow = (WorkNow+1) & WORKMASK;
     Status.HashCount = 0;
     //TMR0 = HashTime;
     Status.State = 'W';
     Status.WorkQC--;
+    return retVal;
 }
 
-void DetectAsics(void)
+void PrepareWorkStatus(void)
 {
     Status.ChipCount = 10;
 
@@ -286,33 +247,6 @@ void DetectAsics(void)
     Status.HashCount = 0;
 }
 
-// ISR functions
-void WorkTick(void)
-{
-    //TMR0 += HashTime;
-    //TMR0IF = 0;
-
-    if((Status.State == 'W') && (++Status.HashCount == Status.MaxCount)) {
-        if(Status.WorkQC > 0) {
-            Status.State = 'P';
-        }
-        else {
-            Status.State = 'R';
-        }
-    }
-
-    if(++SlowTick == 0) {
-        //LED_Off();
-        //Status.Temp = ADRESH;
-        //ADCON0bits.GO_nDONE = 1;
-        //if((++VerySlowTick % 15) == 0) {
-        //    UpdateFanLevel();
-        }
-        //CheckFanSpeed();
-    
-   //if((SlowTick & 3) == 0)
-   //I2CPoll();
-}
 
 void ResultRx(void)
 {
@@ -348,36 +282,6 @@ outrx:
 }
 
 
-void InitTempSensor(void)
-{ 
-    //THERM_TRIS=1;
-    //TEMP_INIT;
-    //FVREN = 1;
-    //ADCON0bits.CHS = TEMP_THERMISTOR;
-    //ADCON0bits.ADON = 1;
-    //ADCON1bits.ADFM = 0;
-    //ADCON1bits.ADCS = 6;
-    //ADCON1bits.ADPREF = 0;
-    //ADCON2bits.TRIGSEL = 0;
-    TempTarget = DEFAULT_TEMP_TARGET;
-}
-
-void InitWorkTick(void)
-{
-    //TMR0CS = 0;
-    //OPTION_REGbits.PSA = 0;
-    //OPTION_REGbits.PS = 7;
-    //TMR0 = HashTime;
-
-    //HASH_TRIS_0P = 0;
-    //HASH_TRIS_0N = 0;
-    //HASH_TRIS_1P = 0;
-    //HASH_TRIS_1N = 0;
-    //HASH_IDLE();
-    //HASH_CLK_TRIS = 0;
-    //HASH_CLK_EN = 0;
-}
-
 void InitResultRx(void)
 {
     ResultQC = 0;
@@ -395,13 +299,12 @@ void InitResultRx(void)
     //RCREG = 0xFF;
 }
 
-static void InitializeSystem();
 void ProcessIO();
 
 
 int mainProgram(void)
 {   
-    InitializeSystem();
+    InitializeWorkSystem();
 
     while(1)
     {
@@ -436,10 +339,10 @@ int mainProgram(void)
         #endif
         
         //if(TMR0IF)
-            WorkTick();
+        //    WorkTick();
 
         if(Status.State == 'P'){
-            AsicPushWork();
+            AssembleWorkForAsics();
         }
                       
         ProcessIO();
@@ -447,9 +350,7 @@ int mainProgram(void)
     }//end while
 }//end main
 
-void UserInit();
-
-static void InitializeSystem(void)
+void InitializeWorkSystem(void)
 {
     // all pins digital mode, except RC2, which has a Thermistor on it
     ANSELA = 0x00;
@@ -458,25 +359,16 @@ static void InitializeSystem(void)
 
     //USBGenericOutHandle = 0;
     //USBGenericInHandle = 0;
-    //WQI = WQX = 0;
+    WQI = WQX = 0;
     
-    UserInit();
+    //replaced UserInit() call with the following two lines:
+    InitResultRx();
+    PrepareWorkStatus();
 
     //USBDeviceInit();    //usb_device.c.  Initializes USB module SFRs and firmware
                         //variables to known states.
 }//end InitializeSystem
 
-
-void UserInit(void)
-{
-    //InitLED();
-    InitTempSensor();
-    InitWorkTick();
-    //InitI2CMaster();
-    InitResultRx();
-    DetectAsics();
-
-}//end UserInit
 
 void ProcessIO(void)
 {   

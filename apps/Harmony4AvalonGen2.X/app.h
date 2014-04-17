@@ -132,7 +132,7 @@ typedef struct
 
 typedef struct
 {
-    DRV_SPI_BUFFER_HANDLE  receiveBufHandle;
+    DRV_SPI_BUFFER_HANDLE  receiveBufHandle[4];
     DRV_SPI_BUFFER_HANDLE  transmitBufHandle;
 } APP_DRV_OBJECTS;
 

@@ -49,6 +49,7 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #include "byte_manipulation.h"
 #include "sha256.h"
 #include "GenericTypeDefs.h"
+#include "condominer.h"
 
 extern DWORD DivisionOfLabor[10];
 
@@ -143,10 +144,11 @@ DRV_SPI_CLIENT_SETUP drvSPIClientREPORTSetup =
     .chipSelectBitPos = 16 // invalid pin, not used for slave receive
 };
 
-// test data
-uint8_t state1[SHA256_DIGEST_SIZE];
-uint8_t state2[SHA256_DIGEST_SIZE];
-uint8_t state3[SHA256_DIGEST_SIZE];
+// golden nonces received from Asics
+uint8_t state1[sizeof(DWORD)];
+uint8_t state2[sizeof(DWORD)];
+uint8_t state3[sizeof(DWORD)];
+uint8_t state4[sizeof(DWORD)];
 
 // bit 0*1 2 3 4*5 6 7 ... 15 16*17 18 19 20*21 22 23 24*25 26 27 28*29 30 .. 63
 //     | | | | | | | |      |  |  |  |  |  |  |  |  |  |  |  |  |  |  | reserved
@@ -276,6 +278,7 @@ void ASIC_wait_callback()
 
 void APP_Initialize ( void )
 {
+    InitializeWorkSystem();
 }
 
 // private methods
@@ -357,21 +360,22 @@ SPI_DATA_TYPE * massage_data_out( const uint8_t * rawBuf, int size, int *count)
 //
 //}
 
+uint8_t outdata[ARRANGED_SIZE_IN_BYTES];
+
 SPI_DATA_TYPE * massage_for_send( const uint8_t * rawBuf, int size, int *count)
 {
     uint8_t temp1[ARRANGED_SIZE_IN_BYTES];
     uint8_t temp2[ARRANGED_SIZE_IN_BYTES];
-    uint8_t *data = malloc(ARRANGED_SIZE_IN_BYTES); // this is freed in drv_spi_dynamic.c
 
     memcpy(temp1, rawBuf, size);
     memcpy(temp1, coded_clock_rate, 8);
     memcpy(temp1 + size, (uint8_t *)DivisionOfLabor, 4 * ASIC_COUNT);
     flip4SPI(temp2, temp1, ARRANGED_SIZE_IN_BYTES);
     // FIXME: remove call to invert_logic once hashing unit PCB is finalized
-    invert_logic((SPI_DATA_TYPE *)data, (SPI_DATA_TYPE *)temp2, ARRANGED_SIZE_IN_BYTES);
+    invert_logic((SPI_DATA_TYPE *)outdata, (SPI_DATA_TYPE *)temp2, ARRANGED_SIZE_IN_BYTES);
     if (count != NULL)
         *count = ARRANGED_SIZE_IN_BYTES;
-    return (SPI_DATA_TYPE *)data;
+    return (SPI_DATA_TYPE *)outdata;
 }
 
 SPI_DATA_TYPE * massage_data_in( const uint8_t * state, int size )
@@ -382,13 +386,70 @@ SPI_DATA_TYPE * massage_data_in( const uint8_t * state, int size )
 
 SYS_TMR_HANDLE timer_handle = NULL;
 SPI_DATA_TYPE *dataToSend;
+int asicBadOutputCount = 0;
+int tc = 0, to = 0, cc = 0;
+int j = 0;
+int seq[5] = {0, 0, 0, 0, 0};
 
 void DoneWaiting4Asics()
 {
+    tc++;
     timer_handle = SYS_TMR_HANDLE_INVALID;
     if (appObject.appState == WaitingForReport)
+    {
+        to++;
         appObject.appState = ReadReport;
-    free(dataToSend);
+        // Reset bufering mechanism. We have direct access to the actual buffers,
+        // and so we don't access the actual buffers through the buffering mechanism.
+        DRV_SPI_AbortCurrentReadAndResetBuffers(appObject.spiReportDrvHandle);
+
+        // at least the first buffer should have data
+        if (state1[0] == 0 && state1[1] == 0 && state1[2] == 0 && state1[3] == 0)
+            asicBadOutputCount++;
+    }
+}
+
+    // Event Processing Technique. Event is received when
+    // the buffer is processed.
+
+void APP_SPIBufferEventHandler( DRV_SPI_BUFFER_EVENT event,
+        DRV_SPI_BUFFER_HANDLE handle, uintptr_t context )
+{
+    cc++;
+    SYS_ASSERT((timer_handle != SYS_TMR_HANDLE_INVALID), "timeout timer invalid during buffer completion event (entry)");
+    // The context handle was set to an application specific
+    // object. It is now retrievable easily in the event handler.
+    // This is NULL.
+    //MY_APP_OBJ myAppObj = (MY_APP_OBJ *) context;
+
+    // We are only interested in the completion event.
+    // We use only four buffers. If we run out, just re-use the same buffers, one after another, in a circular buf manner.
+    if(event == DRV_SPI_BUFFER_EVENT_COMPLETE)
+    {
+        if (handle == appDrvObject.receiveBufHandle[0])
+        {
+            state2[0] = 0; state2[1] = 0; state2[2] = 0; state2[3] = 0;
+            appDrvObject.receiveBufHandle[1] = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state2, sizeof(DWORD));
+        }
+        else if (handle == appDrvObject.receiveBufHandle[1])
+        {
+            state3[0] = 0; state3[1] = 0; state3[2] = 0; state3[3] = 0;
+            appDrvObject.receiveBufHandle[2] = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state3, sizeof(DWORD));
+        }
+        else if (handle == appDrvObject.receiveBufHandle[2])
+        {
+            state4[0] = 0; state4[1] = 0; state4[2] = 0; state4[3] = 0;
+            appDrvObject.receiveBufHandle[3] = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state4, sizeof(DWORD));
+        }
+        else if (handle == appDrvObject.receiveBufHandle[3])
+        {
+            state1[0] = 0; state1[1] = 0; state1[2] = 0; state1[3] = 0;
+            appDrvObject.receiveBufHandle[0] = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state1, sizeof(DWORD));
+        }
+        // Don't free this buffer here. Free them all at the same instant in DoneWaiting4Asics above.
+        //DRV_SPI_FreeBuffer(appObject.spiReportDrvHandle, handle);
+    }
+    SYS_ASSERT((timer_handle != SYS_TMR_HANDLE_INVALID), "timeout timer invalid during buffer completion event (exit)");
 }
 
 /******************************************************************************
@@ -400,7 +461,6 @@ void DoneWaiting4Asics()
  */
 
 static int q = 0, r = 0, s = 0, t = 0;
-int i = 0;
 bool done = false;
 
 void APP_Tasks ( void )
@@ -431,6 +491,8 @@ void APP_Tasks ( void )
             // This SPI module has only one client, so we can set it up here permanently.
             _DRV_SPI_ClientHardwareSetup(appObject.spiReportDrvHandle);
 
+            DRV_SPI_BufferEventHandlerSet (appObject.spiReportDrvHandle, APP_SPIBufferEventHandler, NULL );
+
             // After initializing we set the state to "WaitingForCommand" and enable USB interrupts
             appObject.appState = WaitingForCommand; // wait for interrupt from USB
             break;
@@ -447,24 +509,39 @@ void APP_Tasks ( void )
         case PreCalculating:
             dataToSend = massage_for_send( (uint8_t *)testChips, 4 * GEN2_INPUT_WORD_COUNT, &count );
             appDrvObject.transmitBufHandle = DRV_SPI_BufferAddWrite(appObject.spiConfigDrvHandle, dataToSend, count);
-            appDrvObject.receiveBufHandle = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state1, 4 /*SHA256_DIGEST_SIZE */);
+            state1[0] = 0; state1[1] = 0; state1[2] = 0; state1[3] = 0;
+            appDrvObject.receiveBufHandle[0] = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state1, sizeof(DWORD));
 
+            SYS_ASSERT((timer_handle == SYS_TMR_HANDLE_INVALID), "Previous timeout was not triggered");
             timer_handle = SYS_TMR_CallbackSingle (timeout_in_msec, DoneWaiting4Asics);
+            SYS_ASSERT((timer_handle != SYS_TMR_HANDLE_INVALID), "Cannot setup Asic wait timeout");
             appObject.appState = WaitingForReport;
+            seq[j++] = tc;
             break;
 
         case WaitingForReport:
-            // SPI interrupt came in? If so, process it here and then read report
-            if (DRV_SPI_BufferStatus (appDrvObject.receiveBufHandle) == DRV_SPI_BUFFER_EVENT_COMPLETE)
+            // When first receive buffer is filled, free the send buffer.
+            SYS_ASSERT((timer_handle != SYS_TMR_HANDLE_INVALID), "timeout timer invalid when WaitingForReport");
+            if (DRV_SPI_BufferStatus (appDrvObject.receiveBufHandle[0]) == DRV_SPI_BUFFER_EVENT_COMPLETE)
             {
+                // If we are only interested in only one golden nonce, we disable the callback.
                 //SYS_TMR_RemoveCallback(timer_handle);
-                free(dataToSend);
+
+                // If we are only interested in the first golden nonce from the Asics, move on to the next state.
                 //appObject.appState = ReadReport;
             }
             break;
 
         case ReadReport:
-            massage_data_in( state1, RCV_BUF_SIZE_IN_BYTES );
+            SYS_ASSERT((state1[0] != 0 || state1[1] != 0 || state1[2] != 0 || state1[3] != 0), "we must get at least one report from the Asics");
+            if (state1[0] != 0 || state1[1] != 0 || state1[2] != 0 || state1[3] != 0)
+                massage_data_in( state1, RCV_BUF_SIZE_IN_BYTES );
+            if (state2[0] != 0 || state2[1] != 0 || state2[2] != 0 || state2[3] != 0)
+                massage_data_in( state2, sizeof(DWORD));
+            if (state3[0] != 0 || state3[1] != 0 || state3[2] != 0 || state3[3] != 0)
+                massage_data_in( state3, sizeof(DWORD));
+            if (state4[0] != 0 || state4[1] != 0 || state4[2] != 0 || state4[3] != 0)
+                massage_data_in( state4, sizeof(DWORD));
 
             appObject.appState = WaitingForCommand;
             break;

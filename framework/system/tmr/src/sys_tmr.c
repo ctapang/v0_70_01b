@@ -505,7 +505,7 @@ void SYS_TMR_Tasks ( SYS_MODULE_OBJ object )
                            then process the event to check if it has elapsed */
                         cbObject->elapsed++;
 
-                        if ( cbObject->elapsed == cbObject->period )
+                        if ( cbObject->elapsed >= cbObject->period )
                         {
                             /* The event is elapsed, increment the event count */
                             cbObject->elapsed = 0;
@@ -516,7 +516,7 @@ void SYS_TMR_Tasks ( SYS_MODULE_OBJ object )
                                 /* Call the corresponding event call back routine */
                                 (cbObject->callback)();
 
-                                /* De register the event it it is one shot */
+                                /* De register the event if it is one shot */
                                 SYS_TMR_CallbackDeregister (&sSysTMRQueueObjects[i]);
                             }
                             else if (SYS_TMR_CALLBACK_PERIODIC == cbObject->type)
@@ -704,16 +704,13 @@ void SYS_TMR_CallbackStop (SYS_TMR_HANDLE handle)
 
 void SYS_TMR_RemoveCallback(SYS_TMR_HANDLE handle)
 {
-    SYS_TMR_CallbackStop(handle);
-
-    QUEUE_ELEMENT_OBJECT * queueObject;
-    SYS_TMR_CALLBACK_OBJECT * object;
-
     /* Check for handle validity */
     if (SYS_TMR_HANDLE_INVALID == handle)
         return;
 
-    queueObject = &sSysTMRQueueObjects[handle];
+    SYS_TMR_CallbackStop(handle);
+
+    QUEUE_ELEMENT_OBJECT * queueObject = &sSysTMRQueueObjects[handle];
 
     SYS_TMR_CallbackDeregister(queueObject);
 }
@@ -779,8 +776,14 @@ SYS_TMR_HANDLE SYS_TMR_CallbackSingle (unsigned int period, SYS_TMR_CALLBACK cal
     /* Variable to hold the Queue elment index */
     int8_t qElementIndex = SYS_TMR_HANDLE_INVALID;
 
-    if (sIndex >= SYS_TMR_MAX_PERIODIC_EVENTS)
-        return SYS_TMR_HANDLE_INVALID;
+    // Re-use previous slot if it's not already active.
+    if (sCallbackObject[sIndex].status == SYS_TMR_CALLBACK_ACTIVE)
+    {
+        sIndex++;
+
+        if (sIndex >= SYS_TMR_MAX_PERIODIC_EVENTS)
+            return SYS_TMR_HANDLE_INVALID;
+    }
 
     /* OSAL Mutex Lock */
     if (OSAL_MUTEX_Lock(callbackSingleMutex, OSAL_WAIT_FOREVER) == OSAL_RESULT_TRUE)
@@ -803,8 +806,8 @@ SYS_TMR_HANDLE SYS_TMR_CallbackSingle (unsigned int period, SYS_TMR_CALLBACK cal
             {
                 /* Register the event */
                 qElementIndex = QUEUE_Push( &sSysTmrObject.eventQ, &sCallbackObject[sIndex] );
-                /* Event Index to be incremented */
-                sIndex++;
+                // Do NOT increment sIndex so we can re-use this slot and not run out of slots.
+                //sIndex++;
             }
         /* OSAL Mutex Unlock */
         OSAL_ASSERT( (OSAL_MUTEX_Unlock(callbackSingleMutex) == OSAL_RESULT_TRUE),

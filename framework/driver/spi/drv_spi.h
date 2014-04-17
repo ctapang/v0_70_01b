@@ -1193,6 +1193,7 @@ size_t DRV_SPI_Write ( DRV_HANDLE handle, void* buffer,
 DRV_SPI_BUFFER_HANDLE DRV_SPI_BufferAddRead ( DRV_HANDLE handle, void *rxBuffer,
                                     size_t size );
 
+void DRV_SPI_FreeBuffer( DRV_HANDLE handle, DRV_SPI_BUFFER_HANDLE buf );
 
 /***************************************************************************************
   Function:
@@ -1468,6 +1469,7 @@ void DRV_SPI_BufferEventHandlerSet (const DRV_HANDLE handle,
                     const DRV_SPI_BUFFER_EVENT_HANDLER eventHandler, 
                     const uintptr_t context );
 
+void DRV_SPI_AbortCurrentReadAndResetBuffers( const DRV_HANDLE handle);
 
 // *****************************************************************************
 /* Function:

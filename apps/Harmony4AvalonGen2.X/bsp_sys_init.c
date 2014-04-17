@@ -265,8 +265,6 @@ void BSP_Initialize(void )
 void BSP_SetVoltage(char level)
 {
     SYS_ASSERT( (level >= 0) && (level < 64), "Voltage level input invalid." );
-    if ((level < 0) || (level > 63))
-        return; // FIXME: This should be an exception
     
     char shifter = 1;
     if (shifter & level)

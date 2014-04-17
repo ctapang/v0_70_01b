@@ -683,7 +683,7 @@ void DRV_SPI_Tasks ( SYS_MODULE_OBJ object )
                     else if ( lBufferObj->transferSize <= 0 ) /* If all transmission is complete */
                     {
                         /* Hold the buffer till the completion of the operation */
-                        lBufferObj->inUse = false;
+                        //lBufferObj->inUse = false;
                         dObj->task = DRV_SPI_TASK_PROCESS_QUEUE;
 
                         _DRV_SPI_InterruptSourceDisable ( _DRV_SPI_INT_SRC_GET ( dObj->rxInterruptSource ) ) ;
@@ -1178,6 +1178,12 @@ DRV_SPI_BUFFER_HANDLE DRV_SPI_BufferAddRead ( DRV_HANDLE handle, void *rxBuffer,
     return (DRV_SPI_BUFFER_HANDLE)NULL;
 }
 
+__attribute__((section("driver")))
+void DRV_SPI_FreeBuffer( DRV_HANDLE handle, DRV_SPI_BUFFER_HANDLE buf )
+{
+    ((DRV_SPI_BUFFER_OBJECT   *)buf)->inUse = false;
+}
+
 
 //******************************************************************************
 /* Function:
@@ -1335,6 +1341,41 @@ DRV_SPI_BUFFER_EVENT DRV_SPI_BufferStatus ( DRV_SPI_BUFFER_HANDLE bufferHandle )
 
 } /* DRV_SPI_TransferStatus */
 
+__attribute__((section("driver")))
+void DRV_SPI_BufferEventHandlerSet (const DRV_HANDLE handle,
+                    const DRV_SPI_BUFFER_EVENT_HANDLER eventHandler,
+                    const uintptr_t context )
+{
+    //DRV_SPI_CLIENT_OBJ *clientObj = (DRV_SPI_CLIENT_OBJ*)handle;
+    _DRV_SPI_CLIENT_OBJ(((DRV_SPI_CLIENT_OBJ*)handle), callback) = eventHandler;
+}
+
+// When Asics timeout, we need to abort the current read buffer
+__attribute__((section("driver")))
+void DRV_SPI_AbortCurrentReadAndResetBuffers( const DRV_HANDLE handle)
+{
+    int index;
+    DRV_SPI_OBJ* dObj = _DRV_SPI_CLIENT_OBJ(((DRV_SPI_CLIENT_OBJ*)handle), driverObject);
+    DRV_SPI_BUFFER_OBJECT *lQueueObj;
+    SYS_MODULE_INDEX drvIndex = dObj->drvIndex;
+
+    _DRV_SPI_InterruptSourceDisable ( _DRV_SPI_INT_SRC_GET ( dObj->rxInterruptSource ) ) ;
+
+    for ( index=0; index<DRV_SPI_BUFFER_OBJ_SIZE;index++ )
+    {
+        lQueueObj = &gDrvSPIBufferObj [ drvIndex ][ index ];
+
+        lQueueObj->inUse = false;
+        lQueueObj->next = NULL;
+        lQueueObj->rxBuffer = NULL;
+        lQueueObj->txBuffer = NULL;
+        lQueueObj->transferSize = 0;
+        lQueueObj->status = DRV_SPI_BUFFER_EVENT_PENDING;
+    }
+
+    dObj->queueHead = NULL;
+    dObj->taskLObj = NULL;
+}
 
 // *****************************************************************************
 /* Function:
