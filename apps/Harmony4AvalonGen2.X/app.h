@@ -83,7 +83,7 @@ typedef enum
 {
     Initializing,
     WaitingForCommand,
-    PreCalculating,
+    SendWorkToAsics,
     WaitingForReport,
     ReadReport,
     Idle

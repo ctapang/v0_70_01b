@@ -332,6 +332,8 @@ uint32_t * re_arrange_words(uint32_t *data, uint32_t *a, uint32_t *e, int byteCo
     return outData;
 }
 
+uint8_t outdata[ARRANGED_SIZE_IN_BYTES];
+
 SPI_DATA_TYPE * massage_data_out( const uint8_t * rawBuf, int size, int *count)
 {
     int byteCount = 4 * GEN2_INPUT_WORD_COUNT;
@@ -339,28 +341,25 @@ SPI_DATA_TYPE * massage_data_out( const uint8_t * rawBuf, int size, int *count)
     uint32_t a[3], e[3];
     uint8_t temp[2 * SHA256_BLOCK_SIZE];
 
-    uint8_t *data = malloc(dataSize); // this is freed in drv_spi_dynamic.c
-    memset(data, 0x00, dataSize);
+    memset(outdata, 0x00, dataSize);
     SYS_ASSERT((size < dataSize), "input data size too large");
-    memcpy(data, rawBuf, size);
+    memcpy(outdata, rawBuf, size);
     
-    sha256_precalc(data, a, e, byteCount);
-    uint32_t *arranged = re_arrange_words((uint32_t *)data, a, e, byteCount);
+    sha256_precalc(outdata, a, e, byteCount);
+    uint32_t *arranged = re_arrange_words((uint32_t *)outdata, a, e, byteCount);
     flip4SPI(temp, (uint8_t *)arranged, ARRANGED_SIZE_IN_BYTES);
     free(arranged);
     // FIXME: remove call to invert_logic once hashing unit PCB is finalized
-    invert_logic((SPI_DATA_TYPE *)data, (SPI_DATA_TYPE *)temp, ARRANGED_SIZE_IN_BYTES);
+    invert_logic((SPI_DATA_TYPE *)outdata, (SPI_DATA_TYPE *)temp, ARRANGED_SIZE_IN_BYTES);
     if (count != NULL)
         *count = ARRANGED_SIZE_IN_BYTES;
-    return (SPI_DATA_TYPE *)data;
+    return (SPI_DATA_TYPE *)outdata;
 }
 
 //void SendAsicData(WORKTASK *work)
 //{
 //
 //}
-
-uint8_t outdata[ARRANGED_SIZE_IN_BYTES];
 
 SPI_DATA_TYPE * massage_for_send( const uint8_t * rawBuf, int size, int *count)
 {
@@ -497,10 +496,12 @@ void APP_SPIBufferEventHandler( DRV_SPI_BUFFER_EVENT event,
 
 static int q = 0, r = 0, s = 0, t = 0;
 bool done = false;
+BYTE id = 0;
 
 void APP_Tasks ( void )
 {
     DRV_SPI_BUFFER_OBJECT *buf;
+    DWORD *sequencedBuffer = NULL;
     int count;
     
     /* check the application state*/
@@ -536,11 +537,26 @@ void APP_Tasks ( void )
             q++;
             // USB interrupt should be enabled;
             // If a packet came in, process the command here
-            // set appState to "PreCalculating" when done analyzing command
-            appObject.appState = PreCalculating;
+
+            // test command
+            char cmd[70];
+            cmd[0] = 'W';
+            cmd[1] = id++; // work id
+            
+            // end test command
+            
+            sequencedBuffer = ProcessCmd(cmd);
+            
+            // set appState to "PreCalculating" if command is 'W'
+            if (Status.State == 'W')
+            {
+                SYS_ASSERT((sequencedBuffer != NULL), "cannot send null buffer");
+                appObject.appState = SendWorkToAsics;
+            }
             break;
 
-        case PreCalculating:
+        case SendWorkToAsics:
+            //dataToSend = massage_for_send( (uint8_t *)sequencedBuffer, 4 * GEN2_INPUT_WORD_COUNT, &count );
             dataToSend = massage_for_send( (uint8_t *)testChips, 4 * GEN2_INPUT_WORD_COUNT, &count );
             appDrvObject.transmitBufHandle = DRV_SPI_BufferAddWrite(appObject.spiConfigDrvHandle, dataToSend, count);
             state1[0] = 0; state1[1] = 0; state1[2] = 0; state1[3] = 0;
@@ -570,7 +586,11 @@ void APP_Tasks ( void )
             if (Status.State == 'R')
                 appObject.appState = WaitingForCommand;
             else if (Status.State == 'P')
-                appObject.appState = PreCalculating;
+            {
+                sequencedBuffer = AssembleWorkForAsics();
+                SYS_ASSERT((sequencedBuffer != NULL), "buffer cannot be NULL when state is 'P'");
+                appObject.appState = SendWorkToAsics;
+            }
             break;
         case ReadReport:
             // send this result back to cgminer

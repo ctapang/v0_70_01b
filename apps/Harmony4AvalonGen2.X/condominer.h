@@ -50,11 +50,13 @@ typedef struct _worktask {
     BYTE WorkID;
     DWORD MidState[8];
     DWORD Merkle[3];
+    DWORD PrecalcHashes[6];
 } WORKTASK;
 
 
-void ProcessCmd(char *cmd);
-WORKTASK *AssembleWorkForAsics(void);
+DWORD * ProcessCmd(char *cmd);
+
+DWORD *AssembleWorkForAsics(void);
 
 void PrepareWorkStatus(void);
 

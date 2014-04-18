@@ -1,6 +1,7 @@
 #include "GenericTypeDefs.h"
 #include <xc.h>
 #include "condominer.h"
+#include "app.h"
 
 #define USBGEN_EP_SIZE 1024
 //#define IN_DATA_BUFFER_ADDRESS 0x2140
@@ -42,8 +43,6 @@ INT16 Step, Error, LastError;
 DWORD NonceRanges[10];
 
 const IDENTITY ID = { 1, "Swauk1", 0xA51C };
-
-DWORD PrecalcHashes[6];
 
 /*bank2*/ DWORD send32_data; // place in same bank as latc registers!
 /*bank2*/ BYTE send32_count; // count DWORDS
@@ -93,8 +92,8 @@ void AsicPreCalc(WORKTASK *work)
         x = x | z;
         m[7-n] += y + x;
 
-        PrecalcHashes[2-n] = m[7-n];
-        PrecalcHashes[5-n] = m[3-n];
+        work->PrecalcHashes[2-n] = m[7-n];
+        work->PrecalcHashes[5-n] = m[3-n];
     }
 }
 
@@ -166,16 +165,21 @@ void SendCmdReply(char *cmd, BYTE *data, BYTE count)
     }
 }
 
-void ProcessCmd(char *cmd)
+DWORD *AssembleWorkForAsics(void);
+
+DWORD * ProcessCmd(char *cmd)
 {
+    DWORD *retVal = NULL;
+    
     // cmd is one char, dest address 1 byte, data follows
     // we already know address is ours here
     switch(cmd[0]) {
         case 'W': // queue new work
             if( Status.WorkQC < MAX_WORK_COUNT-1 ) {
-                WorkQue[ (WorkNow + Status.WorkQC++) & WORKMASK ] = *(WORKTASK *)(cmd+2);
+                WORKTASK *work = &WorkQue[ (WorkNow + Status.WorkQC++) & WORKMASK ];
+                memcpy(work, cmd + 1, GEN2_INPUT_WORD_COUNT + 1);
                 if(Status.State == 'R') {
-                    AssembleWorkForAsics();
+                    retVal = AssembleWorkForAsics();
                 }
             }
             SendCmdReply(cmd, (char *)&Status, sizeof(Status));
@@ -215,14 +219,43 @@ void ProcessCmd(char *cmd)
             break;
         }
     //LED_On();
+
+    return retVal;
 }
 
-WORKTASK *AssembleWorkForAsics(void)
+DWORD buf[GEN2_INPUT_WORD_COUNT];
+
+DWORD * ArrangeWords4TxSequence(WORKTASK * work)
+{
+    buf[0] = 0L; // for clock, to be set later
+    buf[1] = 0L; // for clock, to be set later
+    buf[2] = work->Merkle[0];
+    buf[3] = work->Merkle[1];
+    buf[4] = work->Merkle[2];
+    buf[5] = work->PrecalcHashes[1];
+    buf[6] = work->PrecalcHashes[2];
+    buf[7] = work->PrecalcHashes[3];
+    buf[8] = work->PrecalcHashes[4];
+    buf[9] = work->PrecalcHashes[5];
+    buf[10] = work->MidState[0];
+    buf[11] = work->MidState[1];
+    buf[12] = work->MidState[2];
+    buf[13] = work->MidState[3];
+    buf[14] = work->MidState[4];
+    buf[15] = work->MidState[5];
+    buf[16] = work->MidState[6];
+    buf[17] = work->MidState[7];
+    buf[18] = work->PrecalcHashes[0];
+
+    return buf;
+}
+
+DWORD *AssembleWorkForAsics(void)
 {
     AsicPreCalc(&WorkQue[WorkNow]);
     Status.WorkID = WorkQue[WorkNow].WorkID;
     //SendAsicData(&WorkQue[WorkNow]);
-    WORKTASK *retVal = &WorkQue[WorkNow];
+    DWORD *retVal = ArrangeWords4TxSequence(&WorkQue[WorkNow]);
     WorkNow = (WorkNow+1) & WORKMASK;
     Status.HashCount = 0;
     //TMR0 = HashTime;
@@ -282,6 +315,7 @@ void InitResultRx(void)
 void ProcessIO();
 
 
+// FIXME: mainProgram is unused
 int mainProgram(void)
 {   
     InitializeWorkSystem();
