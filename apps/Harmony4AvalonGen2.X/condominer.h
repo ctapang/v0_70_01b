@@ -54,9 +54,9 @@ typedef struct _worktask {
 } WORKTASK;
 
 
-DWORD * ProcessCmd(char *cmd);
+void ProcessCmd(char *cmd, DWORD *out);
 
-DWORD *AssembleWorkForAsics(void);
+void AssembleWorkForAsics(DWORD *out);
 
 void PrepareWorkStatus(void);
 

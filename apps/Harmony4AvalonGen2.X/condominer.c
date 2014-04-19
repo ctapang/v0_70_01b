@@ -165,21 +165,22 @@ void SendCmdReply(char *cmd, BYTE *data, BYTE count)
     }
 }
 
-DWORD *AssembleWorkForAsics(void);
 
-DWORD * ProcessCmd(char *cmd)
+DWORD * buf;
+
+void ProcessCmd(char *cmd, DWORD *out)
 {
-    DWORD *retVal = NULL;
-    
+    buf = out;
     // cmd is one char, dest address 1 byte, data follows
     // we already know address is ours here
     switch(cmd[0]) {
         case 'W': // queue new work
             if( Status.WorkQC < MAX_WORK_COUNT-1 ) {
                 WORKTASK *work = &WorkQue[ (WorkNow + Status.WorkQC++) & WORKMASK ];
-                memcpy(work, cmd + 1, GEN2_INPUT_WORD_COUNT + 1);
+                work->WorkID = cmd[1];
+                memcpy((BYTE *)(work->MidState), cmd + 2, 4 * GEN2_INPUT_WORD_COUNT);
                 if(Status.State == 'R') {
-                    retVal = AssembleWorkForAsics();
+                    AssembleWorkForAsics(out);
                 }
             }
             SendCmdReply(cmd, (char *)&Status, sizeof(Status));
@@ -219,13 +220,9 @@ DWORD * ProcessCmd(char *cmd)
             break;
         }
     //LED_On();
-
-    return retVal;
 }
 
-DWORD buf[GEN2_INPUT_WORD_COUNT];
-
-DWORD * ArrangeWords4TxSequence(WORKTASK * work)
+void ArrangeWords4TxSequence(WORKTASK * work)
 {
     buf[0] = 0L; // for clock, to be set later
     buf[1] = 0L; // for clock, to be set later
@@ -247,29 +244,28 @@ DWORD * ArrangeWords4TxSequence(WORKTASK * work)
     buf[17] = work->MidState[7];
     buf[18] = work->PrecalcHashes[0];
 
-    return buf;
 }
 
-DWORD *AssembleWorkForAsics(void)
+void AssembleWorkForAsics(DWORD *out)
 {
+    SYS_ASSERT((out == buf), "out buffer has changed address");
     AsicPreCalc(&WorkQue[WorkNow]);
     Status.WorkID = WorkQue[WorkNow].WorkID;
     //SendAsicData(&WorkQue[WorkNow]);
-    DWORD *retVal = ArrangeWords4TxSequence(&WorkQue[WorkNow]);
+    ArrangeWords4TxSequence(&WorkQue[WorkNow]);
     WorkNow = (WorkNow+1) & WORKMASK;
     Status.HashCount = 0;
     //TMR0 = HashTime;
     Status.State = 'W';
     Status.WorkQC--;
-    return retVal;
 }
 
 void PrepareWorkStatus(void)
 {
-    Status.ChipCount = 10;
+    Status.ChipCount = ASIC_COUNT;
 
     // pre-calc nonce range values
-    BankSize = 10;
+    BankSize = ASIC_COUNT;
     Status.MaxCount = WORK_TICKS / BankSize / 2;
 
     NonceRanges[0] = 0;
@@ -314,55 +310,6 @@ void InitResultRx(void)
 
 void ProcessIO();
 
-
-// FIXME: mainProgram is unused
-int mainProgram(void)
-{   
-    InitializeWorkSystem();
-
-    while(1)
-    {
-        #if defined(USB_INTERRUPT)
-            //if(USB_BUS_SENSE && (USBGetDeviceState() == DETACHED_STATE))
-            //{
-                USBDeviceAttach();              
-            //}
-        #endif
-
-        /*if(USBDeviceState < CONFIGURED_STATE) {
-            if(!I2CState.Slave)
-                InitI2CSlave();
-            }
-        else if(!I2CState.Master)
-            InitI2CMaster();*/
-
-        #if defined(USB_POLLING)
-    // Check bus status and service USB interrupts.
-        USBDeviceTasks(); // Interrupt or polling method.  If using polling, must call
-                          // this function periodically.  This function will take care
-                          // of processing and responding to SETUP transactions 
-                          // (such as during the enumeration process when you first
-                          // plug in).  USB hosts require that USB devices should accept
-                          // and process SETUP packets in a timely fashion.  Therefore,
-                          // when using polling, this function should be called 
-                          // regularly (such as once every 1.8ms or faster** [see 
-                          // inline code comments in usb_device.c for explanation when
-                          // "or faster" applies])  In most cases, the USBDeviceTasks() 
-                          // function does not take very long to execute (ex: <100 
-                          // instruction cycles) before it returns.
-        #endif
-        
-        //if(TMR0IF)
-        //    WorkTick();
-
-        if(Status.State == 'P'){
-            AssembleWorkForAsics();
-        }
-                      
-        ProcessIO();
-              
-    }//end while
-}//end main
 
 void InitializeWorkSystem(void)
 {

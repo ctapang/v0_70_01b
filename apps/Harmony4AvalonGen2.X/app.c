@@ -501,7 +501,7 @@ BYTE id = 0;
 void APP_Tasks ( void )
 {
     DRV_SPI_BUFFER_OBJECT *buf;
-    DWORD *sequencedBuffer = NULL;
+    DWORD sequencedBuffer[GEN2_INPUT_WORD_COUNT];
     int count;
     
     /* check the application state*/
@@ -542,22 +542,28 @@ void APP_Tasks ( void )
             char cmd[70];
             cmd[0] = 'W';
             cmd[1] = id++; // work id
-            
+            memcpy(cmd + 2, (BYTE *)testChips + 40, 32);
+            memcpy(cmd + 34, (BYTE *)testChips + 8, 12);
             // end test command
             
-            sequencedBuffer = ProcessCmd(cmd);
+            ProcessCmd(cmd, sequencedBuffer);
             
-            // set appState to "PreCalculating" if command is 'W'
+            // set appState to "SendWorkToAsics" if command is 'W'
             if (Status.State == 'W')
             {
-                SYS_ASSERT((sequencedBuffer != NULL), "cannot send null buffer");
+                // test ProcessCmd
+                int i;
+                for(i = 2; i < (GEN2_INPUT_WORD_COUNT - 2); i++)
+                    SYS_ASSERT((testChips[i] == sequencedBuffer[i]), "bad input");
+                // end test ProcessCmd
+                
                 appObject.appState = SendWorkToAsics;
             }
             break;
 
         case SendWorkToAsics:
-            //dataToSend = massage_for_send( (uint8_t *)sequencedBuffer, 4 * GEN2_INPUT_WORD_COUNT, &count );
-            dataToSend = massage_for_send( (uint8_t *)testChips, 4 * GEN2_INPUT_WORD_COUNT, &count );
+            dataToSend = massage_for_send( (uint8_t *)sequencedBuffer, 4 * GEN2_INPUT_WORD_COUNT, &count );
+            //dataToSend = massage_for_send( (uint8_t *)testChips, 4 * GEN2_INPUT_WORD_COUNT, &count );
             appDrvObject.transmitBufHandle = DRV_SPI_BufferAddWrite(appObject.spiConfigDrvHandle, dataToSend, count);
             state1[0] = 0; state1[1] = 0; state1[2] = 0; state1[3] = 0;
             appDrvObject.receiveBufHandle[0] = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state1, sizeof(DWORD));
@@ -587,14 +593,14 @@ void APP_Tasks ( void )
                 appObject.appState = WaitingForCommand;
             else if (Status.State == 'P')
             {
-                sequencedBuffer = AssembleWorkForAsics();
-                SYS_ASSERT((sequencedBuffer != NULL), "buffer cannot be NULL when state is 'P'");
+                AssembleWorkForAsics(sequencedBuffer);
+                SYS_ASSERT((sequencedBuffer[2] != 0L), "first merkle cannot be zero when state is 'P'");
                 appObject.appState = SendWorkToAsics;
             }
             break;
         case ReadReport:
             // send this result back to cgminer
-            ResultRx(indata);
+            ResultRx(indata - 0x180);
 
             appObject.appState = WaitingForReport;
             break;
