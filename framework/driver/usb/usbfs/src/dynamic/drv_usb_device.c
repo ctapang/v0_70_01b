@@ -44,8 +44,7 @@ SUBSTITUTE  GOODS,  TECHNOLOGY,  SERVICES,  OR  ANY  CLAIMS  BY  THIRD   PARTIES
 *******************************************************************************/
 //DOM-IGNORE-END
 
-//#include "driver/usb/drv_usb.h"
-#include "drv_usb_local.h"
+#include "driver/usb/usbfs/src/drv_usb_local.h"
 
 #define DRIVER __attribute__((section("Driver")))
 

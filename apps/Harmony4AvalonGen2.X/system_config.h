@@ -101,6 +101,29 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #define DRV_USB_INTERRUPT_SOURCE    INT_SOURCE_USB_1
 
 
+// *****************************************************************************
+// *****************************************************************************
+// Section: Generic USB Function Driver Configuration
+// *****************************************************************************
+// *****************************************************************************
+
+#define USB_DEVICE_GENERIC_INDEX_0       0
+
+/* Maximum endpoints used by generic driver.
+ The value given here must match the information given in configuration
+ descriptor */
+#define USB_DEVICE_GENERIC_MAX_ENDPOINTS 1
+
+/* Maximum IRPs reserved per endpoint. Increase this value
+  if application encounters queue full for functions
+  USB_DEVICE_GENERIC_EndpointRead and USB_DEVICE_GENERIC_EndpointWrite */
+#define USB_DEVICE_GENERIC_MAX_QUEUE     1
+
+/* Maximum instances */
+#define USB_DEVICE_GENERIC_MAX_INSTANCES 1
+
+
+
 // WatchDog timer
 
 #define WDT_PLIB_ID    			WDT_ID_1

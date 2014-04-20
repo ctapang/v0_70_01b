@@ -297,69 +297,9 @@ void invert_logic(SPI_DATA_TYPE *output, SPI_DATA_TYPE *input, int size)
     }
 }
 
-uint32_t * re_arrange_words(uint32_t *data, uint32_t *a, uint32_t *e, int byteCount)
-{
-    int wordCount = byteCount / sizeof(SPI_DATA_TYPE);
-    uint32_t *outData = (uint32_t *)malloc(ARRANGED_SIZE_IN_BYTES);
-    uint32_t *divlabor = (uint32_t *)DivisionOfLabor;
-
-    memcpy((uint8_t*)outData, set_clock_highest, 8);
-
-    // put data tail in reverse order
-    int i, j;
-    for (i = 2, j = 0; j < 3; i++, j++)
-        outData[i] = data[j];
-
-    outData[5] = a[1];
-    outData[6] = a[0];
-    outData[7] = e[2];
-    outData[8] = e[1];
-    outData[9] = e[0];
-
-    for (i = 10, j = 3; i < 18; i++, j++ )
-        outData[i] = data[j];
-
-    outData[i] = a[2];
-
-    // initial nonces, 10 words
-    for (i = 19, j = 0; i < 29; i++, j++)
-    {
-        outData[i] = divlabor[j];
-    }
-
-    // 29 words total = 116 bytes = 928 bits
-
-    return outData;
-}
 
 uint8_t outdata[ARRANGED_SIZE_IN_BYTES];
 
-SPI_DATA_TYPE * massage_data_out( const uint8_t * rawBuf, int size, int *count)
-{
-    int byteCount = 4 * GEN2_INPUT_WORD_COUNT;
-    int dataSize = 2 * SHA256_BLOCK_SIZE;
-    uint32_t a[3], e[3];
-    uint8_t temp[2 * SHA256_BLOCK_SIZE];
-
-    memset(outdata, 0x00, dataSize);
-    SYS_ASSERT((size < dataSize), "input data size too large");
-    memcpy(outdata, rawBuf, size);
-    
-    sha256_precalc(outdata, a, e, byteCount);
-    uint32_t *arranged = re_arrange_words((uint32_t *)outdata, a, e, byteCount);
-    flip4SPI(temp, (uint8_t *)arranged, ARRANGED_SIZE_IN_BYTES);
-    free(arranged);
-    // FIXME: remove call to invert_logic once hashing unit PCB is finalized
-    invert_logic((SPI_DATA_TYPE *)outdata, (SPI_DATA_TYPE *)temp, ARRANGED_SIZE_IN_BYTES);
-    if (count != NULL)
-        *count = ARRANGED_SIZE_IN_BYTES;
-    return (SPI_DATA_TYPE *)outdata;
-}
-
-//void SendAsicData(WORKTASK *work)
-//{
-//
-//}
 
 SPI_DATA_TYPE * massage_for_send( const uint8_t * rawBuf, int size, int *count)
 {

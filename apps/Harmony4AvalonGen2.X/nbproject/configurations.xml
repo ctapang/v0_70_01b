@@ -58,8 +58,8 @@
           </logicalFolder>
           <logicalFolder name="fusb" displayName="usb" projectFiles="true">
             <logicalFolder name="f1" displayName="src" projectFiles="true">
-              <itemPath>drv_usb_local.h</itemPath>
-              <itemPath>drv_usb_variant_mapping.h</itemPath>
+              <itemPath>../../framework/driver/usb/usbfs/src/drv_usb_local.h</itemPath>
+              <itemPath>../../framework/driver/usb/usbfs/src/drv_usb_variant_mapping.h</itemPath>
             </logicalFolder>
             <itemPath>..\..\..\v0_70_01b\framework\driver\usb\drv_usb.h</itemPath>
           </logicalFolder>
@@ -227,8 +227,7 @@
           <itemPath>..\..\..\v0_70_01b\framework\usb\usb_chapter_9.h</itemPath>
           <itemPath>..\..\..\v0_70_01b\framework\usb\usb_common.h</itemPath>
           <itemPath>..\..\..\v0_70_01b\framework\usb\usb_device.h</itemPath>
-          <itemPath>..\..\..\v0_70_01b\framework\usb\src\usb_device_cdc_local.h</itemPath>
-          <itemPath>..\..\..\v0_70_01b\framework\usb\usb_device_cdc.h</itemPath>
+          <itemPath>../../framework/usb/usb_device_generic.h</itemPath>
         </logicalFolder>
       </logicalFolder>
       <itemPath>system.h</itemPath>
@@ -341,10 +340,9 @@
           <logicalFolder name="fsrc" displayName="src" projectFiles="true">
             <logicalFolder name="fdynamic" displayName="dynamic" projectFiles="true">
               <itemPath>..\..\..\v0_70_01b\framework\usb\src\dynamic\usb_device.c</itemPath>
-              <itemPath>..\..\..\v0_70_01b\framework\usb\src\dynamic\usb_device_cdc.c</itemPath>
-              <itemPath>..\..\..\v0_70_01b\framework\usb\src\dynamic\usb_device_cdc_acm.c</itemPath>
             </logicalFolder>
           </logicalFolder>
+          <itemPath>../../framework/usb/src/dynamic/usb_device_generic.c</itemPath>
         </logicalFolder>
       </logicalFolder>
       <itemPath>exceptions.c</itemPath>
@@ -365,6 +363,7 @@
     <Elem>../../framework/driver</Elem>
     <Elem>../../framework/peripheral/adc/processor</Elem>
     <Elem>../../framework/system/clk</Elem>
+    <Elem>../../framework/usb</Elem>
   </sourceRootList>
   <projectmakefile>Makefile</projectmakefile>
   <confs>
@@ -1607,7 +1606,7 @@
         <property key="enable-unroll-loops" value="false"/>
         <property key="exclude-floating-point" value="false"/>
         <property key="extra-include-directories"
-                  value="..\..\framework\system;..\..\framework;."/>
+                  value="..\..\framework\system;..\..\framework;.;..\..\framework\usb"/>
         <property key="generate-16-bit-code" value="false"/>
         <property key="generate-micro-compressed-code" value="false"/>
         <property key="isolate-each-function" value="false"/>
@@ -1724,7 +1723,6 @@
         <property key="ToolFirmwareOption.UseLatestFirmware" value="true"/>
         <property key="UART1" value="true"/>
         <property key="UART2" value="true"/>
-        <property key="firmware.download.all" value="false"/>
         <property key="hwtoolclock.frcindebug" value="false"/>
         <property key="memories.aux" value="false"/>
         <property key="memories.bootflash" value="true"/>

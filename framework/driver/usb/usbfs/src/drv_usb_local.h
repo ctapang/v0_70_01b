@@ -459,6 +459,8 @@ DRV_USB_GROUP;
  * Local functions.
  *************************************/
 
+#define _DRV_USB_DEVICE_ENDPOINT_ALL 17
+
 void _DRV_USB_DEVICE_Initialize(DRV_USB_OBJ * drvObj, SYS_MODULE_INDEX index);
 void _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver);
 void _DRV_USB_HOST_Initialize(DRV_USB_OBJ * drvObj, SYS_MODULE_INDEX index);

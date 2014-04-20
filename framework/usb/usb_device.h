@@ -60,7 +60,7 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 
 #include "../system/common/sys_module.h"
 #include "../system/common/sys_common.h"
-#include "../../apps/Harmony4AvalonGen2.X/drv_usb_local.h"
+#include "driver/usb/usbfs/src/drv_usb_local.h"
 #include "../driver/driver_common.h"
 #include "../usb/usb_common.h"
 #include "../usb/usb_chapter_9.h"
@@ -705,7 +705,7 @@ typedef struct
     USB device layer*/
     USB_DEVICE_FUNCTION_DRIVER*  driver;
     
-}USB_DEVICE_FUNC_REGISTRATION_TABLE;
+} USB_DEVICE_FUNC_REGISTRATION_TABLE;
 
 
 // *****************************************************************************

@@ -37,7 +37,7 @@
 #include "peripheral/spi/plib_spi.h"
 #include "peripheral/usb/plib_usb.h"
 #include "driver/spi/src/drv_spi_local.h"
-#include "drv_usb_local.h"
+#include "driver/usb/usbfs/src/drv_usb_local.h"
 
 /******************************************************************************/
 

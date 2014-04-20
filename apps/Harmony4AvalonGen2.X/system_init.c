@@ -95,6 +95,8 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 // *****************************************************************************
 // *****************************************************************************
 
+uint8_t __attribute__((aligned(512))) endpointTable[USB_DEVICE_ENDPOINT_TABLE_SIZE];
+
 
 // *****************************************************************************
 /* USB Device layer Initialization Data
@@ -109,32 +111,32 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
     None.
 */
 
-//USB_DEVICE_INIT usbDevInitData =
-//{
-//    /* System module initialization */
-//    {SYS_MODULE_POWER_RUN_FULL},
-//
-//    /* USB device driver client index*/
-//    DRV_USB_INDEX_0,
-//
-//    false, // never stop USB
-//
-//    false, // never suspend USB
-//
-//    INT_SOURCE_USB_1,  // interrupt source (specific to PIC32MX250F128B)
-//
-//    (void *)NULL,   // end point table
-//
-//    USB_DEVICE_INSTANCES_NUMBER,    // registered func count
-//
-//    /* Function driver table registered to this instance of the USB device layer*/
-//    (USB_DEVICE_FUNC_REGISTRATION_TABLE*)funcRegistrationTable,
-//
-//    /* Pointer to USB Descriptor structure */
-//    (USB_MASTER_DESCRIPTOR*)&usbMasterDescriptor,
-//
-//    USB_SPEED_HIGH
-//};
+USB_DEVICE_INIT usbDevInitData =
+{
+    /* System module initialization */
+    {SYS_MODULE_POWER_RUN_FULL},
+
+    /* USB device driver client index*/
+    USB_ID_1, //DRV_USB_INDEX_0,
+
+    false, // never stop USB
+
+    false, // never suspend USB
+
+    INT_SOURCE_USB_1,  // interrupt source (specific to PIC32MX250F128B)
+
+    endpointTable,   // end point table
+
+    1,    // registered func count
+
+    /* Function driver table registered to this instance of the USB device layer*/
+    (USB_DEVICE_FUNC_REGISTRATION_TABLE*)funcRegistrationTable,
+
+    /* Pointer to USB Descriptor structure */
+    (USB_MASTER_DESCRIPTOR*)&usbMasterDescriptor,
+
+    USB_SPEED_HIGH
+};
 
 
 // *****************************************************************************
@@ -174,7 +176,7 @@ DRV_USB_INIT usbCDInitData =
     .operationMode = USB_OPMODE_DEVICE,
 
     /* Endpoint Descriptor Table buffer */
-    .endpointTable = (void*)NULL
+    .endpointTable = endpointTable
 };
 
 SYS_MODULE_OBJ TimerObjectHandle;

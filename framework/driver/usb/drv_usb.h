@@ -1365,6 +1365,6 @@ bool DRV_USB_HOST_OperationIsEnabled(DRV_HANDLE hClient);
     static implementations, depending on build mode.
 */
 
-#include "drv_usb_variant_mapping.h"
+#include "driver/usb/usbfs/src/drv_usb_variant_mapping.h"
 
 #endif

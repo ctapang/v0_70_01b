@@ -53,6 +53,9 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #include <stdlib.h>
 #include "system_config.h"
 #include "bsp_config.h"
+#include "usb_device.h"
+#include "usb_device_generic.h"
+
 
 
 // *****************************************************************************
@@ -226,9 +229,22 @@ void SYS_Tasks ( void );
 // *****************************************************************************
 // *****************************************************************************
 
-extern APP_DRV_OBJECTS appDrvObject;
+/************************************************************
+ * USB Devic Layer Function Driver Registration Table.
+ ************************************************************/
+extern const USB_DEVICE_FUNC_REGISTRATION_TABLE funcRegistrationTable[1];
 
+/************************************************************
+ * Application Data.
+ ************************************************************/
+extern APP_DRV_OBJECTS appDrvObject;
 extern APP_DATA appObject;
+
+/************************************************************
+ * USB Device Layer Master Descriptor Table.
+ ************************************************************/
+extern const USB_MASTER_DESCRIPTOR usbMasterDescriptor;
+
 
 #endif /* _APP_HEADER_H */
 

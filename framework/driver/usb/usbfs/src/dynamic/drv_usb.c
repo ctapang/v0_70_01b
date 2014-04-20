@@ -50,7 +50,7 @@ SUBSTITUTE  GOODS,  TECHNOLOGY,  SERVICES,  OR  ANY  CLAIMS  BY  THIRD   PARTIES
 // *****************************************************************************
 // *****************************************************************************
 
-#include "drv_usb_local.h"
+#include "driver/usb/usbfs/src/drv_usb_local.h"
 
 DRV_USB_GROUP gDrvUSBGroup[DRV_USB_INSTANCES_NUMBER];
 

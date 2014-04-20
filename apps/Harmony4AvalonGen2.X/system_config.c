@@ -1,20 +1,20 @@
 /*******************************************************************************
- CDC Basic Demo Configuration file.
+  USB Descriptors and class specific data for this Device
 
   Company:
-    Microchip Technology Incorported
+    Microchip Technology Inc.
 
   File Name:
     sys_config.c
 
   Summary:
-    Top-level configuration file for the CDC Basic demo application for
-    the PIC32 Starter kit
+    USB Descriptors and class specific data for this Device
 
   Description:
-    This file contains the USB descriptors and CDC calss specific data that
+    This file contains the USB descriptors and Win USB calss specific data that
 	needs to be provided by the application.
 *******************************************************************************/
+
 // DOM-IGNORE-BEGIN
 /*******************************************************************************
 Copyright (c) 2012 released Microchip Technology Inc.  All rights reserved.
@@ -46,46 +46,163 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 // Section: Included Files
 // *****************************************************************************
 // *****************************************************************************
- 
+
 #include "app.h"
 
+#define MY_VID 0x04D8
+#define MY_PID 0x0053
 
-// *****************************************************************************
-// *****************************************************************************
-// Section: File Scope or Global Constants
-// *****************************************************************************
-// *****************************************************************************
+/*Generic USB */
+#define GEN_USB_EP 		1   // Endpoint number
+
+/* Device Descriptor */
+const USB_DEVICE_DESCRIPTOR device_dsc=
+{
+    0x12,                   // Size of this descriptor in bytes
+    USB_DESCRIPTOR_DEVICE,  // DEVICE descriptor type
+    0x0200,                 // USB Spec Release Number in BCD format
+    0x00,                   // Class Code
+    0x00,                   // Subclass code
+    0x00,                   // Protocol code
+    USB_DEVICE_EP0_BUFFER_SIZE,          // Max packet size for EP0, see usb_config.h
+    MY_VID,                 // Vendor ID: 0x04D8 is Microchip's Vendor ID
+    MY_PID,                 // Product ID: 0x0053
+    0x0000,                 // Device release number in BCD format
+    0x01,                   // Manufacturer string index
+    0x02,                   // Product string index
+    0x00,                   // Device serial number string index
+    0x01                   // Number of possible configurations
+};
+
+/* Configuration 1 Descriptor */
+const uint8_t configDescriptor1[]={
+    /* Configuration Descriptor */
+    0x09,//sizeof(USB_CFG_DSC),    // Size of this descriptor in bytes
+    USB_DESCRIPTOR_CONFIGURATION,                // CONFIGURATION descriptor type
+    0x20,0x00,            // Total length of data for this cfg
+    1,                      // Number of interfaces in this cfg
+    1,                      // Index value of this configuration
+    0,                      // Configuration string index
+    USB_ATTRIBUTE_DEFAULT | USB_ATTRIBUTE_SELF_POWERED,               // Attributes, see usb_device.h
+    50,                     // Max power consumption (2X mA)
+
+    /* Interface Descriptor */
+    0x09,//sizeof(USB_INTF_DSC),   // Size of this descriptor in bytes
+    USB_DESCRIPTOR_INTERFACE,               // INTERFACE descriptor type
+    0,                      // Interface Number
+    0,                      // Alternate Setting Number
+    2,                      // Number of endpoints in this intf
+    0xFF,                   // Class code
+    0xFF,                   // Subclass code
+    0xFF,                   // Protocol code
+    0,                      // Interface string index
+
+    /* Endpoint Descriptor */
+    0x07,                           /*sizeof(USB_EP_DSC)*/
+    USB_DESCRIPTOR_ENDPOINT,        //Endpoint Descriptor
+    GEN_USB_EP|USB_EP_DIRECTION_OUT,    //EndpointAddress
+    USB_TRANSFER_TYPE_BULK,             //Attributes
+    0x40,0x00,            //size
+    1,                              //Interval
+
+    0x07,                           /*sizeof(USB_EP_DSC)*/
+    USB_DESCRIPTOR_ENDPOINT,        //Endpoint Descriptor
+    GEN_USB_EP|USB_EP_DIRECTION_IN,    //EndpointAddress
+    USB_TRANSFER_TYPE_BULK,             //Attributes
+    0x40,0x00,            //size
+    1                               //Interval
+};
 
 
-// *****************************************************************************
-/* Global USB Device function registration structure
+//Language code string descriptor
+const struct{uint8_t bLength;uint8_t bDscType;uint16_t string[1];}sd000={
+sizeof(sd000),USB_DESCRIPTOR_STRING,{0x0409}};
 
-  Summary:
-    A function driver has to be registered with the USB device layer
-    using this structure.
+//Manufacturer string descriptor
+const struct{uint8_t bLength;uint8_t bDscType;uint16_t string[25];}sd001={
+sizeof(sd001),USB_DESCRIPTOR_STRING,
+{'M','i','c','r','o','c','h','i','p',' ',
+'T','e','c','h','n','o','l','o','g','y',' ','I','n','c','.'
+}};
 
-  Description:
+//Product string descriptor
+const struct{uint8_t bLength;uint8_t bDscType;uint16_t string[25];}sd002={
+sizeof(sd002),USB_DESCRIPTOR_STRING,
+{'S','i','m','p','l','e',' ','W','i','n','U','S','B',
+' ','D','e','v','i','c','e',' ','D','e','m','o'}};
+
+//Array of configuration descriptors
+const uint8_t *const USB_CD_Ptr[]=
+{
+    (const uint8_t *const)&configDescriptor1
+};
+
+//Array of string descriptors
+const uint8_t *const USB_SD_Ptr[]=
+{
+    (const uint8_t *const)&sd000,
+    (const uint8_t *const)&sd001,
+    (const uint8_t *const)&sd002
+};
+
+//Array of full speed config descriptors
+const uint8_t *const fullSpeedConfigDescSet[] =
+{
+    (const uint8_t *const)&configDescriptor1[0]
+};
 
 
-  Remarks:
+const USB_MASTER_DESCRIPTOR usbMasterDescriptor =
+{
+    /* Full speed descriptor */
+    (uint8_t *)&device_dsc,
 
- */
+    /* Total number of full speed configurations available */
+    1,
+
+    /* Pointer to array of full speed configurations descriptors*/
+    (USB_DEVICE_CONFIG_DESCS_PTR)&fullSpeedConfigDescSet[0],
+
+    /* High speed device desc is not supported*/
+    NULL,
+
+    /*Total number of high speed configurations available */
+    0,
+
+    /* Pointer to array of high speed configurations descriptors. Not supported*/
+    NULL,
+
+    /* Total number of string descriptors available */
+    3,
+
+    /* Pointer to array of string descriptors */
+    (USB_DEVICE_STRING_DESCS_PTR)USB_SD_Ptr,
+
+    /* Pointer to full speed dev qualifier. Not supported */
+    NULL,
+
+    /* Pointer to high speed dev qualifier. Not supported */
+    NULL,
+
+};
 
 
-    
 
-// *****************************************************************************
-/* Global USB Descriptor Structure
+// Used by the device layer.
+const USB_DEVICE_FUNC_REGISTRATION_TABLE funcRegistrationTable[1] =
+{
+   
+    {
+            USB_SPEED_FULL, // Speed.
+            1,              // Configuration value
+            0,              // Interface number
+            1,              // Number of interfaces
+            USB_DEVICE_GENERIC_INDEX_0,  // Instance index
+            NULL,               // Init structure is null
+            &genFuncDriver      // Generic driver
+    }
 
-  Summary:
-    Global USB descriptor structure containing pointers to standard USB
-    descriptor structures.
+};
 
-  Description:
-
-
-  Remarks:
-
-*/
 
 
