@@ -166,11 +166,8 @@ void SendCmdReply(char *cmd, BYTE *data, BYTE count)
 }
 
 
-DWORD * buf;
-
-void ProcessCmd(char *cmd, DWORD *out)
+void ProcessCmd(char *cmd)
 {
-    buf = out;
     // cmd is one char, dest address 1 byte, data follows
     // we already know address is ours here
     switch(cmd[0]) {
@@ -180,7 +177,7 @@ void ProcessCmd(char *cmd, DWORD *out)
                 work->WorkID = cmd[1];
                 memcpy((BYTE *)(work->MidState), cmd + 2, 4 * GEN2_INPUT_WORD_COUNT);
                 if(Status.State == 'R') {
-                    AssembleWorkForAsics(out);
+                    Status.State = 'P'; // AssembleWorkForAsics(out);
                 }
             }
             SendCmdReply(cmd, (char *)&Status, sizeof(Status));
@@ -222,7 +219,7 @@ void ProcessCmd(char *cmd, DWORD *out)
     //LED_On();
 }
 
-void ArrangeWords4TxSequence(WORKTASK * work)
+void ArrangeWords4TxSequence(WORKTASK * work, DWORD * buf)
 {
     buf[0] = 0L; // for clock, to be set later
     buf[1] = 0L; // for clock, to be set later
@@ -252,12 +249,14 @@ void AssembleWorkForAsics(DWORD *out)
     AsicPreCalc(&WorkQue[WorkNow]);
     Status.WorkID = WorkQue[WorkNow].WorkID;
     //SendAsicData(&WorkQue[WorkNow]);
-    ArrangeWords4TxSequence(&WorkQue[WorkNow]);
+    ArrangeWords4TxSequence(&WorkQue[WorkNow], out);
     WorkNow = (WorkNow+1) & WORKMASK;
     Status.HashCount = 0;
     //TMR0 = HashTime;
-    Status.State = 'W';
+    //Status.State = 'W';
     Status.WorkQC--;
+    if (Status.WorkQC == 0)
+        Status.State = 'R';
 }
 
 void PrepareWorkStatus(void)

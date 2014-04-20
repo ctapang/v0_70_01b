@@ -85,6 +85,7 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 typedef enum
 {
     Initializing,
+    WaitingForUSBConfig,
     WaitingForCommand,
     SendWorkToAsics,
     WaitingForReport,

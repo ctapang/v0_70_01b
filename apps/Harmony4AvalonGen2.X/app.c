@@ -265,6 +265,8 @@ void Set_Clock_Rate(DWORD freqInMHz)
 // Section: Application Callback Routines
 // *****************************************************************************
 // *****************************************************************************
+
+// An Report has arrived from the Asics.
 void ASIC_wait_callback()
 {
     appObject.appState = ReadReport;
@@ -288,6 +290,9 @@ void ASIC_wait_callback()
 void APP_Initialize ( void )
 {
     InitializeWorkSystem();
+
+    appObject.epDataReadPending = false ;
+    appObject.epDataWritePending = false;
 }
 
 // private methods
@@ -477,34 +482,38 @@ void APP_Tasks ( void )
             _DRV_SPI_ClientHardwareSetup(appObject.spiReportDrvHandle);
 
             DRV_SPI_BufferEventHandlerSet (appObject.spiReportDrvHandle, APP_SPIBufferEventHandler, NULL );
+            
+            appObject.appState = WaitingForUSBConfig;
 
-            // After initializing we set the state to "WaitingForCommand" and enable USB interrupts
-            appObject.appState = WaitingForCommand; // wait for interrupt from USB
+            break;
+
+        case WaitingForUSBConfig:
+
+            if (appObject.deviceIsConfigured)
+            {
+                appObject.epDataReadPending = true ;
+
+                /* Place a new read request. */
+                USB_DEVICE_GENERIC_EndpointRead ( USB_DEVICE_GENERIC_INDEX_0,
+                                                   &appObject.readTranferHandle,
+                                                    appObject.endpointRx,
+                                                    &appObject.receivedDataBuffer[0],
+                                                    sizeof(appObject.receivedDataBuffer) );
+
+                // After initializing we set the state to "WaitingForCommand" and enable USB interrupts
+                appObject.appState = WaitingForCommand; // wait for interrupt from USB
+            }
             break;
 
         case WaitingForCommand:
             q++;
             // USB interrupt should be enabled;
-            // If a packet came in, process the command here
+            // If a packet came in from cgminer for the Asic chips, we get out of this state.
 
-            // test command
-            char cmd[70];
-            cmd[0] = 'W';
-            cmd[1] = id++; // work id
-            memcpy(cmd + 2, (BYTE *)testChips + 40, 32);
-            memcpy(cmd + 34, (BYTE *)testChips + 8, 12);
-            // end test command
-            
-            ProcessCmd(cmd, sequencedBuffer);
-            
             // set appState to "SendWorkToAsics" if command is 'W'
-            if (Status.State == 'W')
+            if (Status.State == 'P')
             {
-                // test ProcessCmd
-                int i;
-                for(i = 2; i < (GEN2_INPUT_WORD_COUNT - 2); i++)
-                    SYS_ASSERT((testChips[i] == sequencedBuffer[i]), "bad input");
-                // end test ProcessCmd
+                AssembleWorkForAsics(sequencedBuffer);
                 
                 appObject.appState = SendWorkToAsics;
             }
@@ -538,14 +547,8 @@ void APP_Tasks ( void )
             }
 
             // When work is DONE (timeout occurred), get next work item.
-            if (Status.State == 'R')
+            if (Status.State == 'R' || Status.State == 'P')
                 appObject.appState = WaitingForCommand;
-            else if (Status.State == 'P')
-            {
-                AssembleWorkForAsics(sequencedBuffer);
-                SYS_ASSERT((sequencedBuffer[2] != 0L), "first merkle cannot be zero when state is 'P'");
-                appObject.appState = SendWorkToAsics;
-            }
             break;
         case ReadReport:
             // send this result back to cgminer
@@ -604,6 +607,9 @@ void APP_USBDeviceGenericEventHandler ( USB_DEVICE_GENERIC_INDEX iGEN,
 
         case USB_DEVICE_GENERIC_EVENT_ENDPOINT_READ_COMPLETE:
             appObject.epDataReadPending = false;
+
+            // execute the command from cgminer
+            ProcessCmd(appObject.receivedDataBuffer);
             break;
 
         default:
