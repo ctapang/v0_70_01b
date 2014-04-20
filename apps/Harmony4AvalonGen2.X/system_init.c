@@ -135,7 +135,7 @@ USB_DEVICE_INIT usbDevInitData =
     /* Pointer to USB Descriptor structure */
     (USB_MASTER_DESCRIPTOR*)&usbMasterDescriptor,
 
-    USB_SPEED_HIGH
+    USB_SPEED_FULL
 };
 
 
@@ -276,6 +276,29 @@ void TimerHandler();
 
 extern APP_DATA appObject;
 
+void USB_Init()
+{
+    SYS_INT_VectorPrioritySet(INT_VECTOR_USB, INT_PRIORITY_LEVEL2);
+    SYS_INT_VectorSubprioritySet(INT_VECTOR_USB, INT_SUBPRIORITY_LEVEL2);
+
+    //Initialize the USB device layer (this also calls DRV_USB_Initialize)
+    USB_DEVICE_Initialize(  0, (SYS_MODULE_INIT *)&usbCDInitData  );
+
+    /* check if the object returned by the device layer is valid */
+    SYS_ASSERT((SYS_MODULE_OBJ_INVALID != appDrvObject.usbDevObject), "Invalid USB DEVICE object");
+
+    /* open an instance of the device layer */
+    appObject.usbDevHandle = USB_DEVICE_Open( USB_DEVICE_INDEX_0, DRV_IO_INTENT_READWRITE );
+
+    /* Register a callback with device layer to get event notification (for end point 0) */
+    USB_DEVICE_EventCallBackSet(appObject.usbDevHandle, &APP_USBDeviceEventHandler);
+
+    USB_DEVICE_GENERIC_EventHandlerSet(USB_DEVICE_GENERIC_INDEX_0,
+            &APP_USBDeviceGenericEventHandler, (uintptr_t) NULL);
+
+    USB_DEVICE_Attach(appObject.usbDevHandle);
+}
+
 void SYS_Initialize ( void* data )
 {
     /*Refer to the C32 peripheral library documentation for more
@@ -290,8 +313,7 @@ void SYS_Initialize ( void* data )
 
     SYSTEMConfigPerformance(SYS_FREQUENCY);
 
-    //Initialize the USB device layer (this also calls DRV_USB_Initialize)
-    USB_DEVICE_Initialize(  0, (SYS_MODULE_INIT *)&usbCDInitData  );
+    USB_Init();
 
     //Interrupt
     SYS_INT_Initialize();

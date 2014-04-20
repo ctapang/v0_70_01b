@@ -110,11 +110,51 @@ typedef enum
 typedef struct
 {
     APP_STATES appState;
+
+    // SPI stuff
     SYS_MODULE_OBJ spiReportModule;
     DRV_HANDLE  spiReportDrvHandle;
     SYS_MODULE_OBJ spiConfigModule;
     DRV_HANDLE  spiConfigDrvHandle;
+
+    // Timer stuff
     SYS_MODULE_OBJ TimerObjectHandle;
+
+    // USB stuff
+    /* device layer handle returned by device layer open function */
+    DRV_HANDLE usbDevHandle;
+
+    /* Recieve data buffer */
+    uint8_t receivedDataBuffer[64];
+
+    /* Transmit data buffer */
+    uint8_t  transmitDataBuffer[2];
+
+        /* Track device configuration */
+    bool deviceIsConfigured;
+
+    /* Configuration value */
+    uint8_t configValue;
+
+    /* speed */
+    USB_SPEED speed;
+
+    /* ep data sent */
+    bool epDataWritePending;
+
+    /* ep data received */
+    bool epDataReadPending;
+
+    /* Transfer handle */
+    USB_DEVICE_GENERIC_TRANSFER_HANDLE writeTranferHandle;
+
+    /* Transfer handle */
+    USB_DEVICE_GENERIC_TRANSFER_HANDLE readTranferHandle;
+
+    USB_ENDPOINT endpointTx;
+
+    USB_ENDPOINT endpointRx;
+
 } APP_DATA;
 
 
@@ -137,6 +177,8 @@ typedef struct
 {
     DRV_SPI_BUFFER_HANDLE  receiveBufHandle[4];
     DRV_SPI_BUFFER_HANDLE  transmitBufHandle;
+    /* USB device layer object returned by device layer init function */
+    SYS_MODULE_OBJ         usbDevObject;
 } APP_DRV_OBJECTS;
 
 
@@ -147,6 +189,23 @@ typedef struct
 // *****************************************************************************
 /* These routines are called by drivers when certain events occur.
 */
+
+/*********************************************************
+ * Application USB Device Layer Event Handler.
+ *********************************************************/
+
+void APP_USBDeviceEventHandler(USB_DEVICE_EVENT events,
+        USB_DEVICE_EVENT_DATA * eventData);
+
+/*********************************************************
+ * Application USB Device Generic Function Driver
+ * Event Handler.
+ *********************************************************/
+void APP_USBDeviceGenericEventHandler ( USB_DEVICE_GENERIC_INDEX iGEN,
+    USB_DEVICE_CONTROL_TRANSFER_HANDLE controlTransferHandle,
+    USB_DEVICE_GENERIC_EVENT event, USB_DEVICE_GENERIC_EVENT_DATA * eventData,
+    uintptr_t userData );
+
 
 
 // *****************************************************************************

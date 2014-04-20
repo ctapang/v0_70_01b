@@ -74,7 +74,8 @@ _DefaultInterrupt(void)
 }
 
 
-void __ISR ( _USB_1_VECTOR ) _InterruptHandler_USB_stub ( void )
+void __attribute__((interrupt(ipl2), vector(_USB_1_VECTOR)))
+_InterruptHandler_USB_stub ( void )
 {
     DRV_USB_Tasks_ISR((SYS_MODULE_OBJ)0);
 }
