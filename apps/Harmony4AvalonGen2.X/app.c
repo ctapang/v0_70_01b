@@ -489,7 +489,7 @@ void APP_Tasks ( void )
 
         case WaitingForUSBConfig:
 
-            if (appObject.deviceIsConfigured)
+            if (appObject.deviceIsConfigured && appObject.configValue == 1)
             {
                 appObject.epDataReadPending = true ;
 
@@ -610,6 +610,16 @@ void APP_USBDeviceGenericEventHandler ( USB_DEVICE_GENERIC_INDEX iGEN,
 
             // execute the command from cgminer
             ProcessCmd(appObject.receivedDataBuffer);
+
+            // be ready to receive next command
+            appObject.epDataReadPending = true ;
+
+            /* Place a new read request. */
+            USB_DEVICE_GENERIC_EndpointRead ( USB_DEVICE_GENERIC_INDEX_0,
+                                               &appObject.readTranferHandle,
+                                                appObject.endpointRx,
+                                                &appObject.receivedDataBuffer[0],
+                                                sizeof(appObject.receivedDataBuffer) );
             break;
 
         default:
@@ -642,7 +652,7 @@ extern void Reset_All_Avalon_Chips();
 void APP_USBDeviceEventHandler(USB_DEVICE_EVENT event, USB_DEVICE_EVENT_DATA * eventData)
 {
 
-   switch( event )
+    switch( event )
     {
         case USB_DEVICE_EVENT_RESET:
         case USB_DEVICE_EVENT_DECONFIGURED:

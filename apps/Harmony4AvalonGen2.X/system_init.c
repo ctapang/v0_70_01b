@@ -170,7 +170,7 @@ DRV_USB_INIT usbCDInitData =
     .interruptSource = INT_SOURCE_USB_1,
 
     /* USB Speed */
-    .operationSpeed = USB_SPEED_HIGH,
+    .operationSpeed = USB_SPEED_FULL,
 
     /* USB Op Mode */
     .operationMode = USB_OPMODE_DEVICE,

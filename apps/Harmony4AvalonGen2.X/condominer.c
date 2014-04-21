@@ -97,72 +97,23 @@ void AsicPreCalc(WORKTASK *work)
     }
 }
 
-//#define R(a, b, c, d, e, f, g, h, w, k) \
-//    h = h + (rotate(e, 26) ^ rotate(e, 21) ^ rotate(e, 7)) + (g ^ (e & (f ^ g))) + k + w; \
-//    d = d + h; \
-//    h = h + (rotate(a, 30) ^ rotate(a, 19) ^ rotate(a, 10)) + ((a & b) | (c & (a | b)))
-
-/* this version uses too much stack and causes overflow
- * re-written above to be more flat and as first step to
- * assembly optimization
- *
-DWORD rotate(DWORD x, BYTE y)
-{
-    return ((x<<y) | (x>>(32-y)));
-}
-
-void R1(DWORD *m, DWORD w, DWORD k)
-{
-    m[7] = m[7] + (rotate(m[4], 26) ^ rotate(m[4], 21) ^ rotate(m[4], 7)) + (m[6] ^ (m[4] & (m[5] ^ m[6]))) + k + w;
-    m[3] = m[3] + m[7];
-    m[7] = m[7] + (rotate(m[0], 30) ^ rotate(m[0], 19) ^ rotate(m[0], 10)) + ((m[0] & m[1]) | (m[2] & (m[0] | m[1])));
-}
-
-void R2(DWORD *m)
-{
-    DWORD hold = m[7];
-    for(BYTE x=7; x > 0; x--)
-        m[x] = m[x-1];
-    m[0] = hold;
-}
-
-extern BYTE WorkNow;
-extern WORKTASK WorkQue[MAX_WORK_COUNT];
-
-DWORD precalc_hash[6];
-
-void HasherPreCalc(void)
-{
-    const DWORD K[3] = { 0x428a2f98, 0x71374491, 0xb5c0fbcf };
-    DWORD m[8];
-    BYTE n;
-    for(n = 0; n < 8; n++)
-        m[n] = WorkQue[WorkNow].MidState[n];
-
-    R1(m, WorkQue[WorkNow].Merkle[0], K[0]);
-    precalc_hash[0] = m[7];
-    precalc_hash[3] = m[3];
-    R2(m);
-    R1(m, WorkQue[WorkNow].Merkle[1], K[1]);
-    precalc_hash[1] = m[7];
-    precalc_hash[4] = m[3];
-    R2(m);
-    R1(m, WorkQue[WorkNow].Merkle[2], K[2]);
-    precalc_hash[2] = m[7];
-    precalc_hash[5] = m[3];
-}
-*/
 
 void SendCmdReply(char *cmd, BYTE *data, BYTE count)
 {
-    if(WQI*USB_RECORD_SIZE + count + 2 < USBGEN_EP_SIZE) {
-        INPacket[WQI*USB_RECORD_SIZE] = cmd[0];
-        INPacket[WQI*USB_RECORD_SIZE + 1] = SlaveAddress;
-        BYTE n;
-        for(n = 0; n < count; n++)
-            INPacket[WQI*USB_RECORD_SIZE + n + 2] = data[n];
-        WQI = (WQI+1) & 3;
-    }
+    appObject.transmitDataBuffer[0] = cmd[0];
+    appObject.transmitDataBuffer[1] = PLIB_USB_DeviceAddressGet( USB_ID_1 );
+    memcpy(appObject.transmitDataBuffer + 2, data, count);
+
+    /* Send the data to the host */
+
+    appObject.epDataWritePending = true;
+
+    USB_DEVICE_GENERIC_EndpointWrite
+            ( USB_DEVICE_GENERIC_INDEX_0,
+            ( USB_DEVICE_GENERIC_TRANSFER_HANDLE *)&appObject.writeTranferHandle,
+            appObject.endpointTx, &appObject.transmitDataBuffer[0],
+            sizeof(appObject.transmitDataBuffer),
+            USB_DEVICE_GENERIC_TRANSFER_FLAG_NONE );
 }
 
 
