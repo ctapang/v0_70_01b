@@ -440,6 +440,8 @@ void APP_SPIBufferEventHandler( DRV_SPI_BUFFER_EVENT event,
     SYS_ASSERT((timer_handle != SYS_TMR_HANDLE_INVALID), "timeout timer invalid during buffer completion event (exit)");
 }
 
+extern WORKCFG Cfg;
+
 /******************************************************************************
   Function:
     void APP_Tasks ( void )
@@ -514,6 +516,7 @@ void APP_Tasks ( void )
             if (Status.State == 'P')
             {
                 AssembleWorkForAsics(sequencedBuffer);
+                Set_Clock_Rate(Cfg.HashClock);
                 
                 appObject.appState = SendWorkToAsics;
             }
@@ -668,7 +671,7 @@ void APP_USBDeviceEventHandler(USB_DEVICE_EVENT event, USB_DEVICE_EVENT_DATA * e
                 appObject.deviceIsConfigured = true;
                 appObject.configValue = 1;
 
-                APP_Initialize();
+                //APP_Initialize();
             }
             break;
 

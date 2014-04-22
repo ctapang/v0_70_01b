@@ -3,21 +3,6 @@
 #include "condominer.h"
 #include "app.h"
 
-#define USBGEN_EP_SIZE 1024
-//#define IN_DATA_BUFFER_ADDRESS 0x2140
-//#define OUT_DATA_BUFFER_ADDRESS 0x2190
-//#define IN_DATA_BUFFER_ADDRESS_TAG @IN_DATA_BUFFER_ADDRESS
-//#define OUT_DATA_BUFFER_ADDRESS_TAG @OUT_DATA_BUFFER_ADDRESS
-
-unsigned char INPacket[USBGEN_EP_SIZE];      //User application buffer for sending IN packets to the host
-unsigned char OUTPacket[USBGEN_EP_SIZE];    //User application buffer for receiving and holding OUT packets sent from the host
-
-//USB_DEVICE_HANDLE USBGenericOutHandle;  //USB handle.  Must be initialized to 0 at startup.
-//USB_DEVICE_HANDLE USBGenericInHandle;   //USB handle.  Must be initialized to 0 at startup.
-
-unsigned char SlaveAddress = 0;
-
-BYTE WQI, WQX;
 
 DWORD DivisionOfLabor[10] = {
     0x00000000,
@@ -196,7 +181,6 @@ void ArrangeWords4TxSequence(WORKTASK * work, DWORD * buf)
 
 void AssembleWorkForAsics(DWORD *out)
 {
-    SYS_ASSERT((out == buf), "out buffer has changed address");
     AsicPreCalc(&WorkQue[WorkNow]);
     Status.WorkID = WorkQue[WorkNow].WorkID;
     //SendAsicData(&WorkQue[WorkNow]);
@@ -244,21 +228,8 @@ void ResultRx(BYTE *nonce)
 void InitResultRx(void)
 {
     ResultQC = 0;
-    //TXSTAbits.SYNC = 1;
-    //RCSTAbits.SPEN = 1;
-    //TXSTAbits.CSRC = 0;
-    //BAUDCONbits.SCKP = 0;
-    //BAUDCONbits.BRG16 = 1;
-    //ANSELBbits.ANSB5 = 0;
-    //IOCBPbits.IOCBP7 = 1;
-    //INTCONbits.IOCIE = 1;
-    //IOCBF = 0;
-    //INTCONbits.GIE = 1;
-    //RCSTAbits.CREN = 1;
-    //RCREG = 0xFF;
 }
 
-void ProcessIO();
 
 
 void InitializeWorkSystem(void)
@@ -268,41 +239,11 @@ void InitializeWorkSystem(void)
     ANSELB = 0x00;
     //ANSELC = 0x04;
 
-    //USBGenericOutHandle = 0;
-    //USBGenericInHandle = 0;
-    WQI = WQX = 0;
     
     //replaced UserInit() call with the following two lines:
     InitResultRx();
     PrepareWorkStatus();
 
-    //USBDeviceInit();    //usb_device.c.  Initializes USB module SFRs and firmware
-                        //variables to known states.
 }//end InitializeSystem
 
 
-void ProcessIO(void)
-{   
-  
-    //if((USBDeviceState < CONFIGURED_STATE)||(USBSuspendControl==1)) return;
-
-    /*if(USBGetDeviceState() == DETACHED_STATE) {
-        if(I2CCount > 0) {
-            ProcessCmd(OUTPacket);
-            I2CCount = 0;
-            }
-    }
-    else
-    if(!USBHandleBusy(USBGenericOutHandle)) {
-        //if( OUTPacket[1] != MASTER_ADDRESS )
-        //    I2CRelay(OUTPacket, USBGEN_EP_SIZE);
-        //else
-        ProcessCmd(OUTPacket);
-        USBGenericOutHandle = USBGenRead(USBGEN_EP_NUM, (BYTE*)&OUTPacket, USBGEN_EP_SIZE);
-    }
-
-    if(WQI != WQX && !USBHandleBusy(USBGenericInHandle)) {
-        //USBGenericInHandle = USBGenWrite(USBGEN_EP_NUM, (BYTE*)&INPacket[WQX*USB_RECORD_SIZE], USB_RECORD_SIZE);
-        WQX = (WQX+1) & 3;
-    } */
-} //end ProcessIO

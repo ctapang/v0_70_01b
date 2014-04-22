@@ -152,32 +152,6 @@ USB_DEVICE_INIT usbDevInitData =
     None.
 */
 
-DRV_USB_INIT usbCDInitData =
-{
-    /* System module initialization */
-    .moduleInit = {SYS_MODULE_POWER_RUN_FULL},
-
-    /* Identifies peripheral (PLIB-level) ID */
-    .usbID = USB_ID_1,
-
-    /* stop in idle */
-    .stopInIdle = false,
-
-    /* suspend in sleep */
-    .suspendInSleep = false,
-
-    /* interrupt source */
-    .interruptSource = INT_SOURCE_USB_1,
-
-    /* USB Speed */
-    .operationSpeed = USB_SPEED_FULL,
-
-    /* USB Op Mode */
-    .operationMode = USB_OPMODE_DEVICE,
-
-    /* Endpoint Descriptor Table buffer */
-    .endpointTable = endpointTable
-};
 
 SYS_MODULE_OBJ TimerObjectHandle;
 SYS_MODULE_OBJ TimerDriverHandle;
@@ -282,7 +256,7 @@ void USB_Init()
     SYS_INT_VectorSubprioritySet(INT_VECTOR_USB, INT_SUBPRIORITY_LEVEL2);
 
     //Initialize the USB device layer (this also calls DRV_USB_Initialize)
-    USB_DEVICE_Initialize(  0, (SYS_MODULE_INIT *)&usbCDInitData  );
+    USB_DEVICE_Initialize(  0, (SYS_MODULE_INIT *)&usbDevInitData  );
 
     /* check if the object returned by the device layer is valid */
     SYS_ASSERT((SYS_MODULE_OBJ_INVALID != appDrvObject.usbDevObject), "Invalid USB DEVICE object");
