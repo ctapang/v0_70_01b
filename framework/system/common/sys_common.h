@@ -107,7 +107,7 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 
 #ifndef SYS_ASSERT
 
-    #define SYS_ASSERT(test,message)
+    #define SYS_ASSERT(test,message)  if (!(test)) while(1);
 
 #endif
 

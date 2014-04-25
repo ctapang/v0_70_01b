@@ -537,8 +537,13 @@ USB_DEVICE_GENERIC_RESULT USB_DEVICE_GENERIC_EndpointRead( USB_DEVICE_GENERIC_IN
     irp->userData = iGEN;
     irp->callback = &_USB_DEVICE_GENERIC_EndpointReadCallBack;
     transferHandle = ( USB_DEVICE_GENERIC_TRANSFER_HANDLE * ) irp;
-    return (  USB_DEVICE_IRPSubmit( genInstance->usbDeviceHandle,
-                                   endpoint, irp ));
+
+    USB_DEVICE_CLIENT_STRUCT * client = ((USB_DEVICE_CLIENT_STRUCT *)genInstance->usbDeviceHandle);
+    SYS_ASSERT(client != NULL, "bad client");
+    SYS_ASSERT(client->usbDeviceInstance != NULL, "bad device instance");
+    SYS_ASSERT(client->usbDeviceInstance->usbCDHandle != NULL, "bad USB generic handle");
+    
+    return (  USB_DEVICE_IRPSubmit( client, endpoint, irp ));
     
 }
 

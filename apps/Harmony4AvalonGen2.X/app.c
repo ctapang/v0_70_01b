@@ -450,7 +450,6 @@ extern WORKCFG Cfg;
     See prototype in app.h.
  */
 
-static int q = 0, r = 0, s = 0, t = 0;
 bool done = false;
 BYTE id = 0;
 
@@ -466,7 +465,7 @@ void APP_Tasks ( void )
         case Initializing:
             SYS_ASSERT((sha256_test() == 0), "sha256 failed, cannot start");
 
-            Set_Clock_Rate(500);
+            Set_Clock_Rate(300);
             
             appObject.spiConfigDrvHandle = DRV_SPI_Open(DRV_SPI_INDEX_1, DRV_IO_INTENT_WRITE);
             SYS_ASSERT(appObject.spiConfigDrvHandle != DRV_HANDLE_INVALID, "Invalid handle from Open");
@@ -484,12 +483,20 @@ void APP_Tasks ( void )
             _DRV_SPI_ClientHardwareSetup(appObject.spiReportDrvHandle);
 
             DRV_SPI_BufferEventHandlerSet (appObject.spiReportDrvHandle, APP_SPIBufferEventHandler, NULL );
-            
+
             appObject.appState = WaitingForUSBConfig;
+
+            // send message to chips just to set clock
+            dataToSend = massage_for_send( (uint8_t *)testChips, 4 * GEN2_INPUT_WORD_COUNT, &count );
+            appDrvObject.transmitBufHandle = DRV_SPI_BufferAddWrite(appObject.spiConfigDrvHandle, dataToSend, count);
+            state1[0] = 0; state1[1] = 0; state1[2] = 0; state1[3] = 0;
+            appDrvObject.receiveBufHandle[0] = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state1, sizeof(DWORD));
 
             break;
 
         case WaitingForUSBConfig:
+            appObject.endpointRx = 0x01;
+            appObject.endpointTx = 0x81;
 
             if (appObject.deviceIsConfigured && appObject.configValue == 1)
             {
@@ -502,13 +509,14 @@ void APP_Tasks ( void )
                                                     &appObject.receivedDataBuffer[0],
                                                     sizeof(appObject.receivedDataBuffer) );
 
+                appObject.epDataWritePending = false ;
+
                 // After initializing we set the state to "WaitingForCommand" and enable USB interrupts
                 appObject.appState = WaitingForCommand; // wait for interrupt from USB
             }
             break;
 
         case WaitingForCommand:
-            q++;
             // USB interrupt should be enabled;
             // If a packet came in from cgminer for the Asic chips, we get out of this state.
 
@@ -520,11 +528,13 @@ void APP_Tasks ( void )
                 
                 appObject.appState = SendWorkToAsics;
             }
+            
             break;
 
         case SendWorkToAsics:
             dataToSend = massage_for_send( (uint8_t *)sequencedBuffer, 4 * GEN2_INPUT_WORD_COUNT, &count );
             //dataToSend = massage_for_send( (uint8_t *)testChips, 4 * GEN2_INPUT_WORD_COUNT, &count );
+            
             appDrvObject.transmitBufHandle = DRV_SPI_BufferAddWrite(appObject.spiConfigDrvHandle, dataToSend, count);
             state1[0] = 0; state1[1] = 0; state1[2] = 0; state1[3] = 0;
             appDrvObject.receiveBufHandle[0] = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state1, sizeof(DWORD));
@@ -651,6 +661,7 @@ extern void Reset_All_Avalon_Chips();
   Returns:
     None.
  */
+static int p = 0, q = 0, r = 0, s = 0, t = 0, u = 0, v = 0, w = 0;
 
 void APP_USBDeviceEventHandler(USB_DEVICE_EVENT event, USB_DEVICE_EVENT_DATA * eventData)
 {
@@ -658,9 +669,12 @@ void APP_USBDeviceEventHandler(USB_DEVICE_EVENT event, USB_DEVICE_EVENT_DATA * e
     switch( event )
     {
         case USB_DEVICE_EVENT_RESET:
+            p++;
+            break;
         case USB_DEVICE_EVENT_DECONFIGURED:
             // Turn OFF then ON the green LED to indicate reset/deconfigured state.
-            Reset_All_Avalon_Chips();
+            //Reset_All_Avalon_Chips();
+            q++;
             break;
 
         case USB_DEVICE_EVENT_CONFIGURED:
@@ -676,13 +690,23 @@ void APP_USBDeviceEventHandler(USB_DEVICE_EVENT event, USB_DEVICE_EVENT_DATA * e
             break;
 
         case USB_DEVICE_EVENT_SUSPENDED:
+            r++;
             break;
 
         case USB_DEVICE_EVENT_RESUMED:
+            s++;
+            break;
         case USB_DEVICE_EVENT_ATTACHED:
+            t++;
+            break;
         case USB_DEVICE_EVENT_DETACHED:
+            u++;
+            break;
         case USB_DEVICE_EVENT_ERROR:
+            v++;
+            break;
         default:
+            w++;
             break;
 
     }

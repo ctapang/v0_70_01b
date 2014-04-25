@@ -97,6 +97,7 @@ extern APP_DATA appObject;
 void SYS_Tasks ( void )
 {
     // TODO call task routines for the Harmony drivers and middleware
+    USB_DEVICE_Tasks(appDrvObject.usbDevObject);
 
     SYS_TMR_Tasks( appObject.TimerObjectHandle );
 

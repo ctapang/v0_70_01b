@@ -1382,13 +1382,13 @@ void _USB_DEVICE_EventHandler( uintptr_t referenceHandle,
     
     switch(eventType)
     {
-		case DRV_USB_EVENT_RESET_DETECT:
+	case DRV_USB_EVENT_RESET_DETECT:
 
-           // Cancel any IRP already submitted in the RX direction.
-           DRV_USB_DEVICE_IRPCancelAll( usbDeviceInstance->usbCDHandle,
+            // Cancel any IRP already submitted in the RX direction.
+            DRV_USB_DEVICE_IRPCancelAll( usbDeviceInstance->usbCDHandle,
                                         controlEndpointRx );
             
-              // Disable all endpoints except for EP0.
+            // Disable all endpoints except for EP0.
             DRV_USB_DEVICE_EndpointDisableAll(usbDeviceInstance->usbCDHandle);
 
              // Deinit all function drivers.
@@ -1398,7 +1398,7 @@ void _USB_DEVICE_EventHandler( uintptr_t referenceHandle,
             // Host has issued a reset.
             // If the control endpoint is already opened, close it.
             /* Enable EP0 endpoint in rx direction */
-             (void)DRV_USB_DEVICE_EndpointEnable( usbDeviceInstance->usbCDHandle,
+            (void)DRV_USB_DEVICE_EndpointEnable( usbDeviceInstance->usbCDHandle,
                                                   controlEndpointTx,
                                                   USB_TRANSFER_TYPE_CONTROL,
                                                   USB_DEVICE_EP0_BUFFER_SIZE);
@@ -1411,14 +1411,13 @@ void _USB_DEVICE_EventHandler( uintptr_t referenceHandle,
                                              controlEndpointRx ,
                                              &usbDeviceInstance->irpEp0Rx);
             }
-
            					
-			// Change device state to Default
-			usbDeviceInstance->usbDeviceState = USB_DEVICE_STATE_DEFAULT;
+            // Change device state to Default
+            usbDeviceInstance->usbDeviceState = USB_DEVICE_STATE_DEFAULT;
 			
             // Reset means chirping has already happened. So, we must be knowing the speed.
-			// get the speed and save it for future.
-			usbDeviceInstance->usbSpeed = DRV_USB_DEVICE_CurrentSpeedGet(usbDeviceInstance->usbCDHandle);
+            // get the speed and save it for future.
+            usbDeviceInstance->usbSpeed = DRV_USB_DEVICE_CurrentSpeedGet(usbDeviceInstance->usbCDHandle);
 
             // Get the master descriptor table entry.
             ptrMasterDescTable = usbDeviceInstance->ptrMasterDescTable;
@@ -1445,24 +1444,24 @@ void _USB_DEVICE_EventHandler( uintptr_t referenceHandle,
             }
 
             // Invalidate the current active configuration
-			usbDeviceInstance->activeConfiguration = 0;
-           
-			break;
+            usbDeviceInstance->activeConfiguration = 0;
 
-		case DRV_USB_EVENT_RESUME_DETECT:
-			// USB device resumed.
-			// Restore the device state to previous state.
-			usbDeviceInstance->usbDeviceState = usbDeviceInstance->usbDevStatePriorSuspend;        
-			break;
-	    
-	    case DRV_USB_EVENT_IDLE_DETECT:
-	        // This means USB device is suspended.
-			// Save the device state. Once the device resumes device has to fall back
-			// to its previous state.
-			usbDeviceInstance->usbDevStatePriorSuspend = usbDeviceInstance->usbDeviceState;
-			// Set the device state to "Suspended"
-			usbDeviceInstance->usbDeviceState = USB_DEVICE_STATE_SUSPENDED;    
-			break;        
+            break;
+
+        case DRV_USB_EVENT_RESUME_DETECT:
+            // USB device resumed.
+            // Restore the device state to previous state.
+            usbDeviceInstance->usbDeviceState = usbDeviceInstance->usbDevStatePriorSuspend;
+            break;
+
+        case DRV_USB_EVENT_IDLE_DETECT:
+            // This means USB device is suspended.
+            // Save the device state. Once the device resumes device has to fall back
+            // to its previous state.
+            usbDeviceInstance->usbDevStatePriorSuspend = usbDeviceInstance->usbDeviceState;
+            // Set the device state to "Suspended"
+            usbDeviceInstance->usbDeviceState = USB_DEVICE_STATE_SUSPENDED;
+            break;
        
 
         case DRV_USB_EVENT_SOF_DETECT:

@@ -406,7 +406,7 @@ SYS_MODULE_OBJ DRV_TMR_Initialize( const SYS_MODULE_INDEX drvIndex,
     dObj = drvIndex;
 
     /* Check that the object is valid */
-    SYS_ASSERT( dObj < DRV_TMR_INSTANCES_NUMBER, "Hardware Object is invalid" );
+    SYS_ASSERT( (dObj < DRV_TMR_INSTANCES_NUMBER), "Hardware Object is invalid" );
 
     /* Object is valid, set it in use */
     gDrvTMRObj[dObj].inUse = true;

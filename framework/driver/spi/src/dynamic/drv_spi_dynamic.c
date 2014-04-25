@@ -51,6 +51,7 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 // *****************************************************************************
 
 #include "driver/spi/src/drv_spi_local.h"
+#include "app.h"
 
 // *****************************************************************************
 // *****************************************************************************
@@ -1228,7 +1229,8 @@ DRV_SPI_BUFFER_HANDLE DRV_SPI_BufferAddWrite ( DRV_HANDLE handle, void *txBuffer
         spiDataObj->txBuffer        = txBuffer;
         spiDataObj->rxBuffer        = NULL;
         spiDataObj->transferSize    = size / sizeof(SPI_DATA_TYPE);
-        SYS_ASSERT((spiDataObj->transferSize == 16), "wrong byte count when transmitting spi"); // 64 / 4 = 16
+        SYS_ASSERT((spiDataObj->transferSize == (GEN2_INPUT_WORD_COUNT + ASIC_COUNT)),
+                "wrong byte count when transmitting spi");
         spiDataObj->next            = NULL;
 
         if ( dObj->queueHead == NULL )

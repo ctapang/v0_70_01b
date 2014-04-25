@@ -57,7 +57,7 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
    PBCLK = 80 MHz (SYSCLK / FPBDIV) */
 // DEVCFG3
 // USERID = No Setting
-#pragma config PMDL1WAY = ON            // Peripheral Module Disable Configuration (Allow only one reconfiguration)
+#pragma config PMDL1WAY = OFF            // Peripheral Module Disable Configuration (Allow only one reconfiguration)
 #pragma config IOL1WAY = ON             // Peripheral Pin Select Configuration (Allow only one reconfiguration)
 #pragma config FUSBIDIO = ON            // USB USID Selection (Controlled by the USB Module)
 #pragma config FVBUSONIO = ON           // USB VBUS ON Selection (Controlled by USB Module)
@@ -75,8 +75,8 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #pragma config IESO = OFF               // Internal/External Switch Over (Disabled)
 #pragma config POSCMOD = OFF            // Primary Oscillator Configuration (Primary osc disabled)
 #pragma config OSCIOFNC = OFF           // CLKO Output Signal Active on the OSCO Pin (Disabled)
-#pragma config FPBDIV = DIV_2           // Peripheral Clock Divisor (Pb_Clk == Sys_Clk / 2)
-#pragma config FCKSM = CSDCMD           // Clock Switching and Monitor Selection (Clock Switch Disable, FSCM Disabled)
+#pragma config FPBDIV = DIV_1           // Peripheral Clock Divisor (Pb_Clk == Sys_Clk / 2)
+#pragma config FCKSM = CSECME           // Clock Switching and Monitor Selection (Clock Switch Disable, FSCM Disabled)
 #pragma config WDTPS = PS1048576        // Watchdog Timer Postscaler (1:1048576)
 #pragma config WINDIS = OFF             // Watchdog Timer Window Enable (Watchdog Timer is in Non-Window Mode)
 #pragma config FWDTEN = OFF             // Watchdog Timer Enable (WDT Disabled (SWDTEN Bit Controls))
@@ -88,6 +88,14 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #pragma config PWP = OFF                // Program Flash Write Protect (Disable)
 #pragma config BWP = OFF                // Boot Flash Write Protect bit (Protection Disabled)
 #pragma config CP = OFF                 // Code Protect (Protection Disabled)
+
+
+/* Enable USB PLL */
+#pragma config UPLLEN   = ON
+//#pragma config UFRCEN   = ON
+
+/* USB PLL input devider */
+#pragma config UPLLIDIV = DIV_1
 
 // *****************************************************************************
 // *****************************************************************************
@@ -135,7 +143,7 @@ USB_DEVICE_INIT usbDevInitData =
     /* Pointer to USB Descriptor structure */
     (USB_MASTER_DESCRIPTOR*)&usbMasterDescriptor,
 
-    USB_SPEED_FULL
+    USB_SPEED_LOW
 };
 
 
@@ -252,11 +260,23 @@ extern APP_DATA appObject;
 
 void USB_Init()
 {
+    // use FRC for USB clock (UFRCEN)
+    //int usbClock = SYS_CLK_UsbClockSet(SYS_CLK_SOURCE_FRC, 8000000); // 8MHz
+    //OSC_UsbClockSourceSelect_Default( 0, SYS_OSC_USBCLK_FRC );
+    //OSCCONCLR = _OSCCON_CLKLOCK_MASK; // | _OSCCON_ULOCK_MASK | _OSCCON_SLOCK_MASK;
+    SYSKEY = 0X0;
+    SYSKEY = 0XAA996655;
+    SYSKEY = 0X556699AA;
+    OSCCONSET = _OSCCON_UFRCEN_MASK;
+    SYSKEY = 0X0;
+
+    SYS_ASSERT((SYS_OSC_USBCLK_FRC == OSC_UsbClockSourceGet_Default( 0 )), "cannot set USB clock source");
+    
     SYS_INT_VectorPrioritySet(INT_VECTOR_USB, INT_PRIORITY_LEVEL2);
     SYS_INT_VectorSubprioritySet(INT_VECTOR_USB, INT_SUBPRIORITY_LEVEL2);
 
     //Initialize the USB device layer (this also calls DRV_USB_Initialize)
-    USB_DEVICE_Initialize(  0, (SYS_MODULE_INIT *)&usbDevInitData  );
+    appDrvObject.usbDevObject = USB_DEVICE_Initialize(  0, (SYS_MODULE_INIT *)&usbDevInitData  );
 
     /* check if the object returned by the device layer is valid */
     SYS_ASSERT((SYS_MODULE_OBJ_INVALID != appDrvObject.usbDevObject), "Invalid USB DEVICE object");
@@ -287,25 +307,25 @@ void SYS_Initialize ( void* data )
 
     SYSTEMConfigPerformance(SYS_FREQUENCY);
 
-    USB_Init();
-
-    //Interrupt
-    SYS_INT_Initialize();
-
-    // Disable interrrupts for now
-    SYS_INT_Disable();
-
     /* Initialize the BSP (Power Supply Voltage and SPI pins and interrupts) */
     BSP_Initialize ( );
 
     // initialize the timer that manages the tick counter
     TickInit();
 
-    /* Initialize the Application */
-    APP_Initialize ( );
+    //Interrupt initialize for multi-vectored ints
+    SYS_INT_Initialize();
 
     /* Enable all defined interrupts */
     SYS_INT_Enable();
+
+    USB_Init();
+
+    // Disable interrrupts for now
+    //SYS_INT_Disable();
+
+    /* Initialize the Application */
+    APP_Initialize ( );
 }
 
 bool TickInit()
