@@ -177,15 +177,14 @@ void BSP_Initialize(void )
     // VIDC: Pin 8 (RB4)
     // VIDS: Pin 9 (RA4)
 
-    //PLIB_PORTS_DirectionOutputSet( PORTS_ID_0, PORT_CHANNEL_A, VIDA );
-    PLIB_PORTS_PinDirectionOutputSet( PORTS_ID_0, PORT_CHANNEL_A, VIDA );
-    PLIB_PORTS_PinDirectionOutputSet( PORTS_ID_0, PORT_CHANNEL_A, VIDB );
-    PLIB_PORTS_PinDirectionOutputSet( PORTS_ID_0, PORT_CHANNEL_B, VIDC );
+//    PLIB_PORTS_PinDirectionOutputSet( PORTS_ID_0, PORT_CHANNEL_A, VIDA );
+//    PLIB_PORTS_PinDirectionOutputSet( PORTS_ID_0, PORT_CHANNEL_A, VIDB );
+//    PLIB_PORTS_PinDirectionOutputSet( PORTS_ID_0, PORT_CHANNEL_B, VIDC );
     PLIB_PORTS_PinDirectionOutputSet( PORTS_ID_0, PORT_CHANNEL_A, VIDS );
 
-    PLIB_PORTS_PinClear( PORTS_ID_0, PORT_CHANNEL_A, VIDA );
-    PLIB_PORTS_PinClear( PORTS_ID_0, PORT_CHANNEL_A, VIDB );
-    PLIB_PORTS_PinClear( PORTS_ID_0, PORT_CHANNEL_B, VIDC );
+//    PLIB_PORTS_PinClear( PORTS_ID_0, PORT_CHANNEL_A, VIDA );
+//    PLIB_PORTS_PinClear( PORTS_ID_0, PORT_CHANNEL_A, VIDB );
+//    PLIB_PORTS_PinClear( PORTS_ID_0, PORT_CHANNEL_B, VIDC );
     PLIB_PORTS_PinSet( PORTS_ID_0, PORT_CHANNEL_A, VIDS);
 
     // Allow the logic levels to stabilize on the LM10011
@@ -263,6 +262,7 @@ void BSP_Initialize(void )
 // Input level can be from 0 to 64. Every increment is +3.45 mV.
 void BSP_SetVoltage(char level)
 {
+    return;  // do nothing (USB clock fix mod)
     SYS_ASSERT( (level >= 0) && (level < 64), "Voltage level input invalid." );
     
     char shifter = 1;

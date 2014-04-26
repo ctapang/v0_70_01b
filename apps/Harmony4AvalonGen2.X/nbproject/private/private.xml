@@ -5,6 +5,10 @@
             <line>1097</line>
         </file>
         <file>
+            <url>file:/C:/microchip/harmony/v0_70_01b/framework/driver/usb/usbfs/src/dynamic/drv_usb.c</url>
+            <line>170</line>
+        </file>
+        <file>
             <url>app.c</url>
             <line>316</line>
         </file>

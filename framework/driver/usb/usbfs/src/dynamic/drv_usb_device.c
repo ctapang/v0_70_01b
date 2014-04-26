@@ -83,7 +83,7 @@ USB_SPEED DRIVER DRV_USB_DEVICE_CurrentSpeedGet(DRV_HANDLE handle)
         SYS_ASSERT(false, "Driver Handle is invalid");
     }
 
-    return USB_SPEED_LOW;
+    return USB_SPEED_FULL;
 }
 
 void DRIVER DRV_USB_DEVICE_Attach(DRV_HANDLE handle)

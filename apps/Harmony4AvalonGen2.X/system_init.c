@@ -63,20 +63,20 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #pragma config FVBUSONIO = ON           // USB VBUS ON Selection (Controlled by USB Module)
 
 // DEVCFG2
-#pragma config FPLLIDIV = DIV_2         // PLL Input Divider (2x Divider)
-#pragma config FPLLMUL = MUL_20         // PLL Multiplier (20x Multiplier, with an overall result of 10x)
+#pragma config FPLLIDIV = DIV_5         // PLL Input Divider (2x Divider)
+#pragma config FPLLMUL = MUL_16         // PLL Multiplier (20x Multiplier, with an overall result of 10x)
 #pragma config FPLLODIV = DIV_2         // System PLL Output Clock Divider (PLL Divide by 2)
 
 // DEVCFG1
 // NOTE: It seems that for the simulator, no matter what FNOSC is set to, the simulator
 // DEVCFG1 register always shows FNOSC = 0.
-#pragma config FNOSC = FRCPLL           // Oscillator Selection Bits (Fast RC Osc w/ multipliers and dividers)
+#pragma config FNOSC = PRIPLL           // Oscillator Selection Bits (Fast RC Osc w/ multipliers and dividers)
 #pragma config FSOSCEN = OFF            // Secondary Oscillator Enable (Disabled)
 #pragma config IESO = OFF               // Internal/External Switch Over (Disabled)
-#pragma config POSCMOD = OFF            // Primary Oscillator Configuration (Primary osc disabled)
+#pragma config POSCMOD = EC             // Primary Oscillator Configuration (External Clock)
 #pragma config OSCIOFNC = OFF           // CLKO Output Signal Active on the OSCO Pin (Disabled)
 #pragma config FPBDIV = DIV_1           // Peripheral Clock Divisor (Pb_Clk == Sys_Clk / 2)
-#pragma config FCKSM = CSECME           // Clock Switching and Monitor Selection (Clock Switch Disable, FSCM Disabled)
+#pragma config FCKSM = CSDCMD           // Clock Switching and Monitor Selection (Clock Switch Disable, FSCM Disabled)
 #pragma config WDTPS = PS1048576        // Watchdog Timer Postscaler (1:1048576)
 #pragma config WINDIS = OFF             // Watchdog Timer Window Enable (Watchdog Timer is in Non-Window Mode)
 #pragma config FWDTEN = OFF             // Watchdog Timer Enable (WDT Disabled (SWDTEN Bit Controls))
@@ -92,10 +92,9 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 
 /* Enable USB PLL */
 #pragma config UPLLEN   = ON
-//#pragma config UFRCEN   = ON
 
 /* USB PLL input devider */
-#pragma config UPLLIDIV = DIV_1
+#pragma config UPLLIDIV = DIV_6
 
 // *****************************************************************************
 // *****************************************************************************
@@ -143,7 +142,7 @@ USB_DEVICE_INIT usbDevInitData =
     /* Pointer to USB Descriptor structure */
     (USB_MASTER_DESCRIPTOR*)&usbMasterDescriptor,
 
-    USB_SPEED_LOW
+    USB_SPEED_FULL
 };
 
 
@@ -260,18 +259,6 @@ extern APP_DATA appObject;
 
 void USB_Init()
 {
-    // use FRC for USB clock (UFRCEN)
-    //int usbClock = SYS_CLK_UsbClockSet(SYS_CLK_SOURCE_FRC, 8000000); // 8MHz
-    //OSC_UsbClockSourceSelect_Default( 0, SYS_OSC_USBCLK_FRC );
-    //OSCCONCLR = _OSCCON_CLKLOCK_MASK; // | _OSCCON_ULOCK_MASK | _OSCCON_SLOCK_MASK;
-    SYSKEY = 0X0;
-    SYSKEY = 0XAA996655;
-    SYSKEY = 0X556699AA;
-    OSCCONSET = _OSCCON_UFRCEN_MASK;
-    SYSKEY = 0X0;
-
-    SYS_ASSERT((SYS_OSC_USBCLK_FRC == OSC_UsbClockSourceGet_Default( 0 )), "cannot set USB clock source");
-    
     SYS_INT_VectorPrioritySet(INT_VECTOR_USB, INT_PRIORITY_LEVEL2);
     SYS_INT_VectorSubprioritySet(INT_VECTOR_USB, INT_SUBPRIORITY_LEVEL2);
 

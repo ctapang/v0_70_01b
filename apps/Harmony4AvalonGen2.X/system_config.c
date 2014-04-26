@@ -193,7 +193,7 @@ const USB_DEVICE_FUNC_REGISTRATION_TABLE funcRegistrationTable[1] =
 {
    
     {
-            USB_SPEED_LOW, // Speed.
+            USB_SPEED_FULL, // Speed.
             1,              // Configuration value
             0,              // Interface number
             1,              // Number of interfaces

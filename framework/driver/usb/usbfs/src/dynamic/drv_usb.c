@@ -160,13 +160,14 @@ SYS_MODULE_OBJ DRIVER DRV_USB_Initialize
 //        USB_OTG_PullUpPullDownSetup_Default( drvIndex, USB_OTG_DPLUS_PULLDN, false );
 //    }
 
+
+
     /* Clear and enable the interrupts */
     _DRV_USB_InterruptSourceClear(usbInit->interruptSource);
-//    _DRV_USB_InterruptSourceEnable(usbInit->interruptSource);
+    _DRV_USB_InterruptSourceEnable(usbInit->interruptSource);
 
     /* Assign the BDT address */
 
-    SYS_ASSERT((drvObj->pBDT == 0xA0000400), "bad BDT address");
     PLIB_USB_BDTBaseAddressSet( usbID , 
             (void *)((uint32_t)KVA_TO_PA(drvObj->pBDT) ));
 
