@@ -50,7 +50,7 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #include "app.h"
 
 #define MY_VID 0x04D8
-#define MY_PID 0x0053
+#define MY_PID 0xF60A  // Klondike Project
 
 /*Generic USB */
 #define GEN_USB_EP 		1   // Endpoint number
@@ -121,15 +121,14 @@ sizeof(sd000),USB_DESCRIPTOR_STRING,{0x0409}};
 //Manufacturer string descriptor
 const struct{uint8_t bLength;uint8_t bDscType;uint16_t string[25];}sd001={
 sizeof(sd001),USB_DESCRIPTOR_STRING,
-{'M','i','c','r','o','c','h','i','p',' ',
-'T','e','c','h','n','o','l','o','g','y',' ','I','n','c','.'
+{'K','l','o','n','d','i','k','e',' ','P','r','o','j','e','c','t'
 }};
 
 //Product string descriptor
 const struct{uint8_t bLength;uint8_t bDscType;uint16_t string[25];}sd002={
 sizeof(sd002),USB_DESCRIPTOR_STRING,
-{'S','i','m','p','l','e',' ','W','i','n','U','S','B',
-' ','D','e','v','i','c','e',' ','D','e','m','o'}};
+{'K','1','6'
+}};
 
 //Array of configuration descriptors
 const uint8_t *const USB_CD_Ptr[]=

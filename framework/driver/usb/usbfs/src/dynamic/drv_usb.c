@@ -144,22 +144,6 @@ SYS_MODULE_OBJ DRIVER DRV_USB_Initialize
 
     }
 
-//    if (usbInit->operationSpeed == USB_SPEED_LOW)
-//    {
-//        //PLIB_USB_FullSpeedDisable ( drvIndex ); //
-//        USB_OTG_PullUpPullDownSetup_Default( drvIndex, USB_OTG_DMINUS_PULLUP, true );
-//        USB_OTG_PullUpPullDownSetup_Default( drvIndex, USB_OTG_DPLUS_PULLUP, false );
-//        USB_OTG_PullUpPullDownSetup_Default( drvIndex, USB_OTG_DMINUS_PULLDN, false );
-//        USB_OTG_PullUpPullDownSetup_Default( drvIndex, USB_OTG_DPLUS_PULLDN, false );
-//    }
-//    else
-//    {
-//        USB_OTG_PullUpPullDownSetup_Default( drvIndex, USB_OTG_DMINUS_PULLUP, false );
-//        USB_OTG_PullUpPullDownSetup_Default( drvIndex, USB_OTG_DPLUS_PULLUP, true );
-//        USB_OTG_PullUpPullDownSetup_Default( drvIndex, USB_OTG_DMINUS_PULLDN, false );
-//        USB_OTG_PullUpPullDownSetup_Default( drvIndex, USB_OTG_DPLUS_PULLDN, false );
-//    }
-
 
 
     /* Clear and enable the interrupts */

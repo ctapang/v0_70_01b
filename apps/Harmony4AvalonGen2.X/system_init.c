@@ -57,7 +57,7 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
    PBCLK = 80 MHz (SYSCLK / FPBDIV) */
 // DEVCFG3
 // USERID = No Setting
-#pragma config PMDL1WAY = OFF            // Peripheral Module Disable Configuration (Allow only one reconfiguration)
+#pragma config PMDL1WAY = ON            // Peripheral Module Disable Configuration (Allow only one reconfiguration)
 #pragma config IOL1WAY = ON             // Peripheral Pin Select Configuration (Allow only one reconfiguration)
 #pragma config FUSBIDIO = ON            // USB USID Selection (Controlled by the USB Module)
 #pragma config FVBUSONIO = ON           // USB VBUS ON Selection (Controlled by USB Module)
@@ -74,7 +74,7 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #pragma config FSOSCEN = OFF            // Secondary Oscillator Enable (Disabled)
 #pragma config IESO = OFF               // Internal/External Switch Over (Disabled)
 #pragma config POSCMOD = EC             // Primary Oscillator Configuration (External Clock)
-#pragma config OSCIOFNC = OFF           // CLKO Output Signal Active on the OSCO Pin (Disabled)
+#pragma config OSCIOFNC = ON            // CLKO Output Signal Active on the OSCO Pin (Disabled)
 #pragma config FPBDIV = DIV_1           // Peripheral Clock Divisor (Pb_Clk == Sys_Clk / 2)
 #pragma config FCKSM = CSDCMD           // Clock Switching and Monitor Selection (Clock Switch Disable, FSCM Disabled)
 #pragma config WDTPS = PS1048576        // Watchdog Timer Postscaler (1:1048576)
@@ -93,7 +93,7 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 /* Enable USB PLL */
 #pragma config UPLLEN   = ON
 
-/* USB PLL input devider */
+/* USB PLL input divider 25 MHz / 6 = 4.166 */
 #pragma config UPLLIDIV = DIV_6
 
 // *****************************************************************************

@@ -497,9 +497,11 @@ void DRIVER _DRV_USB_DEVICE_EndpointBDTEntryArm
 
 }
 
+int x = 0;
+
 USB_ERROR DRIVER DRV_USB_DEVICE_IRPSubmit
 (
-	DRV_HANDLE client, 
+    DRV_HANDLE client,
     USB_ENDPOINT endpointAndDirection, 
     USB_DEVICE_IRP * inputIRP
 )
@@ -530,6 +532,7 @@ USB_ERROR DRIVER DRV_USB_DEVICE_IRPSubmit
         return(USB_ERROR_DEVICE_IRP_IN_USE);
     }
 
+    x++;
     
     /* Check for a valid endpoint */
     endpoint = endpointAndDirection & 0xF;
