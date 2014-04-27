@@ -495,15 +495,19 @@ USB_DEVICE_CONTROL_TRANSFER_RESULT USB_DEVICE_ControlSend( USB_DEVICE_HANDLE hCl
      USB_DEVICE_IRP * irpHandle;   
 
      usbDeviceThisInstance = ((USB_DEVICE_CLIENT_STRUCT *)hClient)->usbDeviceInstance;
-     irpHandle = &usbDeviceThisInstance->irpEp0Tx;     
+     irpHandle = &usbDeviceThisInstance->irpEp0Tx;
+     while (irpHandle->status > USB_DEVICE_IRP_STATUS_SETUP)
+         irpHandle = &usbDeviceThisInstance->irpEp0Tx;
+    
      irpHandle->data = data;
      irpHandle->size = (unsigned int )length;
 
-    (void)DRV_USB_DEVICE_IRPSubmit( usbDeviceThisInstance->usbCDHandle ,
+     if (USB_ERROR_NONE == DRV_USB_DEVICE_IRPSubmit( usbDeviceThisInstance->usbCDHandle ,
                                      controlEndpointTx ,
-                                     irpHandle);
-
-     return USB_DEVICE_CONTROL_TRANSFER_RESULT_SUCCESS;
+                                     irpHandle))
+         return USB_DEVICE_CONTROL_TRANSFER_RESULT_SUCCESS;
+     else
+         return USB_DEVICE_CONTROL_TRANSFER_RESULT_FAILED;
 }
 
 
@@ -617,13 +621,19 @@ USB_DEVICE_CONTROL_TRANSFER_RESULT USB_DEVICE_ControlStatus( USB_DEVICE_HANDLE h
     {
         // Submit the IRP to send ZLP.
         irpHandle = &usbDeviceThisInstance->irpEp0Tx;
+        while (irpHandle->status > USB_DEVICE_IRP_STATUS_SETUP)
+            irpHandle = &usbDeviceThisInstance->irpEp0Tx;
+
         irpHandle->data = NULL;
         irpHandle->size = 0;
        // irpHandle->flags = 0x80;
 
-        (void)DRV_USB_DEVICE_IRPSubmit( usbDeviceThisInstance->usbCDHandle ,
-                                     controlEndpointTx ,
-                                     irpHandle);
+        if (USB_ERROR_NONE == DRV_USB_DEVICE_IRPSubmit( usbDeviceThisInstance->usbCDHandle ,
+                                        controlEndpointTx ,
+                                        irpHandle))
+            return USB_DEVICE_CONTROL_TRANSFER_RESULT_SUCCESS;
+        else
+            return USB_DEVICE_CONTROL_TRANSFER_RESULT_FAILED;
     }
 
     return USB_DEVICE_CONTROL_TRANSFER_RESULT_SUCCESS;

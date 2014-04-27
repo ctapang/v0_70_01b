@@ -27,7 +27,7 @@ INT16 Step, Error, LastError;
 
 DWORD NonceRanges[10];
 
-const IDENTITY ID = { 1, "Swauk1", 0xA51C };
+const IDENTITY ID = { 0x10, "Swauk1", 0xA51C };
 
 /*bank2*/ DWORD send32_data; // place in same bank as latc registers!
 /*bank2*/ BYTE send32_count; // count DWORDS
