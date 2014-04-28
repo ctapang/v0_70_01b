@@ -523,7 +523,7 @@ USB_ERROR DRIVER DRV_USB_DEVICE_IRPSubmit
         return USB_ERROR_PARAMETER_INVALID;
     }
 
-    if(irp->status != USB_DEVICE_IRP_STATUS_ALLOCATED)
+    if(irp->status >= USB_DEVICE_IRP_STATUS_SETUP && irp->status < USB_DEVICE_IRP_STATUS_ALLOCATED)
     {
         /* This means that the IRP is in use */
         SYS_ASSERT(false, "Device IRP is already in use");
