@@ -107,6 +107,143 @@ static USB_DEVICE_INSTANCE_STRUCT usbDeviceInstance[USB_DEVICE_MAX_INSTANCES];
 
 static USB_DEVICE_CLIENT_STRUCT usbDeviceClients[USB_DEVICE_MAX_INSTANCES][USB_DEVICE_MAX_CLIENTS + 1];
 
+// IRP Allocation
+
+static bool firstAllocation = true;
+
+void InitIRP(USB_DEVICE_IRP_LOCAL * irp)
+{
+    irp->next = NULL;
+    irp->previous = NULL;
+    irp->nPendingBytes = 0;
+    irp->status = USB_DEVICE_IRP_STATUS_ALLOCATED;
+}
+
+void UnlinkIRP(USB_DEVICE_IRP_LOCAL * irp)
+{
+    if (irp->next != NULL)
+        irp->next->previous = irp->previous;
+    if (irp->previous != NULL)
+        irp->previous->next = irp->next;
+}
+
+USB_DEVICE_IRP_LOCAL * SearchForFirstAvailable(USB_DEVICE_IRP_LOCAL * irpBase)
+{
+    int maxIRP = 2 * DRV_USB_MAX_QUEUE_LENGTH; // this is only for EP 0
+    USB_DEVICE_IRP_LOCAL * irp = irpBase;
+    USB_DEVICE_IRP_LOCAL * retIRP = NULL;
+    int j;
+    for (j = 0; j < maxIRP; j++, irp++)
+    {
+        if (irp->status == USB_DEVICE_IRP_STATUS_FREE)
+        {
+            UnlinkIRP(irp);
+            InitIRP(irp);
+            retIRP = irp;
+            break;
+        }
+    }
+    return retIRP;
+}
+
+bool MutexOpen(DRV_HANDLE client)
+{
+    DRV_USB_OBJ * hDriver = ((DRV_USB_CLIENT_OBJ *)client)->hDriver;
+    bool interruptWasEnabled = true;
+    if(hDriver->isInInterruptContext == false)
+    {
+        //OSAL: Get mutex
+        interruptWasEnabled = SYS_INT_SourceIsEnabled(hDriver->interruptSource);
+        _DRV_USB_InterruptSourceDisable(hDriver->interruptSource);
+    }
+    return interruptWasEnabled;
+}
+
+void MutexClose(DRV_HANDLE client, bool interruptWasEnabled)
+{
+    DRV_USB_OBJ * hDriver = ((DRV_USB_CLIENT_OBJ *)client)->hDriver;
+    if(hDriver->isInInterruptContext == false)
+    {
+        if(interruptWasEnabled)
+        {
+            /* Enable the interrupt only if it was enabled */
+            _DRV_USB_InterruptSourceEnable(hDriver->interruptSource);
+        }
+        //OSAL: Return mutex
+    }
+}
+
+static void _USB_DEVICE_Ep0ReceiveCompleteCallback( USB_DEVICE_IRP * handle );
+static void _USB_DEVICE_Ep0TransmitCompleteCallback(USB_DEVICE_IRP * handle);
+
+void InitializeAllIRPs( USB_DEVICE_INSTANCE_STRUCT * usbDeviceThisInstance )
+{
+    int maxIRP = 2 * DRV_USB_MAX_QUEUE_LENGTH; // this is only for EP 0
+ 
+    USB_DEVICE_IRP_LOCAL * irp = (USB_DEVICE_IRP_LOCAL * )usbDeviceThisInstance->irpEp0Tx;
+    int i;
+    for (i = 0; i < maxIRP; i++, irp++)
+    {
+        irp->callback = &_USB_DEVICE_Ep0TransmitCompleteCallback;
+        irp->userData = (uintptr_t)usbDeviceThisInstance;
+        irp->flags = USB_DEVICE_IRP_FLAG_DATA_COMPLETE;
+        irp->status = USB_DEVICE_IRP_STATUS_FREE;
+    }
+
+    irp = (USB_DEVICE_IRP_LOCAL * )usbDeviceThisInstance->irpEp0Rx;
+    for (i = 0; i < maxIRP; i++, irp++)
+    {
+        irp->data = usbDeviceThisInstance->ep0RxBuffer;
+        irp->size = USB_DEVICE_EP0_BUFFER_SIZE;
+        irp->flags = USB_DEVICE_IRP_FLAG_DATA_COMPLETE;
+        irp->status = USB_DEVICE_IRP_STATUS_FREE;
+        irp->callback = &_USB_DEVICE_Ep0ReceiveCompleteCallback;
+        irp->userData = (uintptr_t)usbDeviceThisInstance;
+    }
+}
+
+USB_DEVICE_IRP_LOCAL * allocationHistory[100];
+int hix = 0;
+
+USB_DEVICE_IRP * USB_DEVICE_AllocateIRP
+(
+    USB_DEVICE_INSTANCE_STRUCT * device,
+    const char direction
+)
+{
+    bool interruptWasEnabled = MutexOpen(device->usbCDHandle);
+    if (firstAllocation)
+    {
+        firstAllocation = false;
+        InitializeAllIRPs(device);
+        int i;
+        for (i = 0; i < 100; i++)
+            allocationHistory[i] = NULL;
+    }
+
+    // scan IRPs looking for first available one
+
+    int j;
+    USB_DEVICE_IRP_LOCAL * irp = NULL;
+    if (direction == 'T')
+    {
+        irp = SearchForFirstAvailable((USB_DEVICE_IRP_LOCAL * )device->irpEp0Tx);
+    }
+    else if (direction == 'R')
+    {
+        irp = SearchForFirstAvailable((USB_DEVICE_IRP_LOCAL * )device->irpEp0Rx);
+    }
+    else SYS_ASSERT(false, "invalid second parameter");
+
+    SYS_ASSERT((irp != NULL), "Cannot allocate IRP");
+
+    if (hix < 100)
+        allocationHistory[hix++] = irp;
+
+    MutexClose(device->usbCDHandle, interruptWasEnabled);
+
+    return (USB_DEVICE_IRP *)irp;
+}
 
 // *****************************************************************************
 /* Function:
@@ -487,18 +624,11 @@ void USB_DEVICE_Tasks( SYS_MODULE_OBJ devLayerObj )
 
 */
 
-USB_DEVICE_CONTROL_TRANSFER_RESULT USB_DEVICE_ControlSend( USB_DEVICE_HANDLE hClient,
-                            USB_DEVICE_CONTROL_TRANSFER_HANDLE controlXferHandle,
+USB_DEVICE_CONTROL_TRANSFER_RESULT USB_DEVICE_ControlSend( USB_DEVICE_HANDLE usbDeviceHandle,
                             void *  data, size_t length )
 {
-     USB_DEVICE_INSTANCE_STRUCT * usbDeviceThisInstance;
-     USB_DEVICE_IRP * irpHandle;   
-
-     usbDeviceThisInstance = ((USB_DEVICE_CLIENT_STRUCT *)hClient)->usbDeviceInstance;
-     irpHandle = &usbDeviceThisInstance->irpEp0Tx;
-     while (irpHandle->status > USB_DEVICE_IRP_STATUS_SETUP)
-         irpHandle = &usbDeviceThisInstance->irpEp0Tx;
-    
+     USB_DEVICE_INSTANCE_STRUCT * usbDeviceThisInstance = (USB_DEVICE_INSTANCE_STRUCT *)usbDeviceHandle;
+     USB_DEVICE_IRP * irpHandle = USB_DEVICE_AllocateIRP(usbDeviceThisInstance, 'T');
      irpHandle->data = data;
      irpHandle->size = (unsigned int )length;
 
@@ -599,15 +729,12 @@ USB_DEVICE_CONTROL_TRANSFER_RESULT USB_DEVICE_ControlReceive( USB_DEVICE_HANDLE 
 
 */
 
-USB_DEVICE_CONTROL_TRANSFER_RESULT USB_DEVICE_ControlStatus( USB_DEVICE_HANDLE handle,
-                               USB_DEVICE_CONTROL_TRANSFER_HANDLE controlTransferHandle,
+USB_DEVICE_CONTROL_TRANSFER_RESULT USB_DEVICE_ControlStatus( USB_DEVICE_HANDLE usbDeviceHandle,
                                USB_DEVICE_CONTROL_STATUS status)
 {
-    USB_DEVICE_INSTANCE_STRUCT * usbDeviceThisInstance;
     USB_DEVICE_IRP * irpHandle;
+    USB_DEVICE_INSTANCE_STRUCT * usbDeviceThisInstance = ( USB_DEVICE_INSTANCE_STRUCT *)usbDeviceHandle;
     
-    usbDeviceThisInstance = ((USB_DEVICE_CLIENT_STRUCT *)handle)->usbDeviceInstance ;
-
     usbDeviceThisInstance->controlTransfer.inProgress = false;
    
     if(USB_DEVICE_CONTROL_STATUS_ERROR == status)
@@ -620,13 +747,10 @@ USB_DEVICE_CONTROL_TRANSFER_RESULT USB_DEVICE_ControlStatus( USB_DEVICE_HANDLE h
     else
     {
         // Submit the IRP to send ZLP.
-        irpHandle = &usbDeviceThisInstance->irpEp0Tx;
-        while (irpHandle->status > USB_DEVICE_IRP_STATUS_SETUP)
-            irpHandle = &usbDeviceThisInstance->irpEp0Tx;
-
+        irpHandle = USB_DEVICE_AllocateIRP(usbDeviceThisInstance, 'T');
         irpHandle->data = NULL;
         irpHandle->size = 0;
-       // irpHandle->flags = 0x80;
+        //irpHandle->flags = 0x80;
 
         if (USB_ERROR_NONE == DRV_USB_DEVICE_IRPSubmit( usbDeviceThisInstance->usbCDHandle ,
                                         controlEndpointTx ,
@@ -739,14 +863,13 @@ static void _USB_DEVICE_Ep0ReceiveCompleteCallback( USB_DEVICE_IRP * handle )
     }
 
 
-   
-     usbDeviceThisInstance->irpEp0Rx.size = USB_DEVICE_EP0_BUFFER_SIZE;
-     
+     USB_DEVICE_IRP * irp = USB_DEVICE_AllocateIRP(usbDeviceThisInstance, 'R');
+     irp->size = USB_DEVICE_EP0_BUFFER_SIZE;
 
      /* Submit IRP to endpoint 0 to receive the setup packet */
      (void)DRV_USB_DEVICE_IRPSubmit( usbDeviceThisInstance->usbCDHandle,
                                          controlEndpointRx ,
-                                         &usbDeviceThisInstance->irpEp0Rx);
+                                         irp);
     
 }
 
@@ -843,6 +966,8 @@ SYS_MODULE_OBJ USB_DEVICE_Initialize(const SYS_MODULE_INDEX index,
 
     // Get this instance of USB device layer.
     usbDeviceThisInstance = &usbDeviceInstance[index];
+
+    //InitializeAllIRPs(usbDeviceThisInstance);
       
     //Initialize this instance.        
     usbDeviceThisInstance->usbDeviceInstanceState = SYS_STATUS_READY;
@@ -889,21 +1014,6 @@ SYS_MODULE_OBJ USB_DEVICE_Initialize(const SYS_MODULE_INDEX index,
     DRV_USB_ClientEventCallBackSet(usbDeviceThisInstance->usbCDHandle,
                                              (uintptr_t)usbDeviceThisInstance,
                                             &_USB_DEVICE_EventHandler);
-    
-   
-    irpEp0Rx = &usbDeviceThisInstance->irpEp0Rx;
-    irpEp0Rx->data = usbDeviceThisInstance->ep0RxBuffer;
-    irpEp0Rx->size = USB_DEVICE_EP0_BUFFER_SIZE;
-    irpEp0Rx->flags = USB_DEVICE_IRP_FLAG_DATA_COMPLETE;
-    irpEp0Rx->status = USB_DEVICE_IRP_STATUS_COMPLETED;
-    irpEp0Rx->callback = &_USB_DEVICE_Ep0ReceiveCompleteCallback;
-    irpEp0Rx->userData = (uintptr_t)usbDeviceThisInstance;
-
-    irpEp0Tx = &usbDeviceThisInstance->irpEp0Tx;
-    irpEp0Tx->callback = &_USB_DEVICE_Ep0TransmitCompleteCallback;
-    irpEp0Tx->userData = (uintptr_t)usbDeviceThisInstance;
-    irpEp0Tx->flags = USB_DEVICE_IRP_FLAG_DATA_COMPLETE;
-
 
     // Open 1st client of the device layer.
     // The 1st client of the device layer is used by all function drivers.
@@ -1413,14 +1523,11 @@ void _USB_DEVICE_EventHandler( uintptr_t referenceHandle,
                                                   USB_TRANSFER_TYPE_CONTROL,
                                                   USB_DEVICE_EP0_BUFFER_SIZE);
 
-                       
-            if(usbDeviceInstance->irpEp0Rx.status <= USB_DEVICE_IRP_STATUS_SETUP)
-            {
-                /* Submit IRP to endpoint 0 to receive the setup packet */
-                (void)DRV_USB_DEVICE_IRPSubmit( usbDeviceInstance->usbCDHandle,
-                                             controlEndpointRx ,
-                                             &usbDeviceInstance->irpEp0Rx);
-            }
+            USB_DEVICE_IRP * irp = USB_DEVICE_AllocateIRP(usbDeviceInstance, 'R');
+            /* Submit IRP to endpoint 0 to receive the setup packet */
+            (void)DRV_USB_DEVICE_IRPSubmit( usbDeviceInstance->usbCDHandle,
+                                         controlEndpointRx ,
+                                         irp);
            					
             // Change device state to Default
             usbDeviceInstance->usbDeviceState = USB_DEVICE_STATE_DEFAULT;
@@ -1696,8 +1803,7 @@ static void _USB_DEVICE_ProcessStandardGetRequests( USB_DEVICE_INSTANCE_STRUCT *
     if(pData == NULL)
     {
         // STALL the transfer
-        USB_DEVICE_ControlStatus(   usbDeviceInstance->hClientInternalOperation,
-                                    usbDeviceInstance->controlTransfer.handle,
+        USB_DEVICE_ControlStatus(  (USB_DEVICE_HANDLE)usbDeviceInstance,
                                     USB_DEVICE_CONTROL_STATUS_ERROR );
     }
     else
@@ -1709,8 +1815,7 @@ static void _USB_DEVICE_ProcessStandardGetRequests( USB_DEVICE_INSTANCE_STRUCT *
         }
 
         // Prepare data stage
-        USB_DEVICE_ControlSend( usbDeviceInstance->hClientInternalOperation,
-                                usbDeviceInstance->controlTransfer.handle,
+        USB_DEVICE_ControlSend( (USB_DEVICE_HANDLE)usbDeviceInstance,
                                 pData,
                                 size );
     }
@@ -1919,15 +2024,13 @@ static void _USB_DEVICE_ProcessStandardSetRequests( USB_DEVICE_INSTANCE_STRUCT *
             // Respond with a request error.
             // Stall the endpoint.
              // Stall the EP0 TX.
-            USB_DEVICE_ControlStatus( usbDeviceInstance->hClientInternalOperation,
-                                      usbDeviceInstance->controlTransfer.handle,
+            USB_DEVICE_ControlStatus( (USB_DEVICE_HANDLE) usbDeviceInstance,
                                       USB_DEVICE_CONTROL_STATUS_ERROR);
             break;
     }
 
     // Send ZLP
-    USB_DEVICE_ControlStatus( usbDeviceInstance->hClientInternalOperation,
-                              usbDeviceInstance->controlTransfer.handle,
+    USB_DEVICE_ControlStatus( (USB_DEVICE_HANDLE) usbDeviceInstance,
                               USB_DEVICE_CONTROL_STATUS_OK);
 }
 
@@ -2006,8 +2109,7 @@ static void _USB_DEVICE_ProcessOtherRequests(
                 }
             }
 
-            USB_DEVICE_ControlStatus( usbDeviceInstance->hClientInternalOperation,
-                                      usbDeviceInstance->controlTransfer.handle,
+            USB_DEVICE_ControlStatus( (USB_DEVICE_HANDLE) usbDeviceInstance,
                                       controlStatus );
         }
         else if( setupPkt->bRequest == USB_REQUEST_GET_STATUS )
@@ -2016,8 +2118,7 @@ static void _USB_DEVICE_ProcessOtherRequests(
             usbDeviceInstance->getStatusResponse.endPointHalt
                     =  DRV_USB_DEVICE_EndpointIsStalled(usbDeviceInstance->usbCDHandle, usbEndpoint );
 
-            USB_DEVICE_ControlSend( usbDeviceInstance->hClientInternalOperation,
-                                    usbDeviceInstance->controlTransfer.handle,
+            USB_DEVICE_ControlSend( (USB_DEVICE_HANDLE) usbDeviceInstance,
                                     (uint8_t *)&usbDeviceInstance->getStatusResponse,
                                     2 );
                        

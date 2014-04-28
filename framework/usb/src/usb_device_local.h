@@ -192,10 +192,10 @@ typedef struct _USB_DEVICE_INSTANCE_STRUCT_
     uint8_t ep0RxBuffer[USB_DEVICE_EP0_BUFFER_SIZE];
 
     /* Tx IRP */
-    USB_DEVICE_IRP  irpEp0Tx;
+    USB_DEVICE_IRP  irpEp0Tx[2 * DRV_USB_MAX_QUEUE_LENGTH]; // only for endpoint 0
 
     /* Rx IRP */
-    USB_DEVICE_IRP  irpEp0Rx;
+    USB_DEVICE_IRP  irpEp0Rx[2 * DRV_USB_MAX_QUEUE_LENGTH]; // only for endpoint 0
 
     /* USB Speed - high speed or full speed */
     USB_SPEED    usbSpeed;

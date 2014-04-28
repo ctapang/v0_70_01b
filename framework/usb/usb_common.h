@@ -62,7 +62,10 @@ SUBSTITUTE  GOODS,  TECHNOLOGY,  SERVICES,  OR  ANY  CLAIMS  BY  THIRD   PARTIES
 
 typedef enum
 {
-    /* USB Device IRP was aborted */
+    /* free for allocation */
+    USB_DEVICE_IRP_STATUS_FREE          = -3,
+
+            /* USB Device IRP was aborted */
     USB_DEVICE_IRP_STATUS_ABORTED       = -2,
     
     /* An error occurred on the bus when the IRP was being
@@ -87,6 +90,9 @@ typedef enum
 
     /* The IRP is currently being processed */
     USB_DEVICE_IRP_STATUS_IN_PROGRESS   = 4,
+
+    /* Just allocated */
+    USB_DEVICE_IRP_STATUS_ALLOCATED      = 5
 
    
 }

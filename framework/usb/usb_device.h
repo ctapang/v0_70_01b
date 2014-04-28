@@ -2038,7 +2038,6 @@ USB_ERROR USB_DEVICE_IRPCancelAll (USB_DEVICE_HANDLE usbDeviceHandle,
 
 USB_DEVICE_CONTROL_TRANSFER_RESULT USB_DEVICE_ControlSend
                           ( USB_DEVICE_HANDLE usbDeviceHandle,
-                            USB_DEVICE_CONTROL_TRANSFER_HANDLE controlXferHandle,
                             void *  data, size_t length );
 
 
@@ -2130,7 +2129,6 @@ USB_DEVICE_CONTROL_TRANSFER_RESULT USB_DEVICE_ControlReceive
 
 USB_DEVICE_CONTROL_TRANSFER_RESULT USB_DEVICE_ControlStatus( 
                                USB_DEVICE_HANDLE usbDeviceHandle,
-                               USB_DEVICE_CONTROL_TRANSFER_HANDLE controlTransferHandle,
                                USB_DEVICE_CONTROL_STATUS status);
 
 

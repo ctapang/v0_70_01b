@@ -497,8 +497,6 @@ void DRIVER _DRV_USB_DEVICE_EndpointBDTEntryArm
 
 }
 
-int x = 0;
-
 USB_ERROR DRIVER DRV_USB_DEVICE_IRPSubmit
 (
     DRV_HANDLE client,
@@ -525,14 +523,12 @@ USB_ERROR DRIVER DRV_USB_DEVICE_IRPSubmit
         return USB_ERROR_PARAMETER_INVALID;
     }
 
-    if(irp->status > USB_DEVICE_IRP_STATUS_SETUP)
+    if(irp->status != USB_DEVICE_IRP_STATUS_ALLOCATED)
     {
         /* This means that the IRP is in use */
         SYS_ASSERT(false, "Device IRP is already in use");
         return(USB_ERROR_DEVICE_IRP_IN_USE);
     }
-
-    x++;
     
     /* Check for a valid endpoint */
     endpoint = endpointAndDirection & 0xF;
@@ -702,6 +698,7 @@ void DRIVER _DRV_USB_DEVICE_IRPQueueFlush
             {
                 iterator->callback((USB_DEVICE_IRP *)iterator);
             }
+            iterator->status = USB_DEVICE_IRP_STATUS_FREE;
             iterator = iterator->next;
         }
     }
@@ -1024,7 +1021,7 @@ void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
         /* Stall received by Host or sent by Device 
          * Send a bit mask of endpoints which have
          * stalled.*/
-		unsigned int iEndpoint;
+	unsigned int iEndpoint;
         bDoEventCallBack = true;
         eventType = DRV_USB_EVENT_STALL;
         clearUSBInterrupts = USB_INT_STALL;
@@ -1217,7 +1214,7 @@ void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
         {
             /* Check the queue and get the next IRP */
  
- 			lastEndpointObj->irpQueue = irp->next;
+            lastEndpointObj->irpQueue = irp->next;
 
             /* Check if the queue is empty. This will then allow
              * us to track if a IRP was submitted after the  IRP 
@@ -1237,6 +1234,9 @@ void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
                 /* Invoke the callback */
                 irp->callback((USB_DEVICE_IRP *)irp);
             }
+
+            // free the IRP just processed
+            irp->status = USB_DEVICE_IRP_STATUS_FREE;
 
             if((lastEndpointObj->irpQueue != NULL) &&
                     (!(queueWasEmpty)))
