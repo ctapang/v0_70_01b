@@ -117,9 +117,8 @@ USB_DEVICE_FUNCTION_DRIVER genFuncDriver = {
  */
 typedef struct _USB_DEVICE_GENERIC_INSTANCE
 {
-    USB_DEVICE_HANDLE usbDeviceHandle;
+    CLIENT_HANDLE usbDeviceHandle;
     USB_ENDPOINT endpoints[ USB_DEVICE_GENERIC_MAX_ENDPOINTS * 2 ];
-    USB_DEVICE_IRP irp[ USB_DEVICE_GENERIC_MAX_ENDPOINTS * 2 * USB_DEVICE_GENERIC_MAX_QUEUE ];
     uint8_t endpointCount;
     USB_DEVICE_GENERIC_EVENT_HANDLER appCallBack;
     uintptr_t userData;
@@ -450,29 +449,20 @@ void _USB_DEVICE_GENERIC_EndpointReadCallBack( USB_DEVICE_IRP * irp )
 
 */
 
+// Declaration of allocation function in usb_device.c
+// Normally this should be declared in usb_device.h, but there are complications
+// with declaring it there. This is a kludge.
+USB_DEVICE_IRP * USB_DEVICE_AllocateIRP( USB_DEVICE_INSTANCE_STRUCT * device,
+    const char direction );
+
 USB_DEVICE_GENERIC_RESULT USB_DEVICE_GENERIC_EndpointWrite( USB_DEVICE_GENERIC_INDEX iGEN,
                                             USB_DEVICE_GENERIC_TRANSFER_HANDLE * transferHandle,
                                             USB_ENDPOINT endpoint, uint8_t * buffer, size_t bufferSize,
                                             USB_DEVICE_GENERIC_TRANSFER_FLAG flags )
 {
-    
-    uint8_t count = 0;
     USB_DEVICE_GENERIC_INSTANCE * genInstance = &gUsbDeviceGenInstance[iGEN];
-    USB_DEVICE_IRP * irp = &genInstance->irp[count];
-
-    for(count = 0; count < (USB_DEVICE_GENERIC_MAX_ENDPOINTS * 2) ; count ++ )
-    {
-        if(  irp->status <= USB_DEVICE_IRP_STATUS_COMPLETED_SHORT )
-        {
-            break;
-        }
-        irp ++;
-    }
-
-    if(count >= (USB_DEVICE_GENERIC_MAX_ENDPOINTS * 2))
-    {
-        return USB_DEVICE_GENERIC_RESULT_QUEUE_FULL;
-    }
+    USB_DEVICE_CLIENT_STRUCT * clientHandle = (USB_DEVICE_CLIENT_STRUCT *)genInstance->usbDeviceHandle;
+    USB_DEVICE_IRP * irp = USB_DEVICE_AllocateIRP( (USB_DEVICE_INSTANCE_STRUCT *)clientHandle->usbDeviceInstance, 'T' );
 
     irp->data = buffer;
     irp->size = bufferSize;
@@ -480,7 +470,7 @@ USB_DEVICE_GENERIC_RESULT USB_DEVICE_GENERIC_EndpointWrite( USB_DEVICE_GENERIC_I
     irp->userData = iGEN;
     irp->callback = &_USB_DEVICE_GENERIC_EndpointWriteCallBack;
     (* transferHandle) = ( USB_DEVICE_GENERIC_TRANSFER_HANDLE )irp;
-    return (  USB_DEVICE_IRPSubmit( genInstance->usbDeviceHandle,
+    return (  USB_DEVICE_IRPSubmit( genInstance->usbDeviceHandle,  // macro call
                                    endpoint, irp ));
 }
 
@@ -514,23 +504,9 @@ USB_DEVICE_GENERIC_RESULT USB_DEVICE_GENERIC_EndpointRead( USB_DEVICE_GENERIC_IN
                                            USB_DEVICE_GENERIC_TRANSFER_HANDLE * transferHandle,
                                            USB_ENDPOINT endpoint, uint8_t * buffer, size_t bufferSize )
 {
-    uint8_t count = 0;
     USB_DEVICE_GENERIC_INSTANCE * genInstance = &gUsbDeviceGenInstance[iGEN];
-    USB_DEVICE_IRP * irp = &genInstance->irp[count];
-
-    for(count = 0; count < (USB_DEVICE_GENERIC_MAX_ENDPOINTS * 2) ; count ++ )
-    {
-        if(  irp->status <= USB_DEVICE_IRP_STATUS_COMPLETED_SHORT )
-        {
-            break;
-        }
-        irp ++;
-    }
-
-    if(count >= (USB_DEVICE_GENERIC_MAX_ENDPOINTS * 2))
-    {
-        return USB_DEVICE_GENERIC_RESULT_QUEUE_FULL;
-    }
+    USB_DEVICE_CLIENT_STRUCT * clientHandle = (USB_DEVICE_CLIENT_STRUCT *)genInstance->usbDeviceHandle;
+    USB_DEVICE_IRP * irp = USB_DEVICE_AllocateIRP( (USB_DEVICE_INSTANCE_STRUCT *)clientHandle->usbDeviceInstance, 'R' );
 
     irp->data = buffer;
     irp->size = bufferSize;

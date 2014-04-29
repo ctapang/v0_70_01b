@@ -184,18 +184,18 @@ typedef struct _USB_DEVICE_INSTANCE_STRUCT_
      /* This instance index */
     SYS_MODULE_INDEX usbDevLayerIndex;
     
-    /* USB Controller driver handle */
-    DRV_HANDLE usbCDHandle;
+    /* USB CLIENT handle */
+    CLIENT_HANDLE usbCDHandle;
 
    
     /* EP0 rx buffer*/
     uint8_t ep0RxBuffer[USB_DEVICE_EP0_BUFFER_SIZE];
 
     /* Tx IRP */
-    USB_DEVICE_IRP  irpEp0Tx[2 * DRV_USB_MAX_QUEUE_LENGTH]; // only for endpoint 0
+    USB_DEVICE_IRP  irpEp0Tx[2 * DRV_USB_MAX_QUEUE_LENGTH * DRV_USB_ENDPOINTS_NUMBER]; // for all endpoints
 
     /* Rx IRP */
-    USB_DEVICE_IRP  irpEp0Rx[2 * DRV_USB_MAX_QUEUE_LENGTH]; // only for endpoint 0
+    USB_DEVICE_IRP  irpEp0Rx[2 * DRV_USB_MAX_QUEUE_LENGTH * DRV_USB_ENDPOINTS_NUMBER]; // for all endpoints
 
     /* USB Speed - high speed or full speed */
     USB_SPEED    usbSpeed;

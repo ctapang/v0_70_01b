@@ -129,7 +129,7 @@ void UnlinkIRP(USB_DEVICE_IRP_LOCAL * irp)
 
 USB_DEVICE_IRP_LOCAL * SearchForFirstAvailable(USB_DEVICE_IRP_LOCAL * irpBase)
 {
-    int maxIRP = 2 * DRV_USB_MAX_QUEUE_LENGTH; // this is only for EP 0
+    int maxIRP = 2 * DRV_USB_MAX_QUEUE_LENGTH * DRV_USB_ENDPOINTS_NUMBER;
     USB_DEVICE_IRP_LOCAL * irp = irpBase;
     USB_DEVICE_IRP_LOCAL * retIRP = NULL;
     int j;
@@ -146,39 +146,13 @@ USB_DEVICE_IRP_LOCAL * SearchForFirstAvailable(USB_DEVICE_IRP_LOCAL * irpBase)
     return retIRP;
 }
 
-bool MutexOpen(DRV_HANDLE client)
-{
-    DRV_USB_OBJ * hDriver = ((DRV_USB_CLIENT_OBJ *)client)->hDriver;
-    bool interruptWasEnabled = true;
-    if(hDriver->isInInterruptContext == false)
-    {
-        //OSAL: Get mutex
-        interruptWasEnabled = SYS_INT_SourceIsEnabled(hDriver->interruptSource);
-        _DRV_USB_InterruptSourceDisable(hDriver->interruptSource);
-    }
-    return interruptWasEnabled;
-}
-
-void MutexClose(DRV_HANDLE client, bool interruptWasEnabled)
-{
-    DRV_USB_OBJ * hDriver = ((DRV_USB_CLIENT_OBJ *)client)->hDriver;
-    if(hDriver->isInInterruptContext == false)
-    {
-        if(interruptWasEnabled)
-        {
-            /* Enable the interrupt only if it was enabled */
-            _DRV_USB_InterruptSourceEnable(hDriver->interruptSource);
-        }
-        //OSAL: Return mutex
-    }
-}
 
 static void _USB_DEVICE_Ep0ReceiveCompleteCallback( USB_DEVICE_IRP * handle );
 static void _USB_DEVICE_Ep0TransmitCompleteCallback(USB_DEVICE_IRP * handle);
 
 void InitializeAllIRPs( USB_DEVICE_INSTANCE_STRUCT * usbDeviceThisInstance )
 {
-    int maxIRP = 2 * DRV_USB_MAX_QUEUE_LENGTH; // this is only for EP 0
+    int maxIRP = 2 * DRV_USB_MAX_QUEUE_LENGTH * DRV_USB_ENDPOINTS_NUMBER;
  
     USB_DEVICE_IRP_LOCAL * irp = (USB_DEVICE_IRP_LOCAL * )usbDeviceThisInstance->irpEp0Tx;
     int i;
@@ -207,11 +181,14 @@ int hix = 0;
 
 USB_DEVICE_IRP * USB_DEVICE_AllocateIRP
 (
-    USB_DEVICE_INSTANCE_STRUCT * device,
+    USB_DEVICE_HANDLE deviceHandle,
     const char direction
 )
 {
-    bool interruptWasEnabled = MutexOpen(device->usbCDHandle);
+    USB_DEVICE_INSTANCE_STRUCT * device = (USB_DEVICE_INSTANCE_STRUCT *)deviceHandle;
+
+    bool interruptWasEnabled = MutexOpen();
+    
     if (firstAllocation)
     {
         firstAllocation = false;
@@ -228,10 +205,20 @@ USB_DEVICE_IRP * USB_DEVICE_AllocateIRP
     if (direction == 'T')
     {
         irp = SearchForFirstAvailable((USB_DEVICE_IRP_LOCAL * )device->irpEp0Tx);
+        irp->callback = &_USB_DEVICE_Ep0TransmitCompleteCallback;
+        irp->userData = (uintptr_t)device;
+        irp->flags = USB_DEVICE_IRP_FLAG_DATA_COMPLETE;
+        irp->status = USB_DEVICE_IRP_STATUS_FREE;
     }
     else if (direction == 'R')
     {
         irp = SearchForFirstAvailable((USB_DEVICE_IRP_LOCAL * )device->irpEp0Rx);
+        irp->data = device->ep0RxBuffer;
+        irp->size = USB_DEVICE_EP0_BUFFER_SIZE;
+        irp->flags = USB_DEVICE_IRP_FLAG_DATA_COMPLETE;
+        irp->status = USB_DEVICE_IRP_STATUS_FREE;
+        irp->callback = &_USB_DEVICE_Ep0ReceiveCompleteCallback;
+        irp->userData = (uintptr_t)device;
     }
     else SYS_ASSERT(false, "invalid second parameter");
 
@@ -240,7 +227,7 @@ USB_DEVICE_IRP * USB_DEVICE_AllocateIRP
     if (hix < 100)
         allocationHistory[hix++] = irp;
 
-    MutexClose(device->usbCDHandle, interruptWasEnabled);
+    MutexClose(interruptWasEnabled);
 
     return (USB_DEVICE_IRP *)irp;
 }
@@ -628,7 +615,8 @@ USB_DEVICE_CONTROL_TRANSFER_RESULT USB_DEVICE_ControlSend( USB_DEVICE_HANDLE usb
                             void *  data, size_t length )
 {
      USB_DEVICE_INSTANCE_STRUCT * usbDeviceThisInstance = (USB_DEVICE_INSTANCE_STRUCT *)usbDeviceHandle;
-     USB_DEVICE_IRP * irpHandle = USB_DEVICE_AllocateIRP(usbDeviceThisInstance, 'T');
+     
+     USB_DEVICE_IRP * irpHandle = USB_DEVICE_AllocateIRP(usbDeviceHandle, 'T');
      irpHandle->data = data;
      irpHandle->size = (unsigned int )length;
 
@@ -747,7 +735,7 @@ USB_DEVICE_CONTROL_TRANSFER_RESULT USB_DEVICE_ControlStatus( USB_DEVICE_HANDLE u
     else
     {
         // Submit the IRP to send ZLP.
-        irpHandle = USB_DEVICE_AllocateIRP(usbDeviceThisInstance, 'T');
+        irpHandle = USB_DEVICE_AllocateIRP(usbDeviceHandle, 'T');
         irpHandle->data = NULL;
         irpHandle->size = 0;
         //irpHandle->flags = 0x80;
@@ -863,7 +851,7 @@ static void _USB_DEVICE_Ep0ReceiveCompleteCallback( USB_DEVICE_IRP * handle )
     }
 
 
-     USB_DEVICE_IRP * irp = USB_DEVICE_AllocateIRP(usbDeviceThisInstance, 'R');
+     USB_DEVICE_IRP * irp = USB_DEVICE_AllocateIRP((USB_DEVICE_HANDLE)usbDeviceThisInstance, 'R');
      irp->size = USB_DEVICE_EP0_BUFFER_SIZE;
 
      /* Submit IRP to endpoint 0 to receive the setup packet */
@@ -1030,7 +1018,7 @@ SYS_MODULE_OBJ USB_DEVICE_Initialize(const SYS_MODULE_INDEX index,
 
 /******************************************************************************
   Function:
-    DRV_HANDLE USB_DEVICE_Open( const SYS_MODULE_INDEX index,
+    CLIENT_HANDLE USB_DEVICE_Open( const SYS_MODULE_INDEX index,
                                 const DRV_IO_INTENT    intent )
 
   Summary:
@@ -1051,10 +1039,10 @@ SYS_MODULE_OBJ USB_DEVICE_Initialize(const SYS_MODULE_INDEX index,
     If an error occurs, the return value is DRV_HANDLE_INVALID.
 */
 
-DRV_HANDLE USB_DEVICE_Open(const SYS_MODULE_INDEX index, const DRV_IO_INTENT  intent )
+CLIENT_HANDLE USB_DEVICE_Open(const SYS_MODULE_INDEX index, const DRV_IO_INTENT  intent )
 {
     uint8_t i;
-    DRV_HANDLE retValue = DRV_HANDLE_INVALID;
+    CLIENT_HANDLE retValue = DRV_HANDLE_INVALID;
     USB_DEVICE_CLIENT_STRUCT* usbDeviceThisClient;
 
      // Make sure the index is with in range.
@@ -1085,7 +1073,7 @@ DRV_HANDLE USB_DEVICE_Open(const SYS_MODULE_INDEX index, const DRV_IO_INTENT  in
             usbDeviceThisClient->clientState = DRV_CLIENT_STATUS_READY;
             // Link the instance index.
             usbDeviceThisClient->usbDeviceInstance = &usbDeviceInstance[index];
-            retValue = (DRV_HANDLE)usbDeviceThisClient;
+            retValue = (CLIENT_HANDLE)usbDeviceThisClient;
             break;
         }    
     }  
@@ -1102,7 +1090,7 @@ DRV_HANDLE USB_DEVICE_Open(const SYS_MODULE_INDEX index, const DRV_IO_INTENT  in
 
 // *****************************************************************************
 /* Function:
-    void USB_DEVICE_Close( DRV_HANDLE usbDevHandle )
+    void USB_DEVICE_Close( CLIENT_HANDLE usbDevHandle )
 
   Summary:
     Closes an opened instance of the USB device layer.
@@ -1120,7 +1108,7 @@ DRV_HANDLE USB_DEVICE_Open(const SYS_MODULE_INDEX index, const DRV_IO_INTENT  in
 
 */
 
-void USB_DEVICE_Close(DRV_HANDLE hClient )
+void USB_DEVICE_Close(CLIENT_HANDLE hClient )
 {
     USB_DEVICE_CLIENT_HANDLE usbClientHandle;
     
@@ -1159,7 +1147,7 @@ void USB_DEVICE_Close(DRV_HANDLE hClient )
     the USB device layer.
 */
 
-DRV_CLIENT_STATUS USB_DEVICE_ClientStatus( DRV_HANDLE hHandle )
+DRV_CLIENT_STATUS USB_DEVICE_ClientStatus( CLIENT_HANDLE hHandle )
 {
     USB_DEVICE_CLIENT_STRUCT* devClientHandle;
     
@@ -1220,7 +1208,7 @@ SYS_STATUS USB_DEVICE_Status( SYS_MODULE_OBJ object )
     
 /******************************************************************************
   Function:
-    USB_ERROR USB_DEVICE_EventCallBackSet(DRV_HANDLE hHandle,
+    USB_ERROR USB_DEVICE_EventCallBackSet(CLIENT_HANDLE hHandle,
                                        const USB_DEVICE_CALLBACK *callBackFunc)
 
   Summary:
@@ -1242,7 +1230,7 @@ SYS_STATUS USB_DEVICE_Status( SYS_MODULE_OBJ object )
     If successful, this function returns the error status "USB_ERROR_OK".
 */
 
-USB_ERROR USB_DEVICE_EventCallBackSet(DRV_HANDLE hHandle, const USB_DEVICE_CALLBACK callBackFunc)
+USB_ERROR USB_DEVICE_EventCallBackSet(CLIENT_HANDLE hHandle, const USB_DEVICE_CALLBACK callBackFunc)
 {
     
     USB_DEVICE_CLIENT_STRUCT* devClientHandle;    
@@ -1269,7 +1257,7 @@ USB_ERROR USB_DEVICE_EventCallBackSet(DRV_HANDLE hHandle, const USB_DEVICE_CALLB
 
 /******************************************************************************
   Function:
-    uint16_t USB_DEVICE_GetConfigurationValue(DRV_HANDLE *hHandle)  
+    uint16_t USB_DEVICE_GetConfigurationValue(CLIENT_HANDLE *hHandle)
 
   Summary:
     Gets the configuration selected by the Host.
@@ -1284,7 +1272,7 @@ USB_ERROR USB_DEVICE_EventCallBackSet(DRV_HANDLE hHandle, const USB_DEVICE_CALLB
     Present active configuration of the device.
 */
 
-uint8_t USB_DEVICE_GetConfigurationValue(DRV_HANDLE hHandle)
+uint8_t USB_DEVICE_GetConfigurationValue(CLIENT_HANDLE hHandle)
 {
     USB_DEVICE_CLIENT_STRUCT * devClientHandle;
 
@@ -1301,7 +1289,7 @@ uint8_t USB_DEVICE_GetConfigurationValue(DRV_HANDLE hHandle)
 
 /******************************************************************************
   Function:
-    USB_SPEED USB_DEVICE_GetDeviceSpeed(DRV_HANDLE *hHandle)
+    USB_SPEED USB_DEVICE_GetDeviceSpeed(CLIENT_HANDLE *hHandle)
 
   Summary:
     Gets the speed on which the device has enumerated.
@@ -1316,7 +1304,7 @@ uint8_t USB_DEVICE_GetConfigurationValue(DRV_HANDLE hHandle)
     USB speed.
 */
 
-USB_SPEED USB_DEVICE_GetDeviceSpeed(DRV_HANDLE hHandle)
+USB_SPEED USB_DEVICE_GetDeviceSpeed(CLIENT_HANDLE hHandle)
 {
     USB_DEVICE_CLIENT_STRUCT* devClientHandle;
     
@@ -1523,7 +1511,7 @@ void _USB_DEVICE_EventHandler( uintptr_t referenceHandle,
                                                   USB_TRANSFER_TYPE_CONTROL,
                                                   USB_DEVICE_EP0_BUFFER_SIZE);
 
-            USB_DEVICE_IRP * irp = USB_DEVICE_AllocateIRP(usbDeviceInstance, 'R');
+            USB_DEVICE_IRP * irp = USB_DEVICE_AllocateIRP((USB_DEVICE_HANDLE)usbDeviceInstance, 'R');
             /* Submit IRP to endpoint 0 to receive the setup packet */
             (void)DRV_USB_DEVICE_IRPSubmit( usbDeviceInstance->usbCDHandle,
                                          controlEndpointRx ,
@@ -2265,7 +2253,7 @@ void USB_DEVICE_PowerStateSet( USB_DEVICE_HANDLE handle,
 
 /******************************************************************************
   Function:
-    USB_ERROR USB_DEVICE_ControlEventCallBackSet( DRV_HANDLE handle,
+    USB_ERROR USB_DEVICE_ControlEventCallBackSet( CLIENT_HANDLE handle,
                      const USB_DEVICE_CONTROL_TRANSFER_CALLBACK callBackFunc )
 
   Summary:
@@ -2283,7 +2271,7 @@ void USB_DEVICE_PowerStateSet( USB_DEVICE_HANDLE handle,
 
 */
 
-USB_ERROR USB_DEVICE_ControlEventCallBackSet( DRV_HANDLE handle,
+USB_ERROR USB_DEVICE_ControlEventCallBackSet( CLIENT_HANDLE handle,
                      const USB_DEVICE_CONTROL_TRANSFER_CALLBACK callBackFunc )
 {
     ((USB_DEVICE_CLIENT_STRUCT *)handle)->controlTransferEventCallback = callBackFunc;

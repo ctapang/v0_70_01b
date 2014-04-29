@@ -198,6 +198,24 @@ typedef uint8_t** USB_DEVICE_STRING_DESCS_PTR;
 
 typedef uintptr_t USB_DEVICE_CONTROL_TRANSFER_HANDLE;
 
+//*******************************************************************************
+/*  Data type of client handle.
+
+  Summary:
+    Data type of USB client handle (which should be a USB_DEVICE_CLIENT_STRUCT).
+
+  Description:
+    This is the data type of the handle that must refer to a
+    USB_DEVICE_CLIENT_STRUCT.
+
+  Remarks:
+    Also see,
+       USB_DEVICE_CLIENT_STRUCT
+
+*/
+
+typedef uintptr_t CLIENT_HANDLE;
+
 
 //*******************************************************************************
 /* 

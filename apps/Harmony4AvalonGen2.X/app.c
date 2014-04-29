@@ -605,6 +605,9 @@ void APP_Tasks ( void )
     None.
  */
 
+int x = 0;
+BYTE buf[100];
+
 void APP_USBDeviceGenericEventHandler ( USB_DEVICE_GENERIC_INDEX iGEN,
                            USB_DEVICE_CONTROL_TRANSFER_HANDLE controlTransferHandle,
                            USB_DEVICE_GENERIC_EVENT event,
@@ -621,6 +624,9 @@ void APP_USBDeviceGenericEventHandler ( USB_DEVICE_GENERIC_INDEX iGEN,
         case USB_DEVICE_GENERIC_EVENT_ENDPOINT_READ_COMPLETE:
             appObject.epDataReadPending = false;
 
+            if (x < 100)
+                buf[x++] = appObject.receivedDataBuffer[0];
+            
             // execute the command from cgminer
             ProcessCmd(appObject.receivedDataBuffer);
 

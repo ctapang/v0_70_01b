@@ -54,6 +54,33 @@ SUBSTITUTE  GOODS,  TECHNOLOGY,  SERVICES,  OR  ANY  CLAIMS  BY  THIRD   PARTIES
 
 DRV_USB_GROUP gDrvUSBGroup[DRV_USB_INSTANCES_NUMBER];
 
+bool MutexOpen()
+{
+    DRV_USB_OBJ * drvObj = &gDrvUSBGroup[DRV_USB_INDEX_0].gDrvUSBObj; // this works bec there's only one USB hw module
+    bool interruptWasEnabled = true;
+    if(drvObj->isInInterruptContext == false)
+    {
+        //OSAL: Get mutex
+        interruptWasEnabled = SYS_INT_SourceIsEnabled(drvObj->interruptSource);
+        _DRV_USB_InterruptSourceDisable(drvObj->interruptSource);
+    }
+    return interruptWasEnabled;
+}
+
+void MutexClose(bool interruptWasEnabled)
+{
+    DRV_USB_OBJ * drvObj = &gDrvUSBGroup[DRV_USB_INDEX_0].gDrvUSBObj; // this works bec there's only one USB hw module
+    if(drvObj->isInInterruptContext == false)
+    {
+        if(interruptWasEnabled)
+        {
+            /* Enable the interrupt only if it was enabled */
+            _DRV_USB_InterruptSourceEnable(drvObj->interruptSource);
+        }
+        //OSAL: Return mutex
+    }
+}
+
 #define DRIVER __attribute__((section("Driver")))
 
 SYS_MODULE_OBJ DRIVER DRV_USB_Initialize 
