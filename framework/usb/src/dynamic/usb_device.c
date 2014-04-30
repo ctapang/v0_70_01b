@@ -206,23 +206,21 @@ USB_DEVICE_IRP * USB_DEVICE_AllocateIRP
     {
         irp = SearchForFirstAvailable((USB_DEVICE_IRP_LOCAL * )device->irpEp0Tx);
         irp->callback = &_USB_DEVICE_Ep0TransmitCompleteCallback;
-        irp->userData = (uintptr_t)device;
-        irp->flags = USB_DEVICE_IRP_FLAG_DATA_COMPLETE;
-        irp->status = USB_DEVICE_IRP_STATUS_FREE;
     }
     else if (direction == 'R')
     {
         irp = SearchForFirstAvailable((USB_DEVICE_IRP_LOCAL * )device->irpEp0Rx);
         irp->data = device->ep0RxBuffer;
         irp->size = USB_DEVICE_EP0_BUFFER_SIZE;
-        irp->flags = USB_DEVICE_IRP_FLAG_DATA_COMPLETE;
-        irp->status = USB_DEVICE_IRP_STATUS_FREE;
         irp->callback = &_USB_DEVICE_Ep0ReceiveCompleteCallback;
-        irp->userData = (uintptr_t)device;
     }
     else SYS_ASSERT(false, "invalid second parameter");
 
     SYS_ASSERT((irp != NULL), "Cannot allocate IRP");
+
+    irp->userData = deviceHandle;
+    irp->flags = USB_DEVICE_IRP_FLAG_DATA_COMPLETE;
+    irp->status = USB_DEVICE_IRP_STATUS_ALLOCATED;
 
     if (hix < 100)
         allocationHistory[hix++] = irp;

@@ -624,21 +624,21 @@ void APP_USBDeviceGenericEventHandler ( USB_DEVICE_GENERIC_INDEX iGEN,
         case USB_DEVICE_GENERIC_EVENT_ENDPOINT_READ_COMPLETE:
             appObject.epDataReadPending = false;
 
-            if (x < 100)
-                buf[x++] = appObject.receivedDataBuffer[0];
-            
-            // execute the command from cgminer
-            ProcessCmd(appObject.receivedDataBuffer);
-
-            // be ready to receive next command
-            appObject.epDataReadPending = true ;
-
             /* Place a new read request. */
             USB_DEVICE_GENERIC_EndpointRead ( USB_DEVICE_GENERIC_INDEX_0,
                                                &appObject.readTranferHandle,
                                                 appObject.endpointRx,
                                                 &appObject.receivedDataBuffer[0],
                                                 sizeof(appObject.receivedDataBuffer) );
+
+            // be ready to receive next command
+            appObject.epDataReadPending = true ;
+
+            if (x < 100)
+                buf[x++] = appObject.receivedDataBuffer[0];
+            
+            // execute the command from cgminer
+            ProcessCmd(appObject.receivedDataBuffer);
             break;
 
         default:
