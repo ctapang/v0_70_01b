@@ -92,8 +92,6 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
     configuration-specific "sys_tasks.c" file).
  */
 
-extern APP_DATA appObject;
-
 void SYS_Tasks ( void )
 {
     // TODO call task routines for the Harmony drivers and middleware

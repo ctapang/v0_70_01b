@@ -351,23 +351,19 @@ bool USB_DEVICE_GENERIC_EndpointIsEnabled( USB_DEVICE_GENERIC_INDEX iGEN,
 
 void _USB_DEVICE_GENERIC_EndpointWriteCallBack( USB_DEVICE_IRP * irp )
 {
-
-   USB_DEVICE_IRP * irpHandle = irp;
-   USB_DEVICE_GENERIC_EVENT_DATA event;
+   USB_DEVICE_GENERIC_EVENT_DATA event; // FIXME: may need to allocate
    USB_DEVICE_GENERIC_INSTANCE * usbGenInstance;
 
-   usbGenInstance = &gUsbDeviceGenInstance[irpHandle->userData] ;
-
-    irpHandle = ( USB_DEVICE_IRP * )irp;
+   usbGenInstance = &gUsbDeviceGenInstance[irp->userData] ;
 
     if( usbGenInstance->appCallBack != NULL )
     {
-        event.endpointWriteComplete.data = irpHandle->data;
-        event.endpointWriteComplete.dataSize = irpHandle->size;
-        event.endpointWriteComplete.status = irpHandle->status;
-        event.endpointWriteComplete.transferHandle = ( USB_DEVICE_GENERIC_TRANSFER_HANDLE )irpHandle;
+        event.endpointWriteComplete.data = irp->data;
+        event.endpointWriteComplete.dataSize = irp->size;
+        event.endpointWriteComplete.status = irp->status;
+        event.endpointWriteComplete.transferHandle = ( USB_DEVICE_GENERIC_TRANSFER_HANDLE )irp;
 
-        usbGenInstance->appCallBack( ( USB_DEVICE_GENERIC_INDEX ) irpHandle->userData,
+        usbGenInstance->appCallBack( ( USB_DEVICE_GENERIC_INDEX ) irp->userData,
                                        (USB_DEVICE_CONTROL_TRANSFER_HANDLE)NULL,
                                        USB_DEVICE_GENERIC_EVENT_ENDPOINT_WRITE_COMPLETE ,
                                        &event,
@@ -396,23 +392,19 @@ void _USB_DEVICE_GENERIC_EndpointWriteCallBack( USB_DEVICE_IRP * irp )
 
 void _USB_DEVICE_GENERIC_EndpointReadCallBack( USB_DEVICE_IRP * irp )
 {
-
-   USB_DEVICE_IRP * irpHandle = irp;
-   USB_DEVICE_GENERIC_EVENT_DATA event;
+   USB_DEVICE_GENERIC_EVENT_DATA event; // FIXME: may need to allocate
    USB_DEVICE_GENERIC_INSTANCE * usbGenInstance;
 
-   usbGenInstance = &gUsbDeviceGenInstance[irpHandle->userData] ;
-
-    irpHandle = ( USB_DEVICE_IRP * )irp;
+   usbGenInstance = &gUsbDeviceGenInstance[irp->userData] ;
 
     if( usbGenInstance->appCallBack != NULL )
     {
-        event.endpointReadComplete.data = irpHandle->data;
-        event.endpointReadComplete.dataSize = irpHandle->size;
-        event.endpointReadComplete.status = irpHandle->status;
-        event.endpointReadComplete.transferHandle = ( USB_DEVICE_GENERIC_TRANSFER_HANDLE )irpHandle;
+        event.endpointReadComplete.data = irp->data;
+        event.endpointReadComplete.dataSize = irp->size;
+        event.endpointReadComplete.status = irp->status;
+        event.endpointReadComplete.transferHandle = ( USB_DEVICE_GENERIC_TRANSFER_HANDLE )irp;
 
-        usbGenInstance->appCallBack( ( USB_DEVICE_GENERIC_INDEX ) irpHandle->userData,
+        usbGenInstance->appCallBack( ( USB_DEVICE_GENERIC_INDEX ) irp->userData,
                                        (USB_DEVICE_CONTROL_TRANSFER_HANDLE)NULL,
                                        USB_DEVICE_GENERIC_EVENT_ENDPOINT_READ_COMPLETE ,
                                        &event,

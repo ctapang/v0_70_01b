@@ -85,9 +85,14 @@ void AsicPreCalc(WORKTASK *work)
 
 void SendCmdReply(char *cmd, BYTE *data, BYTE count)
 {
-    appObject.transmitDataBuffer[0] = cmd[0];
-    appObject.transmitDataBuffer[1] = PLIB_USB_DeviceAddressGet( USB_ID_1 );
-    memcpy(appObject.transmitDataBuffer + 2, data, count);
+    appObject.bTransmitBufArea = !appObject.bTransmitBufArea;
+    int bufIndex = appObject.bTransmitBufArea ? appObject.txBufSize : 0;
+
+    SYS_ASSERT(((count + 2) <= appObject.txBufSize), "size to transmit too large");
+
+    appObject.transmitDataBuffer[bufIndex] = cmd[0];
+    appObject.transmitDataBuffer[bufIndex + 1] = PLIB_USB_DeviceAddressGet( USB_ID_1 );
+    memcpy(appObject.transmitDataBuffer + bufIndex + 2, data, count);
 
     /* Send the data to the host */
 
@@ -96,8 +101,8 @@ void SendCmdReply(char *cmd, BYTE *data, BYTE count)
     USB_DEVICE_GENERIC_EndpointWrite
             ( USB_DEVICE_GENERIC_INDEX_0,
             ( USB_DEVICE_GENERIC_TRANSFER_HANDLE *)&appObject.writeTranferHandle,
-            appObject.endpointTx, &appObject.transmitDataBuffer[0],
-            sizeof(appObject.transmitDataBuffer),
+            appObject.endpointTx, &appObject.transmitDataBuffer[bufIndex],
+            count + 2,
             USB_DEVICE_GENERIC_TRANSFER_FLAG_NONE );
 }
 

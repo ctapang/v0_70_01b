@@ -126,10 +126,14 @@ typedef struct
     DRV_HANDLE usbDevHandle;
 
     /* Recieve data buffer */
-    uint8_t receivedDataBuffer[64];
+    bool bReceivedBufArea;
+    int rxBufSize;
+    uint8_t receivedDataBuffer[128];
 
     /* Transmit data buffer */
-    uint8_t  transmitDataBuffer[2];
+    bool bTransmitBufArea;
+    int txBufSize;
+    uint8_t  transmitDataBuffer[128];
 
         /* Track device configuration */
     bool deviceIsConfigured;

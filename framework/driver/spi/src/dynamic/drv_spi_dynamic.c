@@ -90,7 +90,7 @@ static DRV_SPI_OBJ             gDrvSPIObj[DRV_SPI_INSTANCES_NUMBER] ;
     None
 */
 
-static DRV_SPI_CLIENT_OBJ      gDrvSPIClientObj [ DRV_SPI_CLIENTS_NUMBER ] ;
+static DRV_SPI_CLIENT_OBJ      gDrvSPIClientObj [ DRV_SPI_INSTANCES_NUMBER ][ DRV_SPI_CLIENTS_NUMBER ] ;
 
 
 // *****************************************************************************
@@ -135,7 +135,7 @@ static DRV_SPI_BUFFER_OBJECT	gDrvSPIBufferObj [ DRV_SPI_INSTANCES_NUMBER ][ DRV_
     This macro has variations for dynamic or static driver.
 */
 
-#define _DRV_SPI_CLIENT_OBJ_GET(obj)    &gDrvSPIClientObj[obj]
+#define _DRV_SPI_CLIENT_OBJ_GET(obj, index)    &gDrvSPIClientObj[obj][index]
 
 // *****************************************************************************
 /* Macro: _DRV_SPI_CLIENT_OBJ(obj,mem)
@@ -426,9 +426,12 @@ SYS_MODULE_OBJ DRV_SPI_Initialize ( const SYS_MODULE_INDEX   drvIndex,
     }
 
     // client for this driver should not be in use
-    DRV_SPI_CLIENT_OBJ  *clientObj      =
-                        ( DRV_SPI_CLIENT_OBJ* ) _DRV_SPI_CLIENT_OBJ_GET(drvIndex);
-    clientObj->inUse = false;
+    size_t iClient;
+    for ( iClient = 0; iClient < DRV_SPI_CLIENTS_NUMBER ; iClient++ )
+    {
+        DRV_SPI_CLIENT_OBJ *spiClient = _DRV_SPI_CLIENT_OBJ_GET(spiId, iClient);
+        spiClient->inUse = false;
+    }
 
     DRV_SPI_OBJ *dObj = _DRV_SPI_INSTANCE_GET ( drvIndex );
 
@@ -509,7 +512,6 @@ void DRV_SPI_Deinitialize ( SYS_MODULE_OBJ object )
 {
     DRV_SPI_OBJ *dObj = (DRV_SPI_OBJ*) object;
     SPI_MODULE_ID spiId = dObj->spiId;
-	size_t iClient;
     /* Interrupt De-Registration */
     _DRV_SPI_InterruptSourceDisable ( _DRV_SPI_INT_SRC_GET( dObj->txInterruptSource ) );
     _DRV_SPI_InterruptSourceDisable ( _DRV_SPI_INT_SRC_GET( dObj->rxInterruptSource ) );
@@ -521,15 +523,17 @@ void DRV_SPI_Deinitialize ( SYS_MODULE_OBJ object )
         PLIB_SPI_Disable( _DRV_SPI_PERIPHERAL_ID_GET( spiId ) );
     }
 
-	for ( iClient = 0; iClient < DRV_SPI_CLIENTS_NUMBER ; iClient++ )
+    size_t iClient;
+    for ( iClient = 0; iClient < DRV_SPI_CLIENTS_NUMBER ; iClient++ )
     {
-		gDrvSPIClientObj[iClient].inUse = false;
-	}
+        DRV_SPI_CLIENT_OBJ *spiClient = _DRV_SPI_CLIENT_OBJ_GET(spiId, iClient);
+        spiClient->inUse = false;
+    }
 
-	dObj->numClients = 0;
-	dObj->isExclusive = false;
-	/* Clear all the pending requests */
-	dObj->queueHead = NULL;
+    dObj->numClients = 0;
+    dObj->isExclusive = false;
+    /* Clear all the pending requests */
+    dObj->queueHead = NULL;
     /* Set the Device Status */
     dObj->status = SYS_STATUS_UNINITIALIZED;
 
@@ -872,7 +876,7 @@ DRV_HANDLE DRV_SPI_Open ( const SYS_MODULE_INDEX   drvIndex,
 {
     /* Multi client variables are removed from single client builds. */
     DRV_SPI_CLIENT_OBJ  *clientObj      =
-                        ( DRV_SPI_CLIENT_OBJ* ) _DRV_SPI_CLIENT_OBJ_GET(drvIndex);
+                        ( DRV_SPI_CLIENT_OBJ* ) _DRV_SPI_CLIENT_OBJ_GET(drvIndex, 0);
     DRV_SPI_OBJ         *dObj;
     size_t              iClient;
 

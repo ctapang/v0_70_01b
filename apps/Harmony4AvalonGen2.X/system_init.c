@@ -255,7 +255,6 @@ DRV_TMR_INIT   timerInit =
 bool TickInit();
 void TimerHandler();
 
-extern APP_DATA appObject;
 
 void USB_Init()
 {

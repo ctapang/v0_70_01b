@@ -501,13 +501,18 @@ void APP_Tasks ( void )
             if (appObject.deviceIsConfigured && appObject.configValue == 1)
             {
                 appObject.epDataReadPending = true ;
+                appObject.bReceivedBufArea = false;
+                appObject.bTransmitBufArea = false;
+                appObject.rxBufSize = 64;
+                appObject.txBufSize = 64;
+                int bufIndex = appObject.bReceivedBufArea ? appObject.rxBufSize : 0;
 
                 /* Place a new read request. */
                 USB_DEVICE_GENERIC_EndpointRead ( USB_DEVICE_GENERIC_INDEX_0,
                                                    &appObject.readTranferHandle,
                                                     appObject.endpointRx,
-                                                    &appObject.receivedDataBuffer[0],
-                                                    sizeof(appObject.receivedDataBuffer) );
+                                                    &appObject.receivedDataBuffer[bufIndex],
+                                                    appObject.rxBufSize );
 
                 appObject.epDataWritePending = false ;
 
@@ -623,22 +628,24 @@ void APP_USBDeviceGenericEventHandler ( USB_DEVICE_GENERIC_INDEX iGEN,
 
         case USB_DEVICE_GENERIC_EVENT_ENDPOINT_READ_COMPLETE:
             appObject.epDataReadPending = false;
+            appObject.bReceivedBufArea = !appObject.bReceivedBufArea;
+            int bufIndex = appObject.bReceivedBufArea ? appObject.rxBufSize : 0;
 
             /* Place a new read request. */
             USB_DEVICE_GENERIC_EndpointRead ( USB_DEVICE_GENERIC_INDEX_0,
                                                &appObject.readTranferHandle,
                                                 appObject.endpointRx,
-                                                &appObject.receivedDataBuffer[0],
-                                                sizeof(appObject.receivedDataBuffer) );
+                                                &appObject.receivedDataBuffer[bufIndex],
+                                                appObject.rxBufSize );
 
             // be ready to receive next command
             appObject.epDataReadPending = true ;
 
             if (x < 100)
-                buf[x++] = appObject.receivedDataBuffer[0];
+                buf[x++] = eventData->endpointReadComplete.data[0];
             
             // execute the command from cgminer
-            ProcessCmd(appObject.receivedDataBuffer);
+            ProcessCmd(eventData->endpointReadComplete.data);
             break;
 
         default:
