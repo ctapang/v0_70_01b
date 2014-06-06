@@ -93,7 +93,7 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 /* Enable USB PLL */
 #pragma config UPLLEN   = ON
 
-/* USB PLL input divider 25 MHz / 6 = 4.166 */
+/* USB PLL input divider 24 MHz / 6 = 4 MHz */
 #pragma config UPLLIDIV = DIV_6
 
 // *****************************************************************************

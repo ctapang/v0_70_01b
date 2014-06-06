@@ -160,7 +160,7 @@ void InitializeAllIRPs( USB_DEVICE_INSTANCE_STRUCT * usbDeviceThisInstance )
     {
         irp->callback = &_USB_DEVICE_Ep0TransmitCompleteCallback;
         irp->userData = (uintptr_t)usbDeviceThisInstance;
-        irp->flags = USB_DEVICE_IRP_FLAG_DATA_COMPLETE;
+        irp->flags = USB_DEVICE_IRP_FLAG_DEVICE_TO_HOST;
         irp->status = USB_DEVICE_IRP_STATUS_FREE;
     }
 
@@ -169,7 +169,7 @@ void InitializeAllIRPs( USB_DEVICE_INSTANCE_STRUCT * usbDeviceThisInstance )
     {
         irp->data = usbDeviceThisInstance->ep0RxBuffer;
         irp->size = USB_DEVICE_EP0_BUFFER_SIZE;
-        irp->flags = USB_DEVICE_IRP_FLAG_DATA_COMPLETE;
+        irp->flags = USB_DEVICE_IRP_FLAG_HOST_TO_DEVICE;
         irp->status = USB_DEVICE_IRP_STATUS_FREE;
         irp->callback = &_USB_DEVICE_Ep0ReceiveCompleteCallback;
         irp->userData = (uintptr_t)usbDeviceThisInstance;
@@ -206,6 +206,7 @@ USB_DEVICE_IRP * USB_DEVICE_AllocateIRP
     {
         irp = SearchForFirstAvailable((USB_DEVICE_IRP_LOCAL * )device->irpEp0Tx);
         irp->callback = &_USB_DEVICE_Ep0TransmitCompleteCallback;
+        irp->flags = USB_DEVICE_IRP_FLAG_DEVICE_TO_HOST;
     }
     else if (direction == 'R')
     {
@@ -213,13 +214,14 @@ USB_DEVICE_IRP * USB_DEVICE_AllocateIRP
         irp->data = device->ep0RxBuffer;
         irp->size = USB_DEVICE_EP0_BUFFER_SIZE;
         irp->callback = &_USB_DEVICE_Ep0ReceiveCompleteCallback;
+        irp->flags = USB_DEVICE_IRP_FLAG_HOST_TO_DEVICE;
     }
     else SYS_ASSERT(false, "invalid second parameter");
 
     SYS_ASSERT((irp != NULL), "Cannot allocate IRP");
 
     irp->userData = deviceHandle;
-    irp->flags = USB_DEVICE_IRP_FLAG_DATA_COMPLETE;
+    //irp->flags |= USB_DEVICE_IRP_FLAG_DATA_COMPLETE;
     irp->status = USB_DEVICE_IRP_STATUS_ALLOCATED;
 
     if (hix < 100)
@@ -533,10 +535,6 @@ void USB_DEVICE_Tasks( SYS_MODULE_OBJ devLayerObj )
 {
     USB_DEVICE_INSTANCE_STRUCT* usbDeviceThisInstance;
     uint8_t count;
-    uint16_t maxFunctionCounts = usbDeviceInstance->registeredFuncDriverCount;
-    USB_DEVICE_FUNC_REGISTRATION_TABLE * funcRegTable = usbDeviceInstance->registeredFuncDrivers;
-    uint8_t speed = usbDeviceInstance->usbSpeed ;
-    uint16_t configValue = usbDeviceInstance->activeConfiguration ;
 
     // Assert object is valid.
     SYS_ASSERT((devLayerObj != SYS_MODULE_OBJ_INVALID), "Invalid Module Obj");    
@@ -544,6 +542,11 @@ void USB_DEVICE_Tasks( SYS_MODULE_OBJ devLayerObj )
     // Get this instance of USB device layer.
     usbDeviceThisInstance = &usbDeviceInstance[devLayerObj];    
        
+    uint16_t maxFunctionCounts = usbDeviceThisInstance->registeredFuncDriverCount;
+    USB_DEVICE_FUNC_REGISTRATION_TABLE * funcRegTable = usbDeviceThisInstance->registeredFuncDrivers;
+    uint8_t speed = usbDeviceThisInstance->usbSpeed ;
+    uint16_t configValue = usbDeviceThisInstance->activeConfiguration ;
+
     // Proceed only if this instance is in initialized state.
     if( usbDeviceThisInstance->usbDeviceInstanceState <= SYS_STATUS_UNINITIALIZED )
     {
@@ -1474,6 +1477,7 @@ void _USB_DEVICE_EventHandler( uintptr_t referenceHandle,
     
     USB_DEVICE_INSTANCE_STRUCT* usbDeviceInstance;
     USB_MASTER_DESCRIPTOR * ptrMasterDescTable;
+    unsigned char err;
              
     usbDeviceInstance = (USB_DEVICE_INSTANCE_STRUCT *)referenceHandle;
     
@@ -1569,7 +1573,11 @@ void _USB_DEVICE_EventHandler( uintptr_t referenceHandle,
 
         case DRV_USB_EVENT_SOF_DETECT:
             break;
-            
+
+        case DRV_USB_EVENT_ERROR:
+            if (eventData != NULL)
+                err = *(unsigned char *)eventData;
+            break;
   
         default:
             // Nothing to do for all other cases.

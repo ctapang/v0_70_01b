@@ -117,8 +117,8 @@ DRV_USB_BDT_ENTRY;
 #define USB_DEVICE_IRP_FLAG_SEND_ZLP 0x80
 
 /***************************************************
- * This object is used by the driver as IRP place
- * holder along with queueing feature.
+ * This object is used by the driver as IRP "derived 
+ * class" that adds queueing feature.
  ***************************************************/
 typedef struct _USB_DEVICE_IRP_LOCAL 
 {

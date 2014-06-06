@@ -183,7 +183,9 @@ typedef enum
      * is more than endpoint size but not a multiple, only
      * endpoitn multiple size of data is sent.*/
 
-    USB_DEVICE_IRP_FLAG_DATA_PENDING = 2
+    USB_DEVICE_IRP_FLAG_DATA_PENDING = 2,
+    USB_DEVICE_IRP_FLAG_DEVICE_TO_HOST = 4,
+    USB_DEVICE_IRP_FLAG_HOST_TO_DEVICE = 8
 }
 USB_DEVICE_IRP_FLAG;
 

@@ -512,7 +512,7 @@ void APP_Tasks ( void )
                                                    &appObject.readTranferHandle,
                                                     appObject.endpointRx,
                                                     &appObject.receivedDataBuffer[bufIndex],
-                                                    appObject.rxBufSize );
+                                                    1 ); // ask for the very minimum
 
                 appObject.epDataWritePending = false ;
 
@@ -610,8 +610,11 @@ void APP_Tasks ( void )
     None.
  */
 
-int x = 0;
+int x = 0, y = 0, z = 0;
 BYTE buf[100];
+
+extern int countAfter;
+int readCompletionTime = -1;
 
 void APP_USBDeviceGenericEventHandler ( USB_DEVICE_GENERIC_INDEX iGEN,
                            USB_DEVICE_CONTROL_TRANSFER_HANDLE controlTransferHandle,
@@ -624,9 +627,14 @@ void APP_USBDeviceGenericEventHandler ( USB_DEVICE_GENERIC_INDEX iGEN,
     {
         case USB_DEVICE_GENERIC_EVENT_ENDPOINT_WRITE_COMPLETE:
             appObject.epDataWritePending = false;
+            z++;
             break;
 
         case USB_DEVICE_GENERIC_EVENT_ENDPOINT_READ_COMPLETE:
+
+            if (readCompletionTime < 0)
+                readCompletionTime = countAfter;
+            
             appObject.epDataReadPending = false;
             appObject.bReceivedBufArea = !appObject.bReceivedBufArea;
             int bufIndex = appObject.bReceivedBufArea ? appObject.rxBufSize : 0;
@@ -636,13 +644,14 @@ void APP_USBDeviceGenericEventHandler ( USB_DEVICE_GENERIC_INDEX iGEN,
                                                &appObject.readTranferHandle,
                                                 appObject.endpointRx,
                                                 &appObject.receivedDataBuffer[bufIndex],
-                                                appObject.rxBufSize );
+                                                1 );
 
             // be ready to receive next command
             appObject.epDataReadPending = true ;
 
             if (x < 100)
                 buf[x++] = eventData->endpointReadComplete.data[0];
+            y++;
             
             // execute the command from cgminer
             ProcessCmd(eventData->endpointReadComplete.data);

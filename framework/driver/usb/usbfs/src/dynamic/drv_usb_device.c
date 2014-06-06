@@ -426,13 +426,35 @@ void DRIVER _DRV_USB_DEVICE_EndpointBDTEntryArm
 
     DRV_USB_BDT_ENTRY * currentBDTEntry;
 
+#if PINGPONG
+    currentBDTEntry = pBDT;
+    endpointObj->nextPingPong = 0;
+    if ((currentBDTEntry->byte[0] & 0x80) != 0)
+    {
+        currentBDTEntry = pBDT + 1;
+        endpointObj->nextPingPong = 1;
+    }
+#else
     currentBDTEntry = pBDT + endpointObj->nextPingPong;
+    //if ((currentBDTEntry->byte[0] & 0x80) != 0)
+    {
+        int cycles = 100000;
+        while (cycles) // ((currentBDTEntry->byte[0] & 0x80) != 0)
+        {
+            size = 0; // dummy assignment for cycles
+            cycles--;
+        }
+    }
+#endif
+    //SYS_ASSERT(((currentBDTEntry->byte[0] & 0x80) == 0), "Ping-pong buffer broken");
 
     /* Calculate the size of the transaction */
     if(USB_DATA_DIRECTION_DEVICE_TO_HOST == direction)
     {
         /* If data is moving from device to host
          * then enable data toggle syncronization */
+
+        SYS_ASSERT(((irp->flags & USB_DEVICE_IRP_FLAG_DEVICE_TO_HOST) != 0), "Wrong write IRP");
 
         currentBDTEntry->byte[0] = 0x08;
 
@@ -462,6 +484,9 @@ void DRIVER _DRV_USB_DEVICE_EndpointBDTEntryArm
     }
     else
     {
+
+        SYS_ASSERT(((irp->flags & USB_DEVICE_IRP_FLAG_HOST_TO_DEVICE) != 0), "Wrong read IRP");
+
         /* Data is moving from host to device */
         currentBDTEntry->byte[0] = 0x0;
 
@@ -482,7 +507,7 @@ void DRIVER _DRV_USB_DEVICE_EndpointBDTEntryArm
      * then set it according to the next data toggle
      * to be used.*/
 
-    currentBDTEntry->byte[0] &= 0xBF;
+    currentBDTEntry->byte[0] &= 0x3F; // 0xBF;
     currentBDTEntry->byte[0] |= (endpointObj->nextDataToggle << 6);
     
     /* Set the size */
@@ -496,6 +521,10 @@ void DRIVER _DRV_USB_DEVICE_EndpointBDTEntryArm
     endpointObj->nextDataToggle ^= 0x1;
 
 }
+
+int countAfter = 0;
+int irpSubmitTime = -1;
+bool trigger = false;
 
 USB_ERROR DRIVER DRV_USB_DEVICE_IRPSubmit
 (
@@ -512,6 +541,7 @@ USB_ERROR DRIVER DRV_USB_DEVICE_IRPSubmit
     DRV_USB_BDT_ENTRY * pBDT;
     DRV_USB_DEVICE_ENDPOINT_OBJ * endpointObj;
     bool interruptWasEnabled = false;
+
 
     int remainder;
 
@@ -554,6 +584,10 @@ USB_ERROR DRIVER DRV_USB_DEVICE_IRPSubmit
         /* This means the endpoint is disabled */        
         return(USB_ERROR_ENDPOINT_NOT_CONFIGURED);        
     }
+
+
+    if(trigger && USB_DATA_DIRECTION_DEVICE_TO_HOST == direction && irpSubmitTime < 0)
+        irpSubmitTime = countAfter; 
 
     /* Check the size of the IRP. If the endpoint receives
      * data from the host, then IRP size must be 
@@ -931,6 +965,12 @@ USB_ERROR DRIVER DRV_USB_DEVICE_EndpointStallClear(DRV_HANDLE client,
     return(USB_ERROR_NONE);
 }
 
+USB_INTERRUPTS interruptTrace[1024];
+int instance = 0;
+int replyTime = -1;
+int processTime = -1;
+int byteCount = -1;
+
 void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
 {
 
@@ -958,6 +998,15 @@ void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
 
     usbID = hDriver->usbID;
     usbInterrupts = PLIB_USB_InterruptFlagAllGet(usbID);
+
+    if (countAfter < 512)
+    {
+        if (instance < 1024)
+            interruptTrace[instance++] = usbInterrupts;
+        else  instance = 0;
+    }
+
+    if (trigger) countAfter++;
 
     /* Check if an error has occurred */
     if ( PLIB_USB_InterruptFlagGet( usbID, USB_INT_ERROR ) )
@@ -1011,7 +1060,7 @@ void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
         /* SOF received by Device or SOF threshold reached by Host
          * no event data to send. */
 
-        bDoEventCallBack = true;
+        bDoEventCallBack = false; // true;
         eventType = DRV_USB_EVENT_SOF_DETECT;
         clearUSBInterrupts = USB_INT_SOF;
 
@@ -1140,6 +1189,14 @@ void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
                  * the transfer. If the pending size is 0 then again
                  * we end the transfer */
 
+                SYS_ASSERT(((irp->flags & USB_DEVICE_IRP_FLAG_HOST_TO_DEVICE) != 0), "Wrong read IRP");
+
+                if (lastEndpoint > 0)
+                {
+                    trigger = true;
+                    if (byteCount < 0)
+                        byteCount = lastBDTEntry->shortWord[1];
+                }
 
                 irp->nPendingBytes 
                     += lastBDTEntry->shortWord[1];
@@ -1150,7 +1207,7 @@ void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
                     /* We end the transfer because we either got the amount 
                      * of data that we were expecting or we got the a short packet*/
 
- 					/* If we got less data than we were expecting, then
+                    /* If we got less data than we were expecting, then
                      * set the IRP status to short else say it is completed */
                     if(irp->nPendingBytes >= irp->size)
                     {
@@ -1164,7 +1221,10 @@ void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
 					/* Update the irp size with received data */
                     irp->size = irp->nPendingBytes;
 
-                   processNextIRP = true;
+                    processNextIRP = true;
+
+                    if (trigger && processTime < 0)
+                       processTime = countAfter;
 
                 }
                 else
@@ -1178,6 +1238,10 @@ void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
             case 0x24:
                 /* This means that a IN token was received from
                  * the host */
+
+                SYS_ASSERT(((irp->flags & USB_DEVICE_IRP_FLAG_DEVICE_TO_HOST) != 0), "Wrong write IRP");
+
+                if (trigger && replyTime < 0) replyTime = countAfter;
     
                 if(irp->nPendingBytes == 0)
                 {
@@ -1226,11 +1290,17 @@ void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
                 /* Queue was empty before the call back */
                 queueWasEmpty = true;
             }
+            else
+            {
+                lastEndpointObj->irpQueue->previous = NULL;
+            }
 
             /* Now do the IRP callback*/
 
             if(irp->callback != NULL)
             {
+                if (trigger)
+                    trigger = true; // for breakpoint
                 /* Invoke the callback */
                 irp->callback((USB_DEVICE_IRP *)irp);
             }

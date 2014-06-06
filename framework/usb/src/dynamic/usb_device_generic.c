@@ -458,7 +458,7 @@ USB_DEVICE_GENERIC_RESULT USB_DEVICE_GENERIC_EndpointWrite( USB_DEVICE_GENERIC_I
 
     irp->data = buffer;
     irp->size = bufferSize;
-    irp->flags = flags;
+    irp->flags |= flags;
     irp->userData = iGEN;
     irp->callback = &_USB_DEVICE_GENERIC_EndpointWriteCallBack;
     (* transferHandle) = ( USB_DEVICE_GENERIC_TRANSFER_HANDLE )irp;
