@@ -492,6 +492,8 @@ void APP_Tasks ( void )
             state1[0] = 0; state1[1] = 0; state1[2] = 0; state1[3] = 0;
             appDrvObject.receiveBufHandle[0] = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state1, sizeof(DWORD));
 
+            timer_handle = SYS_TMR_HANDLE_INVALID;
+
             break;
 
         case WaitingForUSBConfig:
@@ -503,8 +505,8 @@ void APP_Tasks ( void )
                 appObject.epDataReadPending = true ;
                 appObject.bReceivedBufArea = false;
                 appObject.bTransmitBufArea = false;
-                appObject.rxBufSize = 64;
-                appObject.txBufSize = 64;
+                appObject.rxBufSize = USB_DEVICE_EP1_BUF_SIZE;
+                appObject.txBufSize = USB_DEVICE_SEND_HOST_SIZE;
                 int bufIndex = appObject.bReceivedBufArea ? appObject.rxBufSize : 0;
 
                 /* Place a new read request. */
@@ -554,7 +556,7 @@ void APP_Tasks ( void )
 
         case WaitingForReport:
             // When first receive buffer is filled, free the send buffer.
-            SYS_ASSERT((timer_handle != SYS_TMR_HANDLE_INVALID), "timeout timer invalid when WaitingForReport");
+            //SYS_ASSERT((timer_handle != SYS_TMR_HANDLE_INVALID), "timeout timer invalid when WaitingForReport");
             if (DRV_SPI_BufferStatus (appDrvObject.receiveBufHandle[0]) == DRV_SPI_BUFFER_EVENT_COMPLETE)
             {
                 // If we are only interested in only one golden nonce, we disable the callback.

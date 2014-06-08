@@ -504,7 +504,7 @@ USB_DEVICE_GENERIC_RESULT USB_DEVICE_GENERIC_EndpointRead( USB_DEVICE_GENERIC_IN
     irp->size = bufferSize;
     irp->userData = iGEN;
     irp->callback = &_USB_DEVICE_GENERIC_EndpointReadCallBack;
-    transferHandle = ( USB_DEVICE_GENERIC_TRANSFER_HANDLE * ) irp;
+    *transferHandle = (USB_DEVICE_GENERIC_TRANSFER_HANDLE)irp;
 
     USB_DEVICE_CLIENT_STRUCT * client = ((USB_DEVICE_CLIENT_STRUCT *)genInstance->usbDeviceHandle);
     SYS_ASSERT(client != NULL, "bad client");

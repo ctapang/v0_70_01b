@@ -436,15 +436,14 @@ void DRIVER _DRV_USB_DEVICE_EndpointBDTEntryArm
     }
 #else
     currentBDTEntry = pBDT + endpointObj->nextPingPong;
-    //if ((currentBDTEntry->byte[0] & 0x80) != 0)
-    {
-        int cycles = 100000;
-        while (cycles) // ((currentBDTEntry->byte[0] & 0x80) != 0)
-        {
-            size = 0; // dummy assignment for cycles
-            cycles--;
-        }
-    }
+//    {
+//        int cycles = 100000;
+//        while (cycles) // ((currentBDTEntry->byte[0] & 0x80) != 0)
+//        {
+//            size = 0; // dummy assignment for cycles
+//            cycles--;
+//        }
+//    }
 #endif
     //SYS_ASSERT(((currentBDTEntry->byte[0] & 0x80) == 0), "Ping-pong buffer broken");
 
@@ -586,9 +585,6 @@ USB_ERROR DRIVER DRV_USB_DEVICE_IRPSubmit
     }
 
 
-    if(trigger && USB_DATA_DIRECTION_DEVICE_TO_HOST == direction && irpSubmitTime < 0)
-        irpSubmitTime = countAfter; 
-
     /* Check the size of the IRP. If the endpoint receives
      * data from the host, then IRP size must be 
      * multiple of maxPacketSize. If the send ZLP flag is 
@@ -675,6 +671,9 @@ USB_ERROR DRIVER DRV_USB_DEVICE_IRPSubmit
         /* Because this is the first IRP in the queue
          * then we we must arm the endpoint entry in
          * the BDT. */
+
+        if(trigger && USB_DATA_DIRECTION_DEVICE_TO_HOST == direction && irpSubmitTime < 0)
+            irpSubmitTime = countAfter;
 
         irp->status = USB_DEVICE_IRP_STATUS_IN_PROGRESS;
         _DRV_USB_DEVICE_EndpointBDTEntryArm(pBDT,endpointObj, 

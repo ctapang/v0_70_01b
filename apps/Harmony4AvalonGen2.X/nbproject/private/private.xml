@@ -2,11 +2,17 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/1">
         <file>
             <url>file:/C:/microchip/harmony/v0_70_01b/framework/usb/src/dynamic/usb_device_generic.c</url>
-            <line>454</line>
+            <line>446</line>
+            <line>586</line>
         </file>
         <file>
             <url>file:/C:/microchip/harmony/v0_70_01b/framework/driver/usb/usbfs/src/dynamic/drv_usb_device.c</url>
-            <line>528</line>
+            <line>409</line>
+            <line>524</line>
+            <line>678</line>
+            <line>971</line>
+            <line>1223</line>
+            <line>1294</line>
         </file>
         <file>
             <url>file:/C:/microchip/harmony/v0_70_01b/framework/driver/usb/usbfs/src/dynamic/drv_usb.c</url>
@@ -14,7 +20,7 @@
         </file>
         <file>
             <url>app.c</url>
-            <line>316</line>
+            <line>656</line>
         </file>
     </editor-bookmarks>
 </project-private>

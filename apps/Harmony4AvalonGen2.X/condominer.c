@@ -18,7 +18,7 @@ DWORD DivisionOfLabor[10] = {
 };
 BYTE WorkNow, BankSize, ResultQC, SlowTick, TimeOut, TempTarget;
 //BYTE HashTime = 256 - ((WORD)TICK_TOTAL/DEFAULT_HASHCLOCK);
-volatile WORKSTATUS Status = {'I',0,0,0,0,0,0,0,0, WORK_TICKS, 0 };
+volatile WORKSTATUS Status = {'I',0,0,0,0,0,0,0, WORK_TICKS, 0 };
 WORKCFG Cfg = { 1500, 0, 0, 0, 0 };
 WORKTASK WorkQue[MAX_WORK_COUNT];
 volatile BYTE ResultQue[6];
@@ -91,7 +91,7 @@ void SendCmdReply(char *cmd, BYTE *data, BYTE count)
     SYS_ASSERT(((count + 2) <= appObject.txBufSize), "size to transmit too large");
 
     appObject.transmitDataBuffer[bufIndex] = cmd[0];
-    appObject.transmitDataBuffer[bufIndex + 1] = PLIB_USB_DeviceAddressGet( USB_ID_1 );
+    appObject.transmitDataBuffer[bufIndex + 1] = USB_ID_1; // PLIB_USB_DeviceAddressGet( USB_ID_1 );
     memcpy(appObject.transmitDataBuffer + bufIndex + 2, data, count);
 
     /* Send the data to the host */
@@ -102,15 +102,19 @@ void SendCmdReply(char *cmd, BYTE *data, BYTE count)
             ( USB_DEVICE_GENERIC_INDEX_0,
             ( USB_DEVICE_GENERIC_TRANSFER_HANDLE *)&appObject.writeTranferHandle,
             appObject.endpointTx, &appObject.transmitDataBuffer[bufIndex],
-            count + 2,
+            appObject.txBufSize,
             USB_DEVICE_GENERIC_TRANSFER_FLAG_NONE );
 }
 
+char commandTrace[10];
+int cmdIndex = 0;
 
 void ProcessCmd(char *cmd)
 {
     // cmd is one char, dest address 1 byte, data follows
     // we already know address is ours here
+    if (cmdIndex < 10)
+        commandTrace[cmdIndex++] = cmd[0];
     switch(cmd[0]) {
         case 'W': // queue new work
             if( Status.WorkQC < MAX_WORK_COUNT-1 ) {
@@ -121,20 +125,20 @@ void ProcessCmd(char *cmd)
                     Status.State = 'P'; // AssembleWorkForAsics(out);
                 }
             }
-            SendCmdReply(cmd, (char *)&Status, sizeof(Status));
+            SendCmdReply(cmd, (char *)&Status, 13); // sizeof(Status));
             Status.Noise = Status.ErrorCount = 0;
             break;
         case 'A': // abort work, reply status has hash completed count
             Status.WorkQC = WorkNow = 0;
             Status.State = 'R';
-            SendCmdReply(cmd, (char *)&Status, sizeof(Status));
+            SendCmdReply(cmd, (char *)&Status, 13); // sizeof(Status));
             Status.Noise = Status.ErrorCount = 0;
             break;
         case 'I': // return identity 
             SendCmdReply(cmd, (char *)&ID, sizeof(ID));
             break;
         case 'S': // return status 
-            SendCmdReply(cmd, (char *)&Status, sizeof(Status));
+            SendCmdReply(cmd, (char *)&Status, 13); // sizeof(WORKSTATUS));
             Status.Noise = Status.ErrorCount = 0;
             break;
         case 'C': // set config values 
@@ -145,7 +149,7 @@ void ProcessCmd(char *cmd)
         case 'E': // enable/disable work
             //HASH_CLK_EN = (cmd[2] == '1');
             Status.State = (cmd[2] == '1') ? 'R' : 'D';
-            SendCmdReply(cmd, (char *)&Status, sizeof(Status));
+            SendCmdReply(cmd, (char *)&Status, 13); // sizeof(Status));
             Status.Noise = Status.ErrorCount = 0;
             break;
         //case 'F': // enter firmware update mode

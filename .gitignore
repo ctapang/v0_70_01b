@@ -213,3 +213,4 @@ pip-log.txt
 
 #Mr Developer
 .mr.developer.cfg
+framework/driver/usb/usbfs/src/dynamic/drv_usb_device - parallel ints.c
