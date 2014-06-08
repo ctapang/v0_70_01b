@@ -658,7 +658,7 @@ typedef struct
       The device layer will initialize a function driver for every descriptor.
       Based on the descriptor type the function driver has to initialize itself. */
     void (*initializeByDescriptor)
-            (SYS_MODULE_INDEX funcDriverIndex, USB_DEVICE_HANDLE usbDeviceHandle,
+            (SYS_MODULE_INDEX funcDriverIndex, DRV_HANDLE usbClientHandle,
                void* funcDriverInit, uint8_t interfaceNumber, uint8_t alternateSetting,
                uint8_t descriptorType, uint8_t * pDescriptor );
             

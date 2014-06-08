@@ -205,12 +205,14 @@ USB_DEVICE_IRP * USB_DEVICE_AllocateIRP
     if (direction == 'T')
     {
         irp = SearchForFirstAvailable((USB_DEVICE_IRP_LOCAL * )device->irpEp0Tx);
+        SYS_ASSERT((irp != NULL), "Cannot allocate Tx IRP");
         irp->callback = &_USB_DEVICE_Ep0TransmitCompleteCallback;
         irp->flags = USB_DEVICE_IRP_FLAG_DEVICE_TO_HOST;
     }
     else if (direction == 'R')
     {
         irp = SearchForFirstAvailable((USB_DEVICE_IRP_LOCAL * )device->irpEp0Rx);
+        SYS_ASSERT((irp != NULL), "Cannot allocate Rx IRP");
         irp->data = device->ep0RxBuffer;
         irp->size = USB_DEVICE_EP0_BUFFER_SIZE;
         irp->callback = &_USB_DEVICE_Ep0ReceiveCompleteCallback;
@@ -218,15 +220,13 @@ USB_DEVICE_IRP * USB_DEVICE_AllocateIRP
     }
     else SYS_ASSERT(false, "invalid second parameter");
 
-    SYS_ASSERT((irp != NULL), "Cannot allocate IRP");
-
     irp->userData = deviceHandle;
     //irp->flags |= USB_DEVICE_IRP_FLAG_DATA_COMPLETE;
     irp->status = USB_DEVICE_IRP_STATUS_ALLOCATED;
 
-    if (hix < 100)
-        allocationHistory[hix++] = irp;
-
+    allocationHistory[hix++] = irp;
+    if (hix == 100)
+        hix = 0;
     MutexClose(interruptWasEnabled);
 
     return (USB_DEVICE_IRP *)irp;
@@ -540,7 +540,7 @@ void USB_DEVICE_Tasks( SYS_MODULE_OBJ devLayerObj )
     SYS_ASSERT((devLayerObj != SYS_MODULE_OBJ_INVALID), "Invalid Module Obj");    
       
     // Get this instance of USB device layer.
-    usbDeviceThisInstance = &usbDeviceInstance[devLayerObj];    
+    usbDeviceThisInstance = &usbDeviceInstance[devLayerObj];
        
     uint16_t maxFunctionCounts = usbDeviceThisInstance->registeredFuncDriverCount;
     USB_DEVICE_FUNC_REGISTRATION_TABLE * funcRegTable = usbDeviceThisInstance->registeredFuncDrivers;
@@ -771,12 +771,13 @@ USB_DEVICE_CONTROL_TRANSFER_RESULT USB_DEVICE_ControlStatus( USB_DEVICE_HANDLE u
 
 */
 
-static void _USB_DEVICE_Ep0ReceiveCompleteCallback( USB_DEVICE_IRP * handle )
+static void _USB_DEVICE_Ep0ReceiveCompleteCallback( USB_DEVICE_IRP * irpHandle )
 {
-    USB_DEVICE_IRP * irpHandle = (USB_DEVICE_IRP *)handle;
     USB_DEVICE_INSTANCE_STRUCT * usbDeviceThisInstance;  
     USB_DEVICE_CONTROL_TRANSFER_EVENT controlEvent = USB_DEVICE_CONTROL_TRANSFER_NO_EVENT;
     USB_DEVICE_CONTROL_TRANSFER_STRUCT * controlTransfer;
+
+    SYS_ASSERT((irpHandle != NULL), "Invalid Control Rx IRP");
 
     if(irpHandle->status == USB_DEVICE_IRP_STATUS_ABORTED)
     {
@@ -882,11 +883,12 @@ static void _USB_DEVICE_Ep0ReceiveCompleteCallback( USB_DEVICE_IRP * handle )
 
 */
 
-static void _USB_DEVICE_Ep0TransmitCompleteCallback(USB_DEVICE_IRP * handle)
+static void _USB_DEVICE_Ep0TransmitCompleteCallback(USB_DEVICE_IRP * irpHandle)
 {
-    USB_DEVICE_IRP * irpHandle = (USB_DEVICE_IRP *)handle;
     USB_DEVICE_INSTANCE_STRUCT * usbDeviceThisInstance;
     USB_DEVICE_CONTROL_TRANSFER_STRUCT * controlTransfer;
+
+    SYS_ASSERT((irpHandle != NULL), "Invalid Control Tx IRP");
 
     controlTransfer = &usbDeviceInstance->controlTransfer;
 
@@ -1007,7 +1009,7 @@ SYS_MODULE_OBJ USB_DEVICE_Initialize(const SYS_MODULE_INDEX index,
     // Open 1st client of the device layer.
     // The 1st client of the device layer is used by all function drivers.
     usbDeviceClients[index][0].clientState = DRV_CLIENT_STATUS_READY;
-    usbDeviceClients[index][0].usbDeviceInstance = &usbDeviceInstance[index];
+    usbDeviceClients[index][0].usbDeviceInstance = usbDeviceThisInstance;
     // Save the internal client handle for function drivers.
     usbDeviceInstance[index].hClientInternalOperation = (USB_DEVICE_HANDLE)&usbDeviceClients[index][0];
 

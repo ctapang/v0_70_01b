@@ -62,7 +62,7 @@
 // *****************************************************************************
 // *****************************************************************************
 
-static void _USB_DEVICE_GENERIC_Initialize (SYS_MODULE_INDEX iGEN, DRV_HANDLE usbDeviceHandle,
+static void _USB_DEVICE_GENERIC_Initialize (SYS_MODULE_INDEX iGEN, DRV_HANDLE usbClientHandle,
                                     void* funcDriverInit, uint8_t interfaceNumber, uint8_t alternateSetting,
                                     uint8_t descriptorType, uint8_t * pDescriptor );
 
@@ -117,7 +117,7 @@ USB_DEVICE_FUNCTION_DRIVER genFuncDriver = {
  */
 typedef struct _USB_DEVICE_GENERIC_INSTANCE
 {
-    CLIENT_HANDLE usbDeviceHandle;
+    USB_DEVICE_CLIENT_HANDLE usbClientHandle;
     USB_ENDPOINT endpoints[ USB_DEVICE_GENERIC_MAX_ENDPOINTS * 2 ];
     uint8_t endpointCount;
     USB_DEVICE_GENERIC_EVENT_HANDLER appCallBack;
@@ -168,7 +168,7 @@ static USB_DEVICE_GENERIC_INSTANCE gUsbDeviceGenInstance[USB_DEVICE_GENERIC_MAX_
 
 */
 
-void _USB_DEVICE_GENERIC_Initialize (SYS_MODULE_INDEX iGEN, DRV_HANDLE usbDeviceHandle,
+void _USB_DEVICE_GENERIC_Initialize (SYS_MODULE_INDEX iGEN, DRV_HANDLE usbClientHandle,
                                     void* funcDriverInit, uint8_t intfNumber, uint8_t altSetting,
                                     uint8_t descriptorType, uint8_t * pDescriptor )
 {
@@ -177,7 +177,7 @@ void _USB_DEVICE_GENERIC_Initialize (SYS_MODULE_INDEX iGEN, DRV_HANDLE usbDevice
 
 
 
-    genInstance->usbDeviceHandle = usbDeviceHandle;
+    genInstance->usbClientHandle = (USB_DEVICE_CLIENT_STRUCT *)usbClientHandle;
 
     if( (descriptorType == USB_DESCRIPTOR_ENDPOINT) && (altSetting == 0) )
     {
@@ -193,7 +193,7 @@ void _USB_DEVICE_GENERIC_Initialize (SYS_MODULE_INDEX iGEN, DRV_HANDLE usbDevice
            genInstance->endpoints[genInstance->endpointCount++] = epDescriptor->bEndpointAddress;
            
             // Open the endpoint.
-            USB_DEVICE_EndpointEnable(usbDeviceHandle, epDescriptor->bEndpointAddress,
+            USB_DEVICE_EndpointEnable(usbClientHandle, epDescriptor->bEndpointAddress,
                                           epDescriptor->transferType,
                                           epDescriptor->wMaxPacketSize);
 
@@ -234,7 +234,7 @@ USB_DEVICE_GENERIC_RESULT USB_DEVICE_GENERIC_EndpointStall ( USB_DEVICE_GENERIC_
 
 
 
-     return ( USB_DEVICE_EndpointStall( genInstance->usbDeviceHandle,
+     return ( USB_DEVICE_EndpointStall( genInstance->usbClientHandle,
                                         endpoint ));
 
 }
@@ -265,7 +265,7 @@ bool USB_DEVICE_GENERIC_EndpointIsStalled( USB_DEVICE_GENERIC_INDEX iGEN,
 {
      USB_DEVICE_GENERIC_INSTANCE * genInstance = &gUsbDeviceGenInstance[iGEN];
 
-     return( USB_DEVICE_EndpointIsStalled( genInstance->usbDeviceHandle,
+     return( USB_DEVICE_EndpointIsStalled( genInstance->usbClientHandle,
                                            endpoint) );
     
 }
@@ -296,7 +296,7 @@ USB_DEVICE_GENERIC_RESULT USB_DEVICE_GENERIC_EndpointStallClear( USB_DEVICE_GENE
 {
     USB_DEVICE_GENERIC_INSTANCE * genInstance = &gUsbDeviceGenInstance[iGEN];
 
-    return ( USB_DEVICE_EndpointStallClear( genInstance->usbDeviceHandle,
+    return ( USB_DEVICE_EndpointStallClear( genInstance->usbClientHandle,
                                             endpoint ) );
 }
 
@@ -326,7 +326,7 @@ bool USB_DEVICE_GENERIC_EndpointIsEnabled( USB_DEVICE_GENERIC_INDEX iGEN,
 {
     USB_DEVICE_GENERIC_INSTANCE * genInstance = &gUsbDeviceGenInstance[iGEN];
 
-    return ( USB_DEVICE_EndpointIsEnabled( genInstance->usbDeviceHandle,
+    return ( USB_DEVICE_EndpointIsEnabled( genInstance->usbClientHandle,
                                             endpoint ) );
     
 }
@@ -453,7 +453,7 @@ USB_DEVICE_GENERIC_RESULT USB_DEVICE_GENERIC_EndpointWrite( USB_DEVICE_GENERIC_I
                                             USB_DEVICE_GENERIC_TRANSFER_FLAG flags )
 {
     USB_DEVICE_GENERIC_INSTANCE * genInstance = &gUsbDeviceGenInstance[iGEN];
-    USB_DEVICE_CLIENT_STRUCT * clientHandle = (USB_DEVICE_CLIENT_STRUCT *)genInstance->usbDeviceHandle;
+    USB_DEVICE_CLIENT_STRUCT * clientHandle = (USB_DEVICE_CLIENT_STRUCT *)genInstance->usbClientHandle;
     USB_DEVICE_IRP * irp = USB_DEVICE_AllocateIRP( (USB_DEVICE_INSTANCE_STRUCT *)clientHandle->usbDeviceInstance, 'T' );
 
     irp->data = buffer;
@@ -462,7 +462,7 @@ USB_DEVICE_GENERIC_RESULT USB_DEVICE_GENERIC_EndpointWrite( USB_DEVICE_GENERIC_I
     irp->userData = iGEN;
     irp->callback = &_USB_DEVICE_GENERIC_EndpointWriteCallBack;
     (* transferHandle) = ( USB_DEVICE_GENERIC_TRANSFER_HANDLE )irp;
-    return (  USB_DEVICE_IRPSubmit( genInstance->usbDeviceHandle,  // macro call
+    return (  USB_DEVICE_IRPSubmit( genInstance->usbClientHandle,  // macro call
                                    endpoint, irp ));
 }
 
@@ -492,12 +492,18 @@ USB_DEVICE_GENERIC_RESULT USB_DEVICE_GENERIC_EndpointWrite( USB_DEVICE_GENERIC_I
 
 */
 
+int callCount = 0;
+
 USB_DEVICE_GENERIC_RESULT USB_DEVICE_GENERIC_EndpointRead( USB_DEVICE_GENERIC_INDEX iGEN,
                                            USB_DEVICE_GENERIC_TRANSFER_HANDLE * transferHandle,
                                            USB_ENDPOINT endpoint, uint8_t * buffer, size_t bufferSize )
 {
+    callCount++;
+    if (callCount == 0x13)
+        buffer[0] = 0;
+    
     USB_DEVICE_GENERIC_INSTANCE * genInstance = &gUsbDeviceGenInstance[iGEN];
-    USB_DEVICE_CLIENT_STRUCT * clientHandle = (USB_DEVICE_CLIENT_STRUCT *)genInstance->usbDeviceHandle;
+    USB_DEVICE_CLIENT_STRUCT * clientHandle = (USB_DEVICE_CLIENT_STRUCT *)genInstance->usbClientHandle;
     USB_DEVICE_IRP * irp = USB_DEVICE_AllocateIRP( (USB_DEVICE_INSTANCE_STRUCT *)clientHandle->usbDeviceInstance, 'R' );
 
     irp->data = buffer;
@@ -506,7 +512,7 @@ USB_DEVICE_GENERIC_RESULT USB_DEVICE_GENERIC_EndpointRead( USB_DEVICE_GENERIC_IN
     irp->callback = &_USB_DEVICE_GENERIC_EndpointReadCallBack;
     *transferHandle = (USB_DEVICE_GENERIC_TRANSFER_HANDLE)irp;
 
-    USB_DEVICE_CLIENT_STRUCT * client = ((USB_DEVICE_CLIENT_STRUCT *)genInstance->usbDeviceHandle);
+    USB_DEVICE_CLIENT_STRUCT * client = ((USB_DEVICE_CLIENT_STRUCT *)genInstance->usbClientHandle);
     SYS_ASSERT(client != NULL, "bad client");
     SYS_ASSERT(client->usbDeviceInstance != NULL, "bad device instance");
     SYS_ASSERT(client->usbDeviceInstance->usbCDHandle != NULL, "bad USB generic handle");
@@ -619,9 +625,9 @@ void _USB_DEVICE_GENERIC_Deinitialize ( USB_DEVICE_GENERIC_INDEX iGEN )
 
     for( count = 0; count < genericInstance->endpointCount; count ++)
     {
-        USB_DEVICE_IRPCancelAll( genericInstance->usbDeviceHandle,
+        USB_DEVICE_IRPCancelAll( genericInstance->usbClientHandle,
                                  genericInstance->endpoints[count] );
-        USB_DEVICE_EndpointDisable( genericInstance->usbDeviceHandle,
+        USB_DEVICE_EndpointDisable( genericInstance->usbClientHandle,
                                     genericInstance->endpoints[count] );
     }
 

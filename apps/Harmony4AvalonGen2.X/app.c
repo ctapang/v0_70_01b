@@ -342,7 +342,6 @@ SPI_DATA_TYPE *dataToSend;
 int asicBadOutputCount = 0;
 int tc = 0, to = 0, cc = 0;
 int j = 0;
-int seq[5] = {0, 0, 0, 0, 0};
 
 void DoneWaiting4Asics()
 {
@@ -551,7 +550,6 @@ void APP_Tasks ( void )
             SYS_ASSERT((timer_handle != SYS_TMR_HANDLE_INVALID), "Cannot setup Asic wait timeout");
             appObject.appState = WaitingForReport;
             Status.State = 'W';
-            seq[j++] = tc;
             break;
 
         case WaitingForReport:
@@ -646,7 +644,7 @@ void APP_USBDeviceGenericEventHandler ( USB_DEVICE_GENERIC_INDEX iGEN,
                                                &appObject.readTranferHandle,
                                                 appObject.endpointRx,
                                                 &appObject.receivedDataBuffer[bufIndex],
-                                                1 );
+                                                appObject.rxBufSize );
 
             // be ready to receive next command
             appObject.epDataReadPending = true ;

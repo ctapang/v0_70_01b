@@ -95,7 +95,7 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 void SYS_Tasks ( void )
 {
     // TODO call task routines for the Harmony drivers and middleware
-    USB_DEVICE_Tasks(appDrvObject.usbDevObject);
+    //USB_DEVICE_Tasks(appDrvObject.usbDevObject);
 
     SYS_TMR_Tasks( appObject.TimerObjectHandle );
 

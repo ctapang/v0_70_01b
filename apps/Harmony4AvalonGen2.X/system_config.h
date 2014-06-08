@@ -113,11 +113,6 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
  descriptor */
 #define USB_DEVICE_GENERIC_MAX_ENDPOINTS 1
 
-/* Maximum IRPs reserved per endpoint. Increase this value
-  if application encounters queue full for functions
-  USB_DEVICE_GENERIC_EndpointRead and USB_DEVICE_GENERIC_EndpointWrite */
-#define USB_DEVICE_GENERIC_MAX_QUEUE     1
-
 /* Maximum instances */
 #define USB_DEVICE_GENERIC_MAX_INSTANCES 1
 

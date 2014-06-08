@@ -312,6 +312,11 @@ void SYS_Initialize ( void* data )
 
     /* Initialize the Application */
     APP_Initialize ( );
+
+    // Enable timer interrrupt
+
+    /* Enable the interrupt source in case of interrupt mode */
+    SYS_INT_SourceEnable( timerInit.interruptSource );
 }
 
 bool TickInit()

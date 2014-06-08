@@ -1152,6 +1152,14 @@ void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
 
         lastBDTEntry = currentBDTEntry + lastPingPong;
 
+        // make sure the top irp refers to this BDT entry
+        uint32_t physAddr1 = (uint32_t)(KVA_TO_PA (irp->data));
+        uint32_t physAddr2 = (uint32_t)(KVA_TO_PA (irp->data + irp->size));
+        SYS_ASSERT(
+                (lastBDTEntry->word[1] >= physAddr1 &&
+                lastBDTEntry->word[1] <= physAddr2),
+                    "First IRP in queue does not match current BDT");
+
         /* This flag lets us know if the current IRP is done
          * and that the next IRP should be processed */
 
