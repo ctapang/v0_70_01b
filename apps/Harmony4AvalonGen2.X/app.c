@@ -350,10 +350,6 @@ void DoneWaiting4Asics()
     if (Status.State == 'W')
     {
         to++;
-        if(Status.WorkQC > 0)
-            Status.State = 'P';
-        else
-            Status.State = 'R';
         
         // Reset bufering mechanism. We have direct access to the actual buffers,
         // and so we don't access the actual buffers through the buffering mechanism.
@@ -362,6 +358,11 @@ void DoneWaiting4Asics()
         // at least the first buffer should have data
         if (state1[0] == 0 && state1[1] == 0 && state1[2] == 0 && state1[3] == 0)
             asicBadOutputCount++;
+
+        if(Status.WorkQC > 0)
+            Status.State = 'P';
+        else
+            Status.State = 'R';
     }
 }
 
@@ -372,7 +373,9 @@ void APP_SPIBufferEventHandler( DRV_SPI_BUFFER_EVENT event,
         DRV_SPI_BUFFER_HANDLE handle, uintptr_t context )
 {
     cc++;
-    SYS_ASSERT((timer_handle != SYS_TMR_HANDLE_INVALID), "timeout timer invalid during buffer completion event (entry)");
+    if(timer_handle == SYS_TMR_HANDLE_INVALID)
+        return; // timeout timer invalid during buffer completion event entry
+
     // The context handle was set to an application specific
     // object. It is now retrievable easily in the event handler.
     // This is NULL.
@@ -441,6 +444,18 @@ void APP_SPIBufferEventHandler( DRV_SPI_BUFFER_EVENT event,
 
 extern WORKCFG Cfg;
 
+DWORD ByteArray2DWORD(BYTE *inByte)
+{
+    DWORD dword = 0L;
+    int i;
+
+    for (i = 0; i < 4; i++)
+    {
+        dword += ((DWORD)inByte[i]) << 8*i;
+    }
+    return dword;
+}
+
 /******************************************************************************
   Function:
     void APP_Tasks ( void )
@@ -456,6 +471,7 @@ void APP_Tasks ( void )
 {
     DRV_SPI_BUFFER_OBJECT *buf;
     DWORD sequencedBuffer[GEN2_INPUT_WORD_COUNT];
+    DWORD nonce;
     int count;
     
     /* check the application state*/
@@ -529,7 +545,7 @@ void APP_Tasks ( void )
             // set appState to "SendWorkToAsics" if command is 'W'
             if (Status.State == 'P')
             {
-                AssembleWorkForAsics(sequencedBuffer);
+                DeQueueNextWork(sequencedBuffer);
                 Set_Clock_Rate(Cfg.HashClock);
                 
                 appObject.appState = SendWorkToAsics;
@@ -549,7 +565,6 @@ void APP_Tasks ( void )
             timer_handle = SYS_TMR_CallbackSingle (timeout_in_msec, DoneWaiting4Asics);
             SYS_ASSERT((timer_handle != SYS_TMR_HANDLE_INVALID), "Cannot setup Asic wait timeout");
             appObject.appState = WaitingForReport;
-            Status.State = 'W';
             break;
 
         case WaitingForReport:
@@ -570,7 +585,8 @@ void APP_Tasks ( void )
             break;
         case ReadReport:
             // send this result back to cgminer
-            ResultRx(indata - 0x180);
+            nonce = ByteArray2DWORD(indata); // - 0x180;
+            ResultRx(nonce);
 
             appObject.appState = WaitingForReport;
             break;

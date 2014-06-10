@@ -595,10 +595,7 @@ SYS_STATUS DRV_SPI_Status ( SYS_MODULE_OBJ object )
     None.
 */
 
-
-// debug
-uint32_t buf[4];
-
+int noiseCount;
 
 __attribute__((section("driver")))
 void DRV_SPI_Tasks ( SYS_MODULE_OBJ object )
@@ -611,10 +608,6 @@ void DRV_SPI_Tasks ( SYS_MODULE_OBJ object )
     DRV_SPI_CLIENT_OBJ      *lClientObj;
 
     static int i = 0, j = 0, k = 0, m = 0, p = 0, r = 0, S = 0;
-
-    int q;
-    for(q = 0; q < 4; q++)
-        buf[q] = 0x00000000L;
 
     switch ( dObj->task )
     {
@@ -672,13 +665,15 @@ void DRV_SPI_Tasks ( SYS_MODULE_OBJ object )
             break;
         case DRV_SPI_TASK_PROCESS_READ_ONLY:
             /* If RX buffer has some existing data to be read, read (receive them from FIFO) */
-            if ( lBufferObj->transferSize )
+            if ( PLIB_SPI_ReceiverBufferIsFull ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ) ) )
             {
-                if ( PLIB_SPI_ReceiverBufferIsFull ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ) ) )
+                SPI_DATA_TYPE spiWord = PLIB_SPI_BufferRead ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ) );
+                if ( lBufferObj && lBufferObj->transferSize )
                 {
-                    *lBufferObj->rxBuffer++ = PLIB_SPI_BufferRead ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ) );
+                    *lBufferObj->rxBuffer++ = spiWord;
                     lBufferObj->transferSize--;
                     S++;
+                    noiseCount = 0;
 
                     /* Handle the overflow */
                     if ( lBufferObj->transferSize > 1 )
@@ -708,6 +703,12 @@ void DRV_SPI_Tasks ( SYS_MODULE_OBJ object )
                 else
                 {
                     /* Do not block in any case */
+                    if (noiseCount > 5)
+                    {
+                        _DRV_SPI_InterruptSourceDisable ( _DRV_SPI_INT_SRC_GET ( dObj->rxInterruptSource ) ) ;
+                        noiseCount = 0;
+                    }
+                    noiseCount++;
                     break;
                 }
             }
@@ -1566,7 +1567,7 @@ void _DRV_SPI_QueueCleanup ( DRV_HANDLE *dObj )
                 && lQueueObj->status == DRV_SPI_BUFFER_EVENT_COMPLETE
                 && lQueueObj->txBuffer != NULL)
         {
-            free(lQueueObj->txBuffer);
+            //free(lQueueObj->txBuffer);
             lQueueObj->txBuffer = NULL;
         }
     }

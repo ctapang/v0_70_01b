@@ -224,8 +224,9 @@ USB_DEVICE_IRP * USB_DEVICE_AllocateIRP
     //irp->flags |= USB_DEVICE_IRP_FLAG_DATA_COMPLETE;
     irp->status = USB_DEVICE_IRP_STATUS_ALLOCATED;
 
-    allocationHistory[hix++] = irp;
-    if (hix == 100)
+    if(hix < 100)
+        allocationHistory[hix++] = irp;
+    else
         hix = 0;
     MutexClose(interruptWasEnabled);
 

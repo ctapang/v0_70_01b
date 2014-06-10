@@ -1198,13 +1198,6 @@ void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
 
                 SYS_ASSERT(((irp->flags & USB_DEVICE_IRP_FLAG_HOST_TO_DEVICE) != 0), "Wrong read IRP");
 
-                if (lastEndpoint > 0)
-                {
-                    trigger = true;
-                    if (byteCount < 0)
-                        byteCount = lastBDTEntry->shortWord[1];
-                }
-
                 irp->nPendingBytes 
                     += lastBDTEntry->shortWord[1];
 
@@ -1306,8 +1299,13 @@ void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
 
             if(irp->callback != NULL)
             {
-                if (trigger)
-                    trigger = true; // for breakpoint
+                if ((lastEndpoint > 0) && ((irp->flags & USB_DEVICE_IRP_FLAG_DEVICE_TO_HOST) != 0) && (((char *)irp->data)[0] == '='))
+                {
+                    trigger = true;
+                    if (byteCount < 0)
+                        byteCount = lastBDTEntry->shortWord[1];
+                }
+
                 /* Invoke the callback */
                 irp->callback((USB_DEVICE_IRP *)irp);
             }

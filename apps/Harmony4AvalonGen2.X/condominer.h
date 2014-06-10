@@ -22,12 +22,14 @@
 #define DATA_SPLIT  0x50
 
 typedef struct _id {
+    BYTE Device;
     BYTE version;
     char product[7];    
     DWORD serial;
 } IDENTITY;
 
 typedef struct _workstatus {
+    BYTE Device;
     BYTE State;
     BYTE ChipCount;
     BYTE SlaveCount;
@@ -40,13 +42,21 @@ typedef struct _workstatus {
     BYTE Noise;
 } WORKSTATUS;
 
+typedef struct _workresult {
+    BYTE Device;
+    BYTE WorkID;
+    DWORD Nonce;
+} WORKRESULT;
+
 typedef struct _workcfg {
+    BYTE Device;
     WORD HashClock;
     BYTE TempTarget, Future1;
     BYTE Future2, Future3;
 } WORKCFG;
 
 typedef struct _worktask {
+    BYTE Device;
     BYTE WorkID;
     DWORD MidState[8];
     DWORD Merkle[3];
@@ -56,11 +66,11 @@ typedef struct _worktask {
 
 void ProcessCmd(char *cmd);
 
-void AssembleWorkForAsics(DWORD *out);
+void DeQueueNextWork(DWORD *out);
 
 void PrepareWorkStatus(void);
 
-void ResultRx(BYTE *nonce);
+void ResultRx(DWORD nonce);
 //void WorkTick(void);
 
 //void InitTempSensor(void);

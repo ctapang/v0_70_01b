@@ -18,16 +18,17 @@ DWORD DivisionOfLabor[10] = {
 };
 BYTE WorkNow, BankSize, ResultQC, SlowTick, TimeOut, TempTarget;
 //BYTE HashTime = 256 - ((WORD)TICK_TOTAL/DEFAULT_HASHCLOCK);
-volatile WORKSTATUS Status = {'I',0,0,0,0,0,0,0, WORK_TICKS, 0 };
-WORKCFG Cfg = { 1500, 0, 0, 0, 0 };
+volatile WORKSTATUS Status = {USB_ID_1,'I',0,0,0,0,0,0,0, (WORD)0, WORK_TICKS, 0 };
+volatile WORKRESULT WResult = {USB_ID_1, 0, 0L};
+WORKCFG Cfg = { USB_ID_1, 1500, 0, 0, 0, 0 };
 WORKTASK WorkQue[MAX_WORK_COUNT];
-volatile BYTE ResultQue[6];
+volatile BYTE ResultQue[8];
 //DWORD ClockCfg[2] = { (((DWORD)DEFAULT_HASHCLOCK) << 18) | CLOCK_LOW_CHG, CLOCK_HIGH_CFG };
 INT16 Step, Error, LastError;
 
 DWORD NonceRanges[10];
 
-const IDENTITY ID = { 0x10, "Swauk1", 0xA51C };
+const IDENTITY ID = {USB_ID_1, 2, "Swauk1", 0xA51C };
 
 /*bank2*/ DWORD send32_data; // place in same bank as latc registers!
 /*bank2*/ BYTE send32_count; // count DWORDS
@@ -46,7 +47,7 @@ void AsicPreCalc(WORKTASK *work)
     DWORD K[3] = { 0x428a2f98, 0x71374491, 0xb5c0fbcf };
     DWORD x, y, z;
     DWORD m[8];
-    BYTE n;
+    int n;
 
     for(n = 0; n < 8; n++)
         m[n] = work->MidState[n];
@@ -88,11 +89,11 @@ void SendCmdReply(char *cmd, BYTE *data, BYTE count)
     appObject.bTransmitBufArea = !appObject.bTransmitBufArea;
     int bufIndex = appObject.bTransmitBufArea ? appObject.txBufSize : 0;
 
-    SYS_ASSERT(((count + 2) <= appObject.txBufSize), "size to transmit too large");
+    SYS_ASSERT(((count + 1) <= appObject.txBufSize), "size to transmit too large");
 
     appObject.transmitDataBuffer[bufIndex] = cmd[0];
-    appObject.transmitDataBuffer[bufIndex + 1] = USB_ID_1; // PLIB_USB_DeviceAddressGet( USB_ID_1 );
-    memcpy(appObject.transmitDataBuffer + bufIndex + 2, data, count);
+    //appObject.transmitDataBuffer[bufIndex + 1] = data[0]; // USB_ID_1
+    memcpy(appObject.transmitDataBuffer + bufIndex + 1, data, count);
 
     /* Send the data to the host */
 
@@ -117,39 +118,48 @@ void ProcessCmd(char *cmd)
         commandTrace[cmdIndex++] = cmd[0];
     switch(cmd[0]) {
         case 'W': // queue new work
-            if( Status.WorkQC < MAX_WORK_COUNT-1 ) {
-                WORKTASK *work = &WorkQue[ (WorkNow + Status.WorkQC++) & WORKMASK ];
-                work->WorkID = cmd[1];
-                memcpy((BYTE *)(work->MidState), cmd + 2, 4 * GEN2_INPUT_WORD_COUNT);
+            if( Status.WorkQC < MAX_WORK_COUNT ) {
+                WORKTASK *work = &WorkQue[ (WorkNow + Status.WorkQC) & WORKMASK ];
+                memcpy((BYTE *)work, cmd + 1, 4 * GEN2_INPUT_WORD_COUNT + 2);
                 if(Status.State == 'R') {
                     Status.State = 'P'; // AssembleWorkForAsics(out);
                 }
+                Status.WorkQC++;
             }
-            SendCmdReply(cmd, (char *)&Status, 13); // sizeof(Status));
+            SendCmdReply(cmd, (char *)&Status, 14); // sizeof(Status));
             Status.Noise = Status.ErrorCount = 0;
             break;
         case 'A': // abort work, reply status has hash completed count
-            Status.WorkQC = WorkNow = 0;
+            Status.WorkQC = 0;
             Status.State = 'R';
-            SendCmdReply(cmd, (char *)&Status, 13); // sizeof(Status));
+            SendCmdReply(cmd, (char *)&Status, 14); // sizeof(Status));
             Status.Noise = Status.ErrorCount = 0;
             break;
         case 'I': // return identity 
-            SendCmdReply(cmd, (char *)&ID, sizeof(ID));
+            SendCmdReply(cmd, (char *)&ID, 13); // sizeof(ID));
             break;
         case 'S': // return status 
-            SendCmdReply(cmd, (char *)&Status, 13); // sizeof(WORKSTATUS));
+            SendCmdReply(cmd, (char *)&Status, 14); // sizeof(WORKSTATUS));
             Status.Noise = Status.ErrorCount = 0;
             break;
         case 'C': // set config values 
             if( *(WORD *)&cmd[2] != 0 )
-                Cfg = *(WORKCFG *)(cmd+2);
+            {
+                //Cfg = *(WORKCFG *)(cmd+2);
+                Cfg.Device = cmd[1];
+                Cfg.HashClock = cmd[2];
+                Cfg.HashClock += ((WORD)cmd[3]) << 8;
+                Cfg.TempTarget = cmd[4];
+                Cfg.Future1 = cmd[5];
+                Cfg.Future2 = cmd[6];
+                Cfg.Future3 = cmd[7];
+            }
             SendCmdReply(cmd, (char *)&Cfg, sizeof(Cfg));
             break;
         case 'E': // enable/disable work
             //HASH_CLK_EN = (cmd[2] == '1');
             Status.State = (cmd[2] == '1') ? 'R' : 'D';
-            SendCmdReply(cmd, (char *)&Status, 13); // sizeof(Status));
+            SendCmdReply(cmd, (char *)&Status, 14); // sizeof(Status));
             Status.Noise = Status.ErrorCount = 0;
             break;
         //case 'F': // enter firmware update mode
@@ -188,8 +198,10 @@ void ArrangeWords4TxSequence(WORKTASK * work, DWORD * buf)
 
 }
 
-void AssembleWorkForAsics(DWORD *out)
+void DeQueueNextWork(DWORD *out)
 {
+    SYS_ASSERT((Status.WorkQC > 0), "No work queued");
+    
     AsicPreCalc(&WorkQue[WorkNow]);
     Status.WorkID = WorkQue[WorkNow].WorkID;
     //SendAsicData(&WorkQue[WorkNow]);
@@ -197,10 +209,8 @@ void AssembleWorkForAsics(DWORD *out)
     WorkNow = (WorkNow+1) & WORKMASK;
     Status.HashCount = 0;
     //TMR0 = HashTime;
-    //Status.State = 'W';
+    Status.State = 'W';
     Status.WorkQC--;
-    if (Status.WorkQC == 0)
-        Status.State = 'R';
 }
 
 void PrepareWorkStatus(void)
@@ -209,7 +219,7 @@ void PrepareWorkStatus(void)
 
     // pre-calc nonce range values
     BankSize = ASIC_COUNT;
-    Status.MaxCount = WORK_TICKS / BankSize / 2;
+    Status.MaxCount = WORK_TICKS / BankSize;
 
     NonceRanges[0] = 0;
     BYTE x;
@@ -220,15 +230,27 @@ void PrepareWorkStatus(void)
     Status.HashCount = 0;
 }
 
+int resultCount = 0;
+DWORD resultArray[10];
 
-void ResultRx(BYTE *nonce)
+void ResultRx(DWORD nonce)
 {
+    if (resultCount < 10)
+        resultArray[resultCount] = nonce;
+    resultCount++;
+
+    Status.HashCount++;
+
     if(Status.State == 'W') {
         ResultQue[0] = '=';
-        ResultQue[1] = Status.WorkID;
-
+        ResultQue[1] = USB_ID_1;
+        ResultQue[2] = Status.WorkID;
         // FIXME: deal with endianness
-        memcpy(&ResultQue + 2, nonce, sizeof(DWORD));
+        ResultQue[3] = (BYTE)nonce;
+        ResultQue[4] = (BYTE)(nonce >> 8);
+        ResultQue[5] = (BYTE)(nonce >> 16);
+        ResultQue[6] = (BYTE)(nonce >> 24);
+
         SendCmdReply((char *)ResultQue, (BYTE *)(ResultQue+1), sizeof(ResultQue)-1);
     }
 }
