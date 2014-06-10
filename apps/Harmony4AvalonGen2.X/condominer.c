@@ -110,6 +110,8 @@ void SendCmdReply(char *cmd, BYTE *data, BYTE count)
 char commandTrace[10];
 int cmdIndex = 0;
 
+extern void Reset_All_Avalon_Chips();
+
 void ProcessCmd(char *cmd)
 {
     // cmd is one char, dest address 1 byte, data follows
@@ -134,6 +136,7 @@ void ProcessCmd(char *cmd)
             Status.State = 'R';
             SendCmdReply(cmd, (char *)&Status, 14); // sizeof(Status));
             Status.Noise = Status.ErrorCount = 0;
+            Reset_All_Avalon_Chips();
             break;
         case 'I': // return identity 
             SendCmdReply(cmd, (char *)&ID, 13); // sizeof(ID));
@@ -230,11 +233,21 @@ void PrepareWorkStatus(void)
     Status.HashCount = 0;
 }
 
+#define GET_UINT32(n,b,i)                       \
+{                                               \
+    (n) = ( (DWORD) (b)[(i)    ] << 24 )       \
+        | ( (DWORD) (b)[(i) + 1] << 16 )       \
+        | ( (DWORD) (b)[(i) + 2] <<  8 )       \
+        | ( (DWORD) (b)[(i) + 3]       );      \
+}
+
 int resultCount = 0;
 DWORD resultArray[10];
 
-void ResultRx(DWORD nonce)
+void ResultRx(BYTE *indata)
 {
+    DWORD nonce;
+    GET_UINT32(nonce, indata, 0);
     if (resultCount < 10)
         resultArray[resultCount] = nonce;
     resultCount++;
@@ -246,10 +259,10 @@ void ResultRx(DWORD nonce)
         ResultQue[1] = USB_ID_1;
         ResultQue[2] = Status.WorkID;
         // FIXME: deal with endianness
-        ResultQue[3] = (BYTE)nonce;
-        ResultQue[4] = (BYTE)(nonce >> 8);
-        ResultQue[5] = (BYTE)(nonce >> 16);
-        ResultQue[6] = (BYTE)(nonce >> 24);
+        ResultQue[3] = indata[0];
+        ResultQue[4] = indata[1];
+        ResultQue[5] = indata[2];
+        ResultQue[6] = indata[3];
 
         SendCmdReply((char *)ResultQue, (BYTE *)(ResultQue+1), sizeof(ResultQue)-1);
     }

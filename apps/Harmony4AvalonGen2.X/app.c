@@ -585,8 +585,9 @@ void APP_Tasks ( void )
             break;
         case ReadReport:
             // send this result back to cgminer
-            nonce = ByteArray2DWORD(indata); // - 0x180;
-            ResultRx(nonce);
+            //nonce = ByteArray2DWORD(indata); // - 0x180;
+            //ResultRx(nonce);
+            ResultRx(indata);
 
             appObject.appState = WaitingForReport;
             break;
@@ -678,8 +679,6 @@ void APP_USBDeviceGenericEventHandler ( USB_DEVICE_GENERIC_INDEX iGEN,
     }
 
 }
-
-extern void Reset_All_Avalon_Chips();
 
 /*******************************************************************************
   Function:

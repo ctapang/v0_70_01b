@@ -70,7 +70,7 @@ void DeQueueNextWork(DWORD *out);
 
 void PrepareWorkStatus(void);
 
-void ResultRx(DWORD nonce);
+void ResultRx(BYTE *indata);
 //void WorkTick(void);
 
 //void InitTempSensor(void);
