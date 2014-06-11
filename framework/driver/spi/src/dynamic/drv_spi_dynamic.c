@@ -766,9 +766,6 @@ void DRV_SPI_Tasks ( SYS_MODULE_OBJ object )
                         _DRV_SPI_InterruptSourceDisable ( _DRV_SPI_INT_SRC_GET ( dObj->txInterruptSource ) ) ;
                     }
 
-                    /* Hold the buffer till the completion of the operation */
-                    lBufferObj->inUse = false;
-
                     dObj->task = DRV_SPI_TASK_PROCESS_QUEUE;
 
                     _DRV_SPI_CLIENT_OBJ(lBufferObj, status) |=
@@ -781,6 +778,9 @@ void DRV_SPI_Tasks ( SYS_MODULE_OBJ object )
                         _DRV_SPI_CLIENT_OBJ(((DRV_SPI_CLIENT_OBJ *)lBufferObj->clientHandle), callback)
                                 ( DRV_SPI_BUFFER_EVENT_COMPLETE, (DRV_SPI_BUFFER_HANDLE)lBufferObj, 0x00 );
                     }
+
+                    /* Hold the buffer till the completion of the operation */
+                    lBufferObj->inUse = false;
                 }
              }
             break;
@@ -1347,6 +1347,13 @@ DRV_SPI_BUFFER_EVENT DRV_SPI_BufferStatus ( DRV_SPI_BUFFER_HANDLE bufferHandle )
     return _DRV_SPI_DATA_OBJ(bufferHandle, status);
 
 } /* DRV_SPI_TransferStatus */
+
+__attribute__((section("driver")))
+void* _DRV_SPI_GetTransmitBuffer ( DRV_SPI_BUFFER_HANDLE bufferHandle )
+{
+    return _DRV_SPI_DATA_OBJ(bufferHandle, txBuffer);
+}
+
 
 __attribute__((section("driver")))
 void DRV_SPI_BufferEventHandlerSet (const DRV_HANDLE handle,

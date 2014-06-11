@@ -352,6 +352,7 @@ void Reset_All_Avalon_Chips()
 {
     // Reset Avalon Gen2 chips, then turn ON green light by raising reset line
     PLIB_PORTS_PinClear( PORTS_ID_0, PORT_CHANNEL_B, BSP_Green_LED);
+    SpinDelay((uint16_t)20);
     bool lighted = PLIB_PORTS_PinGet(PORTS_ID_0, PORT_CHANNEL_B, BSP_Green_LED);
     if (!lighted)
         BSP_Toggle_Green_LED();

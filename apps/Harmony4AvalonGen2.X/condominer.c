@@ -179,7 +179,7 @@ void ProcessCmd(char *cmd)
 
 void ArrangeWords4TxSequence(WORKTASK * work, DWORD * buf)
 {
-    buf[0] = 0L; // for clock, to be set later
+    buf[0] = (DWORD)work->WorkID; // for clock, to be set later
     buf[1] = 0L; // for clock, to be set later
     buf[2] = work->Merkle[0];
     buf[3] = work->Merkle[1];
@@ -243,13 +243,17 @@ void PrepareWorkStatus(void)
 
 int resultCount = 0;
 DWORD resultArray[10];
+DWORD resultWorkID[10];
 
-void ResultRx(BYTE *indata)
+void ResultRx(BYTE *indata, DWORD wrkID)
 {
     DWORD nonce;
     GET_UINT32(nonce, indata, 0);
     if (resultCount < 10)
+    {
         resultArray[resultCount] = nonce;
+        resultWorkID[resultCount] = wrkID;
+    }
     resultCount++;
 
     Status.HashCount++;
@@ -257,7 +261,7 @@ void ResultRx(BYTE *indata)
     if(Status.State == 'W') {
         ResultQue[0] = '=';
         ResultQue[1] = USB_ID_1;
-        ResultQue[2] = Status.WorkID;
+        ResultQue[2] = (BYTE)wrkID;
         // FIXME: deal with endianness
         ResultQue[3] = indata[0];
         ResultQue[4] = indata[1];

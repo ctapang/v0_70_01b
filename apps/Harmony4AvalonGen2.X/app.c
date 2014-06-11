@@ -311,8 +311,9 @@ void invert_logic(SPI_DATA_TYPE *output, SPI_DATA_TYPE *input, int size)
     }
 }
 
-
-uint8_t outdata[ARRANGED_SIZE_IN_BYTES];
+// we have one outputdata for every buffer object in the SPI transmit driver
+SPI_DATA_TYPE _outdata[DRV_SPI_BUFFER_OBJ_SIZE][(ARRANGED_SIZE_IN_BYTES / 4) + 1];
+int outDataIndex = 0;
 
 
 SPI_DATA_TYPE * massage_for_send( const uint8_t * rawBuf, int size, int *count)
@@ -321,14 +322,23 @@ SPI_DATA_TYPE * massage_for_send( const uint8_t * rawBuf, int size, int *count)
     uint8_t temp2[ARRANGED_SIZE_IN_BYTES];
 
     memcpy(temp1, rawBuf, size);
-    memcpy(temp1, coded_clock_rate, 8);
+    memcpy(temp1, coded_clock_rate, 8); // overwrite first 2 DWORDs
     memcpy(temp1 + size, (uint8_t *)DivisionOfLabor, 4 * ASIC_COUNT);
     flip4SPI(temp2, temp1, ARRANGED_SIZE_IN_BYTES);
+
+    // very simply outdata allocation because we have one outdata for every buffer obj
+    SPI_DATA_TYPE *outdata = _outdata[outDataIndex];
+    outDataIndex = (outDataIndex < (DRV_SPI_BUFFER_OBJ_SIZE - 1)) ? outDataIndex + 1 : 0;
+    
     // FIXME: remove call to invert_logic once hashing unit PCB is finalized
-    invert_logic((SPI_DATA_TYPE *)outdata, (SPI_DATA_TYPE *)temp2, ARRANGED_SIZE_IN_BYTES);
+    invert_logic(outdata, (SPI_DATA_TYPE *)temp2, ARRANGED_SIZE_IN_BYTES);
     if (count != NULL)
         *count = ARRANGED_SIZE_IN_BYTES;
-    return (SPI_DATA_TYPE *)outdata;
+
+    // save work ID in LAST word in outdata
+    outdata[ARRANGED_SIZE_IN_BYTES / 4] = *(SPI_DATA_TYPE *)rawBuf;
+
+    return outdata;
 }
 
 BYTE * massage_data_in( const uint8_t * state, int size )
@@ -366,20 +376,29 @@ void DoneWaiting4Asics()
     }
 }
 
-    // Event Processing Technique. Event is received when
-    // the buffer is processed.
+// Only one work item can be processed by the Asics at one time.
+// The currentWorkID indicates the work item being processed.
+DWORD currentWorkID = -1L;
 
-void APP_SPIBufferEventHandler( DRV_SPI_BUFFER_EVENT event,
+// Event Processing Technique. Event is received when
+// the buffer is processed.
+
+void APP_SPITransmitEventHandler( DRV_SPI_BUFFER_EVENT event,
+        DRV_SPI_BUFFER_HANDLE handle, uintptr_t context )
+{
+    if(event == DRV_SPI_BUFFER_EVENT_COMPLETE && Status.State == 'W')
+    {
+        SPI_DATA_TYPE *buf = _DRV_SPI_GetTransmitBuffer(handle);
+        currentWorkID = (DWORD)buf[0]; // pointer has moved past end
+    }
+}
+
+void APP_SPIReceiveEventHandler( DRV_SPI_BUFFER_EVENT event,
         DRV_SPI_BUFFER_HANDLE handle, uintptr_t context )
 {
     cc++;
     if(timer_handle == SYS_TMR_HANDLE_INVALID)
         return; // timeout timer invalid during buffer completion event entry
-
-    // The context handle was set to an application specific
-    // object. It is now retrievable easily in the event handler.
-    // This is NULL.
-    //MY_APP_OBJ myAppObj = (MY_APP_OBJ *) context;
 
     // We are only interested in the completion event.
     // We use only four buffers. If we run out, just re-use the same buffers, one after another, in a circular buf manner.
@@ -444,18 +463,6 @@ void APP_SPIBufferEventHandler( DRV_SPI_BUFFER_EVENT event,
 
 extern WORKCFG Cfg;
 
-DWORD ByteArray2DWORD(BYTE *inByte)
-{
-    DWORD dword = 0L;
-    int i;
-
-    for (i = 0; i < 4; i++)
-    {
-        dword += ((DWORD)inByte[i]) << 8*i;
-    }
-    return dword;
-}
-
 /******************************************************************************
   Function:
     void APP_Tasks ( void )
@@ -490,6 +497,8 @@ void APP_Tasks ( void )
             // This SPI module has only one client, so we can set it up here permanently.
             _DRV_SPI_ClientHardwareSetup(appObject.spiConfigDrvHandle);
 
+            DRV_SPI_BufferEventHandlerSet (appObject.spiConfigDrvHandle, APP_SPITransmitEventHandler, NULL );
+
             appObject.spiReportDrvHandle = DRV_SPI_Open(DRV_SPI_INDEX_0, DRV_IO_INTENT_READ);
             SYS_ASSERT(appObject.spiReportDrvHandle != DRV_HANDLE_INVALID, "Invalid handle from Open");
 
@@ -497,7 +506,7 @@ void APP_Tasks ( void )
             // This SPI module has only one client, so we can set it up here permanently.
             _DRV_SPI_ClientHardwareSetup(appObject.spiReportDrvHandle);
 
-            DRV_SPI_BufferEventHandlerSet (appObject.spiReportDrvHandle, APP_SPIBufferEventHandler, NULL );
+            DRV_SPI_BufferEventHandlerSet (appObject.spiReportDrvHandle, APP_SPIReceiveEventHandler, NULL );
 
             appObject.appState = WaitingForUSBConfig;
 
@@ -587,7 +596,7 @@ void APP_Tasks ( void )
             // send this result back to cgminer
             //nonce = ByteArray2DWORD(indata); // - 0x180;
             //ResultRx(nonce);
-            ResultRx(indata);
+            ResultRx(indata, currentWorkID);
 
             appObject.appState = WaitingForReport;
             break;
