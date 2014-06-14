@@ -297,8 +297,6 @@ void APP_Initialize ( void )
 
 // private methods
 
-BYTE indata[sizeof(DWORD)];
-
 // remove this method for the next revision of the PCB card
 void invert_logic(SPI_DATA_TYPE *output, SPI_DATA_TYPE *input, int size)
 {
@@ -341,10 +339,16 @@ SPI_DATA_TYPE * massage_for_send( const uint8_t * rawBuf, int size, int *count)
     return outdata;
 }
 
-BYTE * massage_data_in( const uint8_t * state, int size )
+BYTE Nonce[4][sizeof(DWORD)];
+int nonceCount = 0;
+int nonceSent = 0;
+
+void massage_asic_report( const uint8_t * state, int size )
 {
-    flip4SPI( indata, state, size );
-    return indata;
+    SYS_ASSERT((nonceCount < 4), "Ran out of nonce buffer");
+    BYTE * aNonce = Nonce[nonceCount];
+    flip4SPI( aNonce, state, size );
+    nonceCount++;
 }
 
 SYS_TMR_HANDLE timer_handle = NULL;
@@ -357,14 +361,14 @@ void DoneWaiting4Asics()
 {
     tc++;
     timer_handle = SYS_TMR_HANDLE_INVALID;
+    // Reset bufering mechanism. We have direct access to the actual buffers,
+    // and so we don't access the actual buffers through the buffering mechanism.
+    DRV_SPI_AbortCurrentReadAndResetBuffers(appObject.spiReportDrvHandle);
+
     if (Status.State == 'W')
     {
         to++;
         
-        // Reset bufering mechanism. We have direct access to the actual buffers,
-        // and so we don't access the actual buffers through the buffering mechanism.
-        DRV_SPI_AbortCurrentReadAndResetBuffers(appObject.spiReportDrvHandle);
-
         // at least the first buffer should have data
         if (state1[0] == 0 && state1[1] == 0 && state1[2] == 0 && state1[3] == 0)
             asicBadOutputCount++;
@@ -390,6 +394,7 @@ void APP_SPITransmitEventHandler( DRV_SPI_BUFFER_EVENT event,
     {
         SPI_DATA_TYPE *buf = _DRV_SPI_GetTransmitBuffer(handle);
         currentWorkID = (DWORD)buf[0]; // pointer has moved past end
+        nonceCount = 0;
     }
 }
 
@@ -397,8 +402,15 @@ void APP_SPIReceiveEventHandler( DRV_SPI_BUFFER_EVENT event,
         DRV_SPI_BUFFER_HANDLE handle, uintptr_t context )
 {
     cc++;
-    if(timer_handle == SYS_TMR_HANDLE_INVALID)
+    if(timer_handle == SYS_TMR_HANDLE_INVALID || nonceCount > 3)
+    {
+        // debug/test
+        //massage_data_in(state1, 4);
+        //massage_asic_report( state1, sizeof(DWORD)); // puts report in Nonce
+        //appObject.appState = ReadReport;
+        //APP_Tasks();
         return; // timeout timer invalid during buffer completion event entry
+    }
 
     // We are only interested in the completion event.
     // We use only four buffers. If we run out, just re-use the same buffers, one after another, in a circular buf manner.
@@ -408,7 +420,7 @@ void APP_SPIReceiveEventHandler( DRV_SPI_BUFFER_EVENT event,
         {
             // Process this report
             if (state1[0] != 0 || state1[1] != 0 || state1[2] != 0 || state1[3] != 0)
-                massage_data_in( state1, sizeof(DWORD)); // puts report in indata
+                massage_asic_report( state1, sizeof(DWORD)); // puts report in Nonce
             else if (Status.State == 'W')
                 Status.ErrorCount++;
 
@@ -420,7 +432,7 @@ void APP_SPIReceiveEventHandler( DRV_SPI_BUFFER_EVENT event,
         {
             // Process this report
             if (state2[0] != 0 || state2[1] != 0 || state2[2] != 0 || state2[3] != 0)
-                massage_data_in( state2, sizeof(DWORD)); // puts report in indata
+                massage_asic_report( state2, sizeof(DWORD)); // puts report in Nonce
             else if (Status.State == 'W')
                 Status.ErrorCount++;
 
@@ -432,7 +444,7 @@ void APP_SPIReceiveEventHandler( DRV_SPI_BUFFER_EVENT event,
         {
             // Process this report
             if (state3[0] != 0 || state3[1] != 0 || state3[2] != 0 || state3[3] != 0)
-                massage_data_in( state3, sizeof(DWORD)); // puts report in indata
+                massage_asic_report( state3, sizeof(DWORD)); // puts report in Nonce
             else if (Status.State == 'W')
                 Status.ErrorCount++;
 
@@ -444,7 +456,7 @@ void APP_SPIReceiveEventHandler( DRV_SPI_BUFFER_EVENT event,
         {
             // Process this report
             if (state4[0] != 0 || state4[1] != 0 || state4[2] != 0 || state4[3] != 0)
-                massage_data_in( state4, sizeof(DWORD)); // puts report in indata
+                massage_asic_report( state4, sizeof(DWORD)); // puts report in Nonce
             else if (Status.State == 'W')
                 Status.ErrorCount++;
 
@@ -558,6 +570,12 @@ void APP_Tasks ( void )
                 Set_Clock_Rate(Cfg.HashClock);
                 
                 appObject.appState = SendWorkToAsics;
+                nonceCount = nonceSent = 0;
+
+                // kill un-triggered timer
+                if (timer_handle != SYS_TMR_HANDLE_INVALID)
+                    SYS_TMR_CallbackStop(timer_handle);
+                timer_handle = SYS_TMR_HANDLE_INVALID;
             }
             
             break;
@@ -579,27 +597,36 @@ void APP_Tasks ( void )
         case WaitingForReport:
             // When first receive buffer is filled, free the send buffer.
             //SYS_ASSERT((timer_handle != SYS_TMR_HANDLE_INVALID), "timeout timer invalid when WaitingForReport");
-            if (DRV_SPI_BufferStatus (appDrvObject.receiveBufHandle[0]) == DRV_SPI_BUFFER_EVENT_COMPLETE)
-            {
-                // If we are only interested in only one golden nonce, we disable the callback.
-                //SYS_TMR_RemoveCallback(timer_handle);
-
-                // If we are only interested in the first golden nonce from the Asics, move on to the next state.
-                //appObject.appState = ReadReport;
-            }
+//            if (DRV_SPI_BufferStatus (appDrvObject.receiveBufHandle[0]) == DRV_SPI_BUFFER_EVENT_COMPLETE)
+//            {
+//                // If we are only interested in only one golden nonce, we disable the callback.
+//                SYS_TMR_RemoveCallback(timer_handle);
+//
+//                // If we are only interested in the first golden nonce from the Asics, move on to the next state.
+//                appObject.appState = ReadReport;
+//            }
 
             // When work is DONE (timeout occurred), get next work item.
-            if (Status.State == 'R' || Status.State == 'P')
+            if ((Status.State == 'R' || Status.State == 'P') && timer_handle == SYS_TMR_HANDLE_INVALID)
+            {
                 appObject.appState = WaitingForCommand;
+                nonceSent = 0;
+            }
             break;
         case ReadReport:
             // send this result back to cgminer
-            //nonce = ByteArray2DWORD(indata); // - 0x180;
-            //ResultRx(nonce);
-            ResultRx(indata, currentWorkID);
+            SYS_ASSERT((nonceSent < 4), "Too many nonces");
+            SYS_ASSERT((nonceCount > 0), "No report");
+            if (nonceCount > nonceSent)
+            {
+                BYTE *noncePtr = Nonce[nonceSent++];
+                int32_t *wordPtr = (int32_t *)noncePtr;
+                *wordPtr = *wordPtr - 0xC0;  // Klondike cgminer driver takes away 0xC0 also
+                ResultRx(noncePtr, currentWorkID);
 
-            appObject.appState = WaitingForReport;
-            break;
+                appObject.appState = WaitingForReport;
+                break;
+            }
 
         case Idle:
             break;
@@ -657,9 +684,6 @@ void APP_USBDeviceGenericEventHandler ( USB_DEVICE_GENERIC_INDEX iGEN,
             break;
 
         case USB_DEVICE_GENERIC_EVENT_ENDPOINT_READ_COMPLETE:
-
-            if (readCompletionTime < 0)
-                readCompletionTime = countAfter;
             
             appObject.epDataReadPending = false;
             appObject.bReceivedBufArea = !appObject.bReceivedBufArea;

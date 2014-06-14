@@ -30,10 +30,6 @@ DWORD NonceRanges[10];
 
 const IDENTITY ID = {USB_ID_1, 2, "Swauk1", 0xA51C };
 
-/*bank2*/ DWORD send32_data; // place in same bank as latc registers!
-/*bank2*/ BYTE send32_count; // count DWORDS
-/*bank2*/ BYTE last_bit0, last_bit1;
-
 #define r(x) ((x-n)&7)
 
 
@@ -109,8 +105,28 @@ void SendCmdReply(char *cmd, BYTE *data, BYTE count)
 
 char commandTrace[10];
 int cmdIndex = 0;
+int i;
 
 extern void Reset_All_Avalon_Chips();
+
+// swap bytes of a full word
+DWORD SwapBytes(BYTE *psrc)
+{
+    DWORD word;
+    BYTE *pdst = (BYTE *)&word;
+#ifdef SMALL_ENDIAN
+    pdst[0] = psrc[3];
+    pdst[1] = psrc[2];
+    pdst[2] = psrc[1];
+    pdst[3] = psrc[0];
+#else
+    pdst[0] = psrc[0];
+    pdst[1] = psrc[1];
+    pdst[2] = psrc[2];
+    pdst[3] = psrc[3];
+#endif
+    return word;
+}
 
 void ProcessCmd(char *cmd)
 {
@@ -122,7 +138,12 @@ void ProcessCmd(char *cmd)
         case 'W': // queue new work
             if( Status.WorkQC < MAX_WORK_COUNT ) {
                 WORKTASK *work = &WorkQue[ (WorkNow + Status.WorkQC) & WORKMASK ];
-                memcpy((BYTE *)work, cmd + 1, 4 * GEN2_INPUT_WORD_COUNT + 2);
+                work->Device = cmd[1];
+                work->WorkID = cmd[2];
+                for (i = 0; i < 8; i++)
+                    work->MidState[i] = SwapBytes(cmd + 4*i + 3);
+                for (i = 0; i < 3; i++)
+                    work->Merkle[i] = SwapBytes(cmd + 4*i + 35);
                 if(Status.State == 'R') {
                     Status.State = 'P'; // AssembleWorkForAsics(out);
                 }
@@ -160,7 +181,6 @@ void ProcessCmd(char *cmd)
             SendCmdReply(cmd, (char *)&Cfg, sizeof(Cfg));
             break;
         case 'E': // enable/disable work
-            //HASH_CLK_EN = (cmd[2] == '1');
             Status.State = (cmd[2] == '1') ? 'R' : 'D';
             SendCmdReply(cmd, (char *)&Status, 14); // sizeof(Status));
             Status.Noise = Status.ErrorCount = 0;
@@ -258,18 +278,15 @@ void ResultRx(BYTE *indata, DWORD wrkID)
 
     Status.HashCount++;
 
-    if(Status.State == 'W') {
-        ResultQue[0] = '=';
-        ResultQue[1] = USB_ID_1;
-        ResultQue[2] = (BYTE)wrkID;
-        // FIXME: deal with endianness
-        ResultQue[3] = indata[0];
-        ResultQue[4] = indata[1];
-        ResultQue[5] = indata[2];
-        ResultQue[6] = indata[3];
+    ResultQue[0] = '=';
+    ResultQue[1] = USB_ID_1;
+    ResultQue[2] = (BYTE)wrkID;
+    ResultQue[3] = indata[0];
+    ResultQue[4] = indata[1];
+    ResultQue[5] = indata[2];
+    ResultQue[6] = indata[3];
 
-        SendCmdReply((char *)ResultQue, (BYTE *)(ResultQue+1), sizeof(ResultQue)-1);
-    }
+    SendCmdReply((char *)ResultQue, (BYTE *)(ResultQue+1), sizeof(ResultQue)-1);
 }
 
 

@@ -9,12 +9,12 @@
         <file>
             <url>file:/C:/microchip/harmony/v0_70_01b/framework/driver/usb/usbfs/src/dynamic/drv_usb_device.c</url>
             <line>411</line>
-            <line>521</line>
-            <line>672</line>
-            <line>968</line>
-            <line>1157</line>
-            <line>1228</line>
-            <line>1299</line>
+            <line>525</line>
+            <line>676</line>
+            <line>972</line>
+            <line>1169</line>
+            <line>1233</line>
+            <line>1277</line>
         </file>
         <file>
             <url>file:/C:/microchip/harmony/v0_70_01b/framework/driver/usb/usbfs/src/dynamic/drv_usb.c</url>
@@ -22,7 +22,8 @@
         </file>
         <file>
             <url>app.c</url>
-            <line>672</line>
+            <line>298</line>
+            <line>345</line>
         </file>
     </editor-bookmarks>
 </project-private>

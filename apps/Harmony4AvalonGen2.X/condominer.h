@@ -60,7 +60,7 @@ typedef struct _worktask {
     BYTE WorkID;
     DWORD MidState[8];
     DWORD Merkle[3];
-    DWORD PrecalcHashes[6];
+    DWORD PrecalcHashes[6]; // not received from cgminer
 } WORKTASK;
 
 

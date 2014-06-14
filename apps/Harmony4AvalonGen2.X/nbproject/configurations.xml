@@ -251,7 +251,6 @@
         </logicalFolder>
         <itemPath>C:/microchip/harmony/v0_70_01b/apps/Harmony4AvalonGen2.X/app.c</itemPath>
         <itemPath>sha256.c</itemPath>
-        <itemPath>crc16.c</itemPath>
         <itemPath>condominer.c</itemPath>
       </logicalFolder>
       <logicalFolder name="fbsp" displayName="bsp" projectFiles="true">
