@@ -130,6 +130,7 @@ DWORD SwapBytes(BYTE *psrc)
 
 void ProcessCmd(char *cmd)
 {
+    WORKCFG localCfg;
     // cmd is one char, dest address 1 byte, data follows
     // we already know address is ours here
     if (cmdIndex < 10)
@@ -178,7 +179,9 @@ void ProcessCmd(char *cmd)
                 Cfg.Future2 = cmd[6];
                 Cfg.Future3 = cmd[7];
             }
-            SendCmdReply(cmd, (char *)&Cfg, sizeof(Cfg));
+            localCfg = Cfg;
+            localCfg.HashClock = cmd[3]; localCfg.HashClock += ((WORD)cmd[2]) << 8;
+            SendCmdReply(cmd, (char *)&localCfg, sizeof(localCfg));
             break;
         case 'E': // enable/disable work
             Status.State = (cmd[2] == '1') ? 'R' : 'D';
@@ -253,12 +256,13 @@ void PrepareWorkStatus(void)
     Status.HashCount = 0;
 }
 
+// Big Endian
 #define GET_UINT32(n,b,i)                       \
 {                                               \
-    (n) = ( (DWORD) (b)[(i)    ] << 24 )       \
-        | ( (DWORD) (b)[(i) + 1] << 16 )       \
-        | ( (DWORD) (b)[(i) + 2] <<  8 )       \
-        | ( (DWORD) (b)[(i) + 3]       );      \
+    (n) = ( (DWORD) (b)[(i)    ]       )       \
+        | ( (DWORD) (b)[(i) + 1] <<  8 )       \
+        | ( (DWORD) (b)[(i) + 2] << 16 )       \
+        | ( (DWORD) (b)[(i) + 3] << 24 );      \
 }
 
 int resultCount = 0;
