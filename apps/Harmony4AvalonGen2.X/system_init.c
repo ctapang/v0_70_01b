@@ -74,7 +74,7 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #pragma config FSOSCEN = OFF            // Secondary Oscillator Enable (Disabled)
 #pragma config IESO = OFF               // Internal/External Switch Over (Disabled)
 #pragma config POSCMOD = EC             // Primary Oscillator Configuration (External Clock)
-#pragma config OSCIOFNC = ON            // CLKO Output Signal Active on the OSCO Pin (Disabled)
+#pragma config OSCIOFNC = OFF            // CLKO Output Signal Active on the OSCO Pin (Disabled)
 #pragma config FPBDIV = DIV_1           // Peripheral Clock Divisor (Pb_Clk == Sys_Clk / 2)
 #pragma config FCKSM = CSDCMD           // Clock Switching and Monitor Selection (Clock Switch Disable, FSCM Disabled)
 #pragma config WDTPS = PS1048576        // Watchdog Timer Postscaler (1:1048576)
@@ -254,6 +254,22 @@ DRV_TMR_INIT   timerInit =
 
 bool TickInit();
 void TimerHandler();
+
+void ReInitializeUSB()
+{
+    USB_DEVICE_Reinitialize(  0, (SYS_MODULE_INIT *)&usbDevInitData  );
+
+    /* open an instance of the device layer */
+    appObject.usbDevHandle = USB_DEVICE_Open( USB_DEVICE_INDEX_0, DRV_IO_INTENT_READWRITE );
+
+    /* Register a callback with device layer to get event notification (for end point 0) */
+    USB_DEVICE_EventCallBackSet(appObject.usbDevHandle, &APP_USBDeviceEventHandler);
+
+    USB_DEVICE_GENERIC_EventHandlerSet(USB_DEVICE_GENERIC_INDEX_0,
+            &APP_USBDeviceGenericEventHandler, (uintptr_t) NULL);
+
+    USB_DEVICE_Attach(appObject.usbDevHandle);
+}
 
 
 void USB_Init()

@@ -613,10 +613,15 @@ void USB_DEVICE_Tasks( SYS_MODULE_OBJ devLayerObj )
 
 */
 
+//debug
+int ct = 0, dt = 0;
+
 USB_DEVICE_CONTROL_TRANSFER_RESULT USB_DEVICE_ControlSend( USB_DEVICE_HANDLE usbDeviceHandle,
                             void *  data, size_t length )
 {
      USB_DEVICE_INSTANCE_STRUCT * usbDeviceThisInstance = (USB_DEVICE_INSTANCE_STRUCT *)usbDeviceHandle;
+
+     ct++;
      
      USB_DEVICE_IRP * irpHandle = USB_DEVICE_AllocateIRP(usbDeviceHandle, 'T');
      irpHandle->data = data;
@@ -737,6 +742,9 @@ USB_DEVICE_CONTROL_TRANSFER_RESULT USB_DEVICE_ControlStatus( USB_DEVICE_HANDLE u
     else
     {
         // Submit the IRP to send ZLP.
+
+        dt++;
+        
         irpHandle = USB_DEVICE_AllocateIRP(usbDeviceHandle, 'T');
         irpHandle->data = NULL;
         irpHandle->size = 0;

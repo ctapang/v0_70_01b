@@ -99,7 +99,7 @@ typedef unsigned short int SYS_MODULE_INDEX;
     type.
 */
 
-typedef uintptr_t SYS_MODULE_OBJ;
+typedef int SYS_MODULE_OBJ;
 
 
 // *****************************************************************************

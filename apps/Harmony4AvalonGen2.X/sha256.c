@@ -65,65 +65,51 @@ void flip4SPI(void *dest_p, const uint8_t *src_p, size_t len)
     }
 }
 
-int sha256_padding(const uint8_t *input, uint8_t *output, unsigned int count)
-{
-	int i, len_rem, block_nb;
-
-	memset(output, 0, 2 * SHA256_BLOCK_SIZE);
-
-	len_rem = count % SHA256_BLOCK_SIZE;
-	block_nb = ((SHA256_BLOCK_SIZE - 9) < (len_rem % SHA256_BLOCK_SIZE));
-
-	if (block_nb) {
-		for (i = 0; i < len_rem; i++)
-			output[i] = input[i];
-		output[i] = 0x80;
-
-		output[124] = ((count*8) & 0xff000000) >> 24;
-		output[125] = ((count*8) & 0x00ff0000) >> 16;
-		output[126] = ((count*8) & 0x0000ff00) >> 8;
-		output[127] = ((count*8) & 0x000000ff);
-                return 2 * SHA256_BLOCK_SIZE;
-	} else {
-		for (i = 0; i < len_rem; i++)
-			output[i] = input[i];
-		output[i] = 0x80;
-		output[60] = ((count*8) & 0xff000000) >> 24;
-		output[61] = ((count*8) & 0x00ff0000) >> 16;
-		output[62] = ((count*8) & 0x0000ff00) >> 8;
-		output[63] = ((count*8) & 0x000000ff);
-                return SHA256_BLOCK_SIZE;
-	}
-}
 
 // Pre-calculate a and e for first 3 rounds, given input.
-void sha256_precalc(const uint8_t *input, uint32_t *aa, uint32_t *ee, unsigned int count)
+// h == midstate
+// input == merkle
+// count == 12 bytes (3 long words of merkle input)
+// state == precalc output
+void sha256_precalc(const uint8_t *h, const uint8_t *input, unsigned int count, uint8_t *state)
 {
-	int i;
-        uint32_t a = h0, b = h1, c = h2, d = h3, e = h4, f = h5, g = h6, h = h7;
-        uint32_t t1, t2, S0, S1, Ch, maj;
-        uint32_t *w = (uint32_t *)input;
+    sha256_context ctx;
+    uint8_t digest[12];
 
-	for (i = 0; i < 3; i++) {
-            S1 = (e >> 6) ^ (e >> 11) ^ (e >> 25);
-            Ch = (e & f) ^ ((e ^ 0xffffffff) & g);
-            t1 = h + S1 + Ch + k[i] + w[i];
-            S0 = (a >> 2) ^ (a >> 13) ^ (a >> 22);
-            maj = (a & b) ^ (a & c) ^ (b & c);
-            t2 = S0 + maj;
+    sha256_starts(&ctx, (uint32*)h);
 
-            h = g;
-            g = f;
-            f = e;
-            e = d + t1;
-            d = c;
-            c = b;
-            b = a;
-            a = t1 + t2;
-
-            aa[i] = a;
-            ee[i] = e;
-	}
+    memcpy(digest + 0, input + 0, 4);
+    memcpy(digest + 4, input + 4, 4);
+    memcpy(digest + 8, input + 8, 4);
+    
+    sha256_update( &ctx, digest, count );
+    sha256_finish( &ctx, state , 6); // only six precalc values
+    
+//	int i;
+//        uint32_t a = h0, b = h1, c = h2, d = h3, e = h4, f = h5, g = h6, h = h7;
+//        uint32_t t1, t2, S0, S1, Ch, maj;
+//        uint32_t *w = (uint32_t *)input;
+//
+//	for (i = 0; i < 3; i++) {
+//            S1 = (e >> 6) ^ (e >> 11) ^ (e >> 25);
+//            Ch = (e & f) ^ ((e ^ 0xffffffff) & g);
+//            t1 = h + S1 + Ch + k[i] + w[i];
+//            S0 = (a >> 2) ^ (a >> 13) ^ (a >> 22);
+//            maj = (a & b) ^ (a & c) ^ (b & c);
+//            t2 = S0 + maj;
+//
+//            h = g;
+//            g = f;
+//            f = e;
+//            e = d + t1;
+//            d = c;
+//            c = b;
+//            b = a;
+//            a = t1 + t2;
+//
+//            aa[i] = a;
+//            ee[i] = e;
+//	}
 }
 
 
@@ -167,19 +153,24 @@ void sha256_precalc(const uint8_t *input, uint32_t *aa, uint32_t *ee, unsigned i
     (b)[(i) + 3] = (uint8) ( (n)       );       \
 }
 
-void sha256_starts( sha256_context *ctx )
+void sha256_starts( sha256_context *ctx, uint32 *midstate )
 {
     ctx->total[0] = 0;
     ctx->total[1] = 0;
 
-    ctx->state[0] = 0x6A09E667;
-    ctx->state[1] = 0xBB67AE85;
-    ctx->state[2] = 0x3C6EF372;
-    ctx->state[3] = 0xA54FF53A;
-    ctx->state[4] = 0x510E527F;
-    ctx->state[5] = 0x9B05688C;
-    ctx->state[6] = 0x1F83D9AB;
-    ctx->state[7] = 0x5BE0CD19;
+    int i;
+    for (i = 0; i < 8; i++)
+        ctx->state[i] = midstate[i];
+
+//    ctx->state[0] = 0x6A09E667;
+//    ctx->state[1] = 0xBB67AE85;
+//    ctx->state[2] = 0x3C6EF372;
+//    ctx->state[3] = 0xA54FF53A;
+//    ctx->state[4] = 0x510E527F;
+//    ctx->state[5] = 0x9B05688C;
+//    ctx->state[6] = 0x1F83D9AB;
+//    ctx->state[7] = 0x5BE0CD19;
+
 }
 
 void sha256_process( sha256_context *ctx, uint8 data[64] )
@@ -360,7 +351,7 @@ static uint8 sha256_padding_array[64] =
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
-void sha256_finish( sha256_context *ctx, uint8 digest[32] )
+void sha256_finish( sha256_context *ctx, uint8 *digest , int outCount)
 {
     uint32 last, padn;
     uint32 high, low;
@@ -379,14 +370,12 @@ void sha256_finish( sha256_context *ctx, uint8 digest[32] )
     sha256_update( ctx, sha256_padding_array, padn );
     sha256_update( ctx, msglen, 8 );
 
-    PUT_UINT32( ctx->state[0], digest,  0 );
-    PUT_UINT32( ctx->state[1], digest,  4 );
-    PUT_UINT32( ctx->state[2], digest,  8 );
-    PUT_UINT32( ctx->state[3], digest, 12 );
-    PUT_UINT32( ctx->state[4], digest, 16 );
-    PUT_UINT32( ctx->state[5], digest, 20 );
-    PUT_UINT32( ctx->state[6], digest, 24 );
-    PUT_UINT32( ctx->state[7], digest, 28 );
+    SYS_ASSERT((outCount <= 8), "output too large");
+    int i;
+    for (i = 0; i < outCount; i++)
+    {
+        PUT_UINT32( ctx->state[i], digest,  4 * i );
+    }
 }
 
 
@@ -414,6 +403,17 @@ static char *val[] =
     "f1809a48a497200e046d39ccc7112cd0"
 };
 
+uint32 htest[] = {
+    0x6A09E667,
+    0xBB67AE85,
+    0x3C6EF372,
+    0xA54FF53A,
+    0x510E527F,
+    0x9B05688C,
+    0x1F83D9AB,
+    0x5BE0CD19
+};
+
 int sha256_test()
 {
     //FILE *f;
@@ -429,7 +429,7 @@ int sha256_test()
     {
         //printf( " Test %d ", i + 1 );
 
-        sha256_starts( &ctx );
+        sha256_starts( &ctx, htest );
 
         if( i < 2 )
         {
@@ -446,7 +446,7 @@ int sha256_test()
             }
         }
 
-        sha256_finish( &ctx, sha256sum );
+        sha256_finish( &ctx, sha256sum , 8);
 
         for( j = 0; j < 32; j++ )
         {

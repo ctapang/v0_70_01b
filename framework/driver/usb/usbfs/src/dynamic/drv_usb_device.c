@@ -935,7 +935,7 @@ USB_ERROR DRIVER DRV_USB_DEVICE_EndpointStallClear(DRV_HANDLE client,
     return(USB_ERROR_NONE);
 }
 
-int a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0, h = 0, s = 0, l = 0, r = 0;
+int a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0, h = 0, s = 0, l = 0, r = 0, t = 0, u = 0;
 
 void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
 {
@@ -1188,6 +1188,8 @@ void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
 
                    processNextIRP = true;
 
+                   t++;
+
                 }
                 else
                 {
@@ -1215,6 +1217,8 @@ void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
                     {
                         irp->status = USB_DEVICE_IRP_STATUS_COMPLETED;
                         processNextIRP = true;
+
+                        u++;
                     }
                 }
                 else

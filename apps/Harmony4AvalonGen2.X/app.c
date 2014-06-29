@@ -324,7 +324,7 @@ SPI_DATA_TYPE * massage_for_send( const uint8_t * rawBuf, int size, int *count)
     memcpy(temp1 + size, (uint8_t *)DivisionOfLabor, 4 * ASIC_COUNT);
     flip4SPI(temp2, temp1, ARRANGED_SIZE_IN_BYTES);
 
-    // very simply outdata allocation because we have one outdata for every buffer obj
+    // very simple outdata allocation because we have one outdata for every buffer obj
     SPI_DATA_TYPE *outdata = _outdata[outDataIndex];
     outDataIndex = (outDataIndex < (DRV_SPI_BUFFER_OBJ_SIZE - 1)) ? outDataIndex + 1 : 0;
     
@@ -499,7 +499,7 @@ void APP_Tasks ( void )
         case Initializing:
             SYS_ASSERT((sha256_test() == 0), "sha256 failed, cannot start");
 
-            Set_Clock_Rate(300);
+            Set_Clock_Rate(300); // set clock rate data, not the chips clock itself
             
             appObject.spiConfigDrvHandle = DRV_SPI_Open(DRV_SPI_INDEX_1, DRV_IO_INTENT_WRITE);
             SYS_ASSERT(appObject.spiConfigDrvHandle != DRV_HANDLE_INVALID, "Invalid handle from Open");
@@ -519,8 +519,13 @@ void APP_Tasks ( void )
             _DRV_SPI_ClientHardwareSetup(appObject.spiReportDrvHandle);
 
             DRV_SPI_BufferEventHandlerSet (appObject.spiReportDrvHandle, APP_SPIReceiveEventHandler, NULL );
+            
+            Status.State = 'D'; // initially condominer should be dead
 
-            appObject.appState = WaitingForUSBConfig;
+            appObject.appState = ResetAvalon;
+
+        case ResetAvalon:
+            Reset_All_Avalon_Chips();
 
             // send message to chips just to set clock
             dataToSend = massage_for_send( (uint8_t *)testChips, 4 * GEN2_INPUT_WORD_COUNT, &count );
@@ -529,6 +534,8 @@ void APP_Tasks ( void )
             appDrvObject.receiveBufHandle[0] = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state1, sizeof(DWORD));
 
             timer_handle = SYS_TMR_HANDLE_INVALID;
+
+            appObject.appState = WaitingForUSBConfig;
 
             break;
 
@@ -560,10 +567,17 @@ void APP_Tasks ( void )
             break;
 
         case WaitingForCommand:
-            // USB interrupt should be enabled;
-            // If a packet came in from cgminer for the Asic chips, we get out of this state.
+            // If USB has been reset, restart all Avalon chips and wait for USB config.
+            if (appObject.deviceIsConfigured == false)
+            {
+                ReInitializeUSB();
+                
+                appObject.appState = ResetAvalon;
+            }
 
-            // set appState to "SendWorkToAsics" if command is 'W'
+            // Pick up next work, and
+            // set appState to "SendWorkToAsics" if state switches from 'W' to 'P'
+            // (If a packet came in from cgminer for the Asic chips, we get out of this state.)
             if (Status.State == 'P')
             {
                 DeQueueNextWork(sequencedBuffer);
@@ -621,7 +635,7 @@ void APP_Tasks ( void )
             {
                 BYTE *noncePtr = Nonce[nonceSent++];
                 int32_t *wordPtr = (int32_t *)noncePtr;
-                *wordPtr = *wordPtr - 0xC0;  // Klondike cgminer driver takes away 0xC0 also
+                *wordPtr = *wordPtr - 0xC0;  // Klondike cgminer Gen1 driver takes away 0xC0 also
                 ResultRx(noncePtr, currentWorkID);
 
                 appObject.appState = WaitingForReport;
@@ -629,6 +643,7 @@ void APP_Tasks ( void )
             }
 
         case Idle:
+            SYS_ASSERT(false, "Invalid app state");
             break;
 
         default:
@@ -740,6 +755,13 @@ void APP_USBDeviceEventHandler(USB_DEVICE_EVENT event, USB_DEVICE_EVENT_DATA * e
     {
         case USB_DEVICE_EVENT_RESET:
             p++;
+
+            // flush all work requests
+            Status.WorkQC = 0;
+            Status.State = 'D'; // dead
+            Status.Noise = Status.ErrorCount = 0;
+
+            appObject.deviceIsConfigured = false;
             break;
         case USB_DEVICE_EVENT_DECONFIGURED:
             // Turn OFF then ON the green LED to indicate reset/deconfigured state.

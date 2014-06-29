@@ -21,6 +21,8 @@ BYTE WorkNow, BankSize, ResultQC, SlowTick, TimeOut, TempTarget;
 volatile WORKSTATUS Status = {USB_ID_1,'I',0,0,0,0,0,0,0, (WORD)0, WORK_TICKS, 0 };
 volatile WORKRESULT WResult = {USB_ID_1, 0, 0L};
 WORKCFG Cfg = { USB_ID_1, 1500, 0, 0, 0, 0 };
+WORKTASK *pWork;
+WORKTASK alternatePreCalcCopy;
 WORKTASK WorkQue[MAX_WORK_COUNT];
 volatile BYTE ResultQue[8];
 //DWORD ClockCfg[2] = { (((DWORD)DEFAULT_HASHCLOCK) << 18) | CLOCK_LOW_CHG, CLOCK_HIGH_CFG };
@@ -110,41 +112,45 @@ int i;
 extern void Reset_All_Avalon_Chips();
 
 // swap bytes of a full word
-DWORD SwapBytes(BYTE *psrc)
+// Note: PIC32MX is little endian
+DWORD SwapBytesIfNecessary(BYTE *psrc, bool necessary)
 {
     DWORD word;
     BYTE *pdst = (BYTE *)&word;
-#ifdef SMALL_ENDIAN
-    pdst[0] = psrc[3];
-    pdst[1] = psrc[2];
-    pdst[2] = psrc[1];
-    pdst[3] = psrc[0];
-#else
-    pdst[0] = psrc[0];
-    pdst[1] = psrc[1];
-    pdst[2] = psrc[2];
-    pdst[3] = psrc[3];
-#endif
+    if (necessary)
+    {
+        pdst[0] = psrc[3];
+        pdst[1] = psrc[2];
+        pdst[2] = psrc[1];
+        pdst[3] = psrc[0];
+    }
+    else
+    {
+        pdst[0] = psrc[0];
+        pdst[1] = psrc[1];
+        pdst[2] = psrc[2];
+        pdst[3] = psrc[3];
+    }
     return word;
 }
 
 void ProcessCmd(char *cmd)
 {
-    WORKCFG localCfg;
     // cmd is one char, dest address 1 byte, data follows
     // we already know address is ours here
     if (cmdIndex < 10)
         commandTrace[cmdIndex++] = cmd[0];
     switch(cmd[0]) {
         case 'W': // queue new work
-            if( Status.WorkQC < MAX_WORK_COUNT ) {
+            if( Status.WorkQC < MAX_WORK_COUNT && Status.State != 'D' ) {
                 WORKTASK *work = &WorkQue[ (WorkNow + Status.WorkQC) & WORKMASK ];
                 work->Device = cmd[1];
                 work->WorkID = cmd[2];
+                // cmd input is little-endian, and we are also little-endian
                 for (i = 0; i < 8; i++)
-                    work->MidState[i] = SwapBytes(cmd + 4*i + 3);
+                    work->MidState[i] = SwapBytesIfNecessary(cmd + 4*i + 3, false);
                 for (i = 0; i < 3; i++)
-                    work->Merkle[i] = SwapBytes(cmd + 4*i + 35);
+                    work->Merkle[i] = SwapBytesIfNecessary(cmd + 4*i + 35, false);
                 if(Status.State == 'R') {
                     Status.State = 'P'; // AssembleWorkForAsics(out);
                 }
@@ -179,12 +185,10 @@ void ProcessCmd(char *cmd)
                 Cfg.Future2 = cmd[6];
                 Cfg.Future3 = cmd[7];
             }
-            localCfg = Cfg;
-            localCfg.HashClock = cmd[3]; localCfg.HashClock += ((WORD)cmd[2]) << 8;
-            SendCmdReply(cmd, (char *)&localCfg, sizeof(localCfg));
+            SendCmdReply(cmd, (char *)&Cfg, sizeof(Cfg));
             break;
         case 'E': // enable/disable work
-            Status.State = (cmd[2] == '1') ? 'R' : 'D';
+            Status.State = (cmd[2] == '1') ? ((Status.WorkQC > 0) ? 'P' : 'R') : 'D';
             SendCmdReply(cmd, (char *)&Status, 14); // sizeof(Status));
             Status.Noise = Status.ErrorCount = 0;
             break;
@@ -204,31 +208,37 @@ void ArrangeWords4TxSequence(WORKTASK * work, DWORD * buf)
 {
     buf[0] = (DWORD)work->WorkID; // for clock, to be set later
     buf[1] = 0L; // for clock, to be set later
-    buf[2] = work->Merkle[0];
-    buf[3] = work->Merkle[1];
-    buf[4] = work->Merkle[2];
-    buf[5] = work->PrecalcHashes[1];
-    buf[6] = work->PrecalcHashes[2];
-    buf[7] = work->PrecalcHashes[3];
-    buf[8] = work->PrecalcHashes[4];
-    buf[9] = work->PrecalcHashes[5];
-    buf[10] = work->MidState[0];
-    buf[11] = work->MidState[1];
-    buf[12] = work->MidState[2];
-    buf[13] = work->MidState[3];
-    buf[14] = work->MidState[4];
-    buf[15] = work->MidState[5];
-    buf[16] = work->MidState[6];
-    buf[17] = work->MidState[7];
-    buf[18] = work->PrecalcHashes[0];
+    // Merkle, PrecalHashes, and MidState are all big-endian, so we swap bytes
+    buf[2] = SwapBytesIfNecessary((BYTE*)&work->Merkle[0], true);
+    buf[3] = SwapBytesIfNecessary((BYTE*)&work->Merkle[1], true);
+    buf[4] = SwapBytesIfNecessary((BYTE*)&work->Merkle[2], true);
+    buf[5] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[1], true);
+    buf[6] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[2], true);
+    buf[7] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[3], true);
+    buf[8] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[4], true);
+    buf[9] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[5], true);
+    buf[10] = SwapBytesIfNecessary((BYTE*)&work->MidState[0], true);
+    buf[11] = SwapBytesIfNecessary((BYTE*)&work->MidState[1], true);
+    buf[12] = SwapBytesIfNecessary((BYTE*)&work->MidState[2], true);
+    buf[13] = SwapBytesIfNecessary((BYTE*)&work->MidState[3], true);
+    buf[14] = SwapBytesIfNecessary((BYTE*)&work->MidState[4], true);
+    buf[15] = SwapBytesIfNecessary((BYTE*)&work->MidState[5], true);
+    buf[16] = SwapBytesIfNecessary((BYTE*)&work->MidState[6], true);
+    buf[17] = SwapBytesIfNecessary((BYTE*)&work->MidState[7], true);
+    buf[18] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[0], true);
 
 }
 
 void DeQueueNextWork(DWORD *out)
 {
     SYS_ASSERT((Status.WorkQC > 0), "No work queued");
-    
+
+#ifdef USE_SHA256
+    pWork = &WorkQue[WorkNow];
+    sha256_precalc((uint8_t *)pWork->MidState, (uint8_t *)pWork->Merkle, 3, pWork->PrecalcHashes);
+#else
     AsicPreCalc(&WorkQue[WorkNow]);
+#endif
     Status.WorkID = WorkQue[WorkNow].WorkID;
     //SendAsicData(&WorkQue[WorkNow]);
     ArrangeWords4TxSequence(&WorkQue[WorkNow], out);
@@ -256,23 +266,13 @@ void PrepareWorkStatus(void)
     Status.HashCount = 0;
 }
 
-// Big Endian
-#define GET_UINT32(n,b,i)                       \
-{                                               \
-    (n) = ( (DWORD) (b)[(i)    ]       )       \
-        | ( (DWORD) (b)[(i) + 1] <<  8 )       \
-        | ( (DWORD) (b)[(i) + 2] << 16 )       \
-        | ( (DWORD) (b)[(i) + 3] << 24 );      \
-}
-
 int resultCount = 0;
 DWORD resultArray[10];
 DWORD resultWorkID[10];
 
 void ResultRx(BYTE *indata, DWORD wrkID)
 {
-    DWORD nonce;
-    GET_UINT32(nonce, indata, 0);
+    DWORD nonce = SwapBytesIfNecessary(indata, false);
     if (resultCount < 10)
     {
         resultArray[resultCount] = nonce;

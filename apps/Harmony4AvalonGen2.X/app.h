@@ -90,6 +90,7 @@ typedef enum
     SendWorkToAsics,
     WaitingForReport,
     ReadReport,
+    ResetAvalon,
     Idle
 
 } APP_STATES;

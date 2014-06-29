@@ -441,10 +441,13 @@ void _USB_DEVICE_GENERIC_EndpointReadCallBack( USB_DEVICE_IRP * irp )
 
 */
 
+//debug
+int at = 0;
+
 // Declaration of allocation function in usb_device.c
 // Normally this should be declared in usb_device.h, but there are complications
 // with declaring it there. This is a kludge.
-USB_DEVICE_IRP * USB_DEVICE_AllocateIRP( USB_DEVICE_INSTANCE_STRUCT * device,
+extern USB_DEVICE_IRP * USB_DEVICE_AllocateIRP( USB_DEVICE_INSTANCE_STRUCT * device,
     const char direction );
 
 USB_DEVICE_GENERIC_RESULT USB_DEVICE_GENERIC_EndpointWrite( USB_DEVICE_GENERIC_INDEX iGEN,
@@ -454,6 +457,9 @@ USB_DEVICE_GENERIC_RESULT USB_DEVICE_GENERIC_EndpointWrite( USB_DEVICE_GENERIC_I
 {
     USB_DEVICE_GENERIC_INSTANCE * genInstance = &gUsbDeviceGenInstance[iGEN];
     USB_DEVICE_CLIENT_STRUCT * clientHandle = (USB_DEVICE_CLIENT_STRUCT *)genInstance->usbClientHandle;
+
+    at++;
+    
     USB_DEVICE_IRP * irp = USB_DEVICE_AllocateIRP( (USB_DEVICE_INSTANCE_STRUCT *)clientHandle->usbDeviceInstance, 'T' );
 
     irp->data = buffer;
@@ -499,8 +505,6 @@ USB_DEVICE_GENERIC_RESULT USB_DEVICE_GENERIC_EndpointRead( USB_DEVICE_GENERIC_IN
                                            USB_ENDPOINT endpoint, uint8_t * buffer, size_t bufferSize )
 {
     callCount++;
-    if (callCount == 0x13)
-        buffer[0] = 0;
     
     USB_DEVICE_GENERIC_INSTANCE * genInstance = &gUsbDeviceGenInstance[iGEN];
     USB_DEVICE_CLIENT_STRUCT * clientHandle = (USB_DEVICE_CLIENT_STRUCT *)genInstance->usbClientHandle;
