@@ -1230,7 +1230,7 @@ void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
 
                 break;
             default:
-                SYS_ASSERT(false, "Unknown TOKEN received from host");
+                //SYS_ASSERT(false, "Unknown TOKEN received from host");
                 break;
         }
 

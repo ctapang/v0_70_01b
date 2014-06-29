@@ -205,7 +205,9 @@ USB_DEVICE_IRP * USB_DEVICE_AllocateIRP
     if (direction == 'T')
     {
         irp = SearchForFirstAvailable((USB_DEVICE_IRP_LOCAL * )device->irpEp0Tx);
-        SYS_ASSERT((irp != NULL), "Cannot allocate Tx IRP");
+        //SYS_ASSERT((irp != NULL), "Cannot allocate Tx IRP");
+        if (irp == NULL)
+            goto RETNULL;
         irp->callback = &_USB_DEVICE_Ep0TransmitCompleteCallback;
         irp->flags = USB_DEVICE_IRP_FLAG_DEVICE_TO_HOST;
     }
@@ -224,6 +226,7 @@ USB_DEVICE_IRP * USB_DEVICE_AllocateIRP
     //irp->flags |= USB_DEVICE_IRP_FLAG_DATA_COMPLETE;
     irp->status = USB_DEVICE_IRP_STATUS_ALLOCATED;
 
+    RETNULL:
     if(hix < 100)
         allocationHistory[hix++] = irp;
     else
@@ -1355,7 +1358,7 @@ void USB_DEVICE_Reinitialize ( SYS_MODULE_OBJ usbDeviceObj,
 {
     SYS_MODULE_INDEX index = (SYS_MODULE_INDEX)usbDeviceObj;
     
-    SYS_ASSERT( ( usbDeviceObj == SYS_MODULE_OBJ_INVALID ), "Handle is invalid");
+    SYS_ASSERT( ( usbDeviceObj != SYS_MODULE_OBJ_INVALID ), "Handle is invalid");
     
     // Check if this instance is initialized already.
     SYS_ASSERT( ( usbDeviceInstance[index].usbDeviceInstanceState > SYS_STATUS_UNINITIALIZED ),
@@ -1404,7 +1407,9 @@ void USB_DEVICE_Deinitialize ( SYS_MODULE_OBJ usbDeviceObj )
     for( client = 0; client < USB_DEVICE_MAX_CLIENTS + 1; client++ )
     {
         usbDeviceClients[index][client].clientState = DRV_CLIENT_STATUS_CLOSED ;
-    }       
+    }
+
+    DRV_USB_Deinitialize(USB_DEVICE_INDEX_0);
 }
 
 

@@ -257,7 +257,7 @@ void TimerHandler();
 
 void ReInitializeUSB()
 {
-    USB_DEVICE_Reinitialize(  0, (SYS_MODULE_INIT *)&usbDevInitData  );
+    USB_DEVICE_Reinitialize(  USB_DEVICE_INDEX_0, (SYS_MODULE_INIT *)&usbDevInitData  );
 
     /* open an instance of the device layer */
     appObject.usbDevHandle = USB_DEVICE_Open( USB_DEVICE_INDEX_0, DRV_IO_INTENT_READWRITE );

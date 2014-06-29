@@ -353,6 +353,8 @@ void _USB_DEVICE_GENERIC_EndpointWriteCallBack( USB_DEVICE_IRP * irp )
 {
    USB_DEVICE_GENERIC_EVENT_DATA event; // FIXME: may need to allocate
    USB_DEVICE_GENERIC_INSTANCE * usbGenInstance;
+   USB_DEVICE_GENERIC_EVENT eventType = (irp->status == USB_DEVICE_IRP_STATUS_ABORTED) ? 
+       USB_DEVICE_GENERIC_EVENT_CONTROL_TRANSFER_ABORTED : USB_DEVICE_GENERIC_EVENT_ENDPOINT_WRITE_COMPLETE;
 
    usbGenInstance = &gUsbDeviceGenInstance[irp->userData] ;
 
@@ -365,7 +367,7 @@ void _USB_DEVICE_GENERIC_EndpointWriteCallBack( USB_DEVICE_IRP * irp )
 
         usbGenInstance->appCallBack( ( USB_DEVICE_GENERIC_INDEX ) irp->userData,
                                        (USB_DEVICE_CONTROL_TRANSFER_HANDLE)NULL,
-                                       USB_DEVICE_GENERIC_EVENT_ENDPOINT_WRITE_COMPLETE ,
+                                       eventType,
                                        &event,
                                        (uintptr_t)usbGenInstance->userData);
     }
@@ -394,6 +396,8 @@ void _USB_DEVICE_GENERIC_EndpointReadCallBack( USB_DEVICE_IRP * irp )
 {
    USB_DEVICE_GENERIC_EVENT_DATA event; // FIXME: may need to allocate
    USB_DEVICE_GENERIC_INSTANCE * usbGenInstance;
+   USB_DEVICE_GENERIC_EVENT eventType = (irp->status == USB_DEVICE_IRP_STATUS_ABORTED) ? 
+       USB_DEVICE_GENERIC_EVENT_CONTROL_TRANSFER_ABORTED : USB_DEVICE_GENERIC_EVENT_ENDPOINT_READ_COMPLETE;
 
    usbGenInstance = &gUsbDeviceGenInstance[irp->userData] ;
 
@@ -406,7 +410,7 @@ void _USB_DEVICE_GENERIC_EndpointReadCallBack( USB_DEVICE_IRP * irp )
 
         usbGenInstance->appCallBack( ( USB_DEVICE_GENERIC_INDEX ) irp->userData,
                                        (USB_DEVICE_CONTROL_TRANSFER_HANDLE)NULL,
-                                       USB_DEVICE_GENERIC_EVENT_ENDPOINT_READ_COMPLETE ,
+                                       eventType,
                                        &event,
                                        (uintptr_t)usbGenInstance->userData );
 
@@ -461,6 +465,8 @@ USB_DEVICE_GENERIC_RESULT USB_DEVICE_GENERIC_EndpointWrite( USB_DEVICE_GENERIC_I
     at++;
     
     USB_DEVICE_IRP * irp = USB_DEVICE_AllocateIRP( (USB_DEVICE_INSTANCE_STRUCT *)clientHandle->usbDeviceInstance, 'T' );
+    if (irp == NULL)
+        return USB_DEVICE_GENERIC_RESULT_QUEUE_FULL;
 
     irp->data = buffer;
     irp->size = bufferSize;

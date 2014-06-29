@@ -561,6 +561,9 @@ void APP_Tasks ( void )
 
                 appObject.epDataWritePending = false ;
 
+                // We should now be ready to accept commands from cgminer
+                Status.State = 'R';
+
                 // After initializing we set the state to "WaitingForCommand" and enable USB interrupts
                 appObject.appState = WaitingForCommand; // wait for interrupt from USB
             }
@@ -568,9 +571,10 @@ void APP_Tasks ( void )
 
         case WaitingForCommand:
             // If USB has been reset, restart all Avalon chips and wait for USB config.
-            if (appObject.deviceIsConfigured == false)
+            if (appObject.deviceIsConfigured == false || Status.State == 'D')
             {
-                ReInitializeUSB();
+                //if (appObject.deviceIsConfigured == false)
+                    ReInitializeUSB();
                 
                 appObject.appState = ResetAvalon;
             }
@@ -621,7 +625,7 @@ void APP_Tasks ( void )
 //            }
 
             // When work is DONE (timeout occurred), get next work item.
-            if ((Status.State == 'R' || Status.State == 'P') && timer_handle == SYS_TMR_HANDLE_INVALID)
+            if (timer_handle == SYS_TMR_HANDLE_INVALID)
             {
                 appObject.appState = WaitingForCommand;
                 nonceSent = 0;
@@ -720,6 +724,9 @@ void APP_USBDeviceGenericEventHandler ( USB_DEVICE_GENERIC_INDEX iGEN,
             
             // execute the command from cgminer
             ProcessCmd(eventData->endpointReadComplete.data);
+            break;
+
+        case USB_DEVICE_GENERIC_EVENT_CONTROL_TRANSFER_ABORTED:
             break;
 
         default:
