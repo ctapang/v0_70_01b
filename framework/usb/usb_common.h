@@ -293,6 +293,9 @@ typedef struct _USB_DEVICE_IRP
     /* Request specific flags */
     USB_DEVICE_IRP_FLAG flags;
 
+    // endpoint
+    uintptr_t endPoint;
+
     /* User data */
     uintptr_t userData;
 

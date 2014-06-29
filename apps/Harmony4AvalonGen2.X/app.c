@@ -485,6 +485,7 @@ extern WORKCFG Cfg;
 
 bool done = false;
 BYTE id = 0;
+int usbWaitCount = 0;
 
 void APP_Tasks ( void )
 {
@@ -535,6 +536,9 @@ void APP_Tasks ( void )
 
             timer_handle = SYS_TMR_HANDLE_INVALID;
 
+            // We should now be ready to accept commands from cgminer
+            Status.State = 'R';
+
             appObject.appState = WaitingForUSBConfig;
 
             break;
@@ -545,6 +549,8 @@ void APP_Tasks ( void )
 
             if (appObject.deviceIsConfigured && appObject.configValue == 1)
             {
+                usbWaitCount = 0;
+                
                 appObject.epDataReadPending = true ;
                 appObject.bReceivedBufArea = false;
                 appObject.bTransmitBufArea = false;
@@ -561,20 +567,27 @@ void APP_Tasks ( void )
 
                 appObject.epDataWritePending = false ;
 
-                // We should now be ready to accept commands from cgminer
-                Status.State = 'R';
-
                 // After initializing we set the state to "WaitingForCommand" and enable USB interrupts
                 appObject.appState = WaitingForCommand; // wait for interrupt from USB
+            }
+            else
+            {
+                usbWaitCount++;
+                if (usbWaitCount > 10000)
+                {
+                    usbWaitCount = 0;
+                    //ReInitializeUSB();
+
+                    appObject.appState = ResetAvalon;
+                }
             }
             break;
 
         case WaitingForCommand:
-            // If USB has been reset, restart all Avalon chips and wait for USB config.
+            // If USB has been reset, restart all Avalon chips and USB.
             if (appObject.deviceIsConfigured == false || Status.State == 'D')
             {
-                //if (appObject.deviceIsConfigured == false)
-                    ReInitializeUSB();
+                //ReInitializeUSB();
                 
                 appObject.appState = ResetAvalon;
             }

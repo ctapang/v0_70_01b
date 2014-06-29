@@ -127,12 +127,15 @@ void UnlinkIRP(USB_DEVICE_IRP_LOCAL * irp)
         irp->previous->next = irp->next;
 }
 
+uintptr_t uniqueEPPtrs[16];
+
 USB_DEVICE_IRP_LOCAL * SearchForFirstAvailable(USB_DEVICE_IRP_LOCAL * irpBase)
 {
     int maxIRP = 2 * DRV_USB_MAX_QUEUE_LENGTH * DRV_USB_ENDPOINTS_NUMBER;
     USB_DEVICE_IRP_LOCAL * irp = irpBase;
     USB_DEVICE_IRP_LOCAL * retIRP = NULL;
-    int j;
+
+    int i, j;
     for (j = 0; j < maxIRP; j++, irp++)
     {
         if (irp->status == USB_DEVICE_IRP_STATUS_FREE)
@@ -142,7 +145,19 @@ USB_DEVICE_IRP_LOCAL * SearchForFirstAvailable(USB_DEVICE_IRP_LOCAL * irpBase)
             retIRP = irp;
             break;
         }
+        else
+        {
+            for (i = 0; i < 16; i++)
+                if (uniqueEPPtrs[i] == irp->endPoint)
+                    break;
+                else if (uniqueEPPtrs[i] == NULL)
+                {
+                    uniqueEPPtrs[i] = irp->endPoint;
+                    break;
+                }
+        }
     }
+    SYS_ASSERT((retIRP != NULL), "ran out of IRPs");
     return retIRP;
 }
 
@@ -152,10 +167,13 @@ static void _USB_DEVICE_Ep0TransmitCompleteCallback(USB_DEVICE_IRP * handle);
 
 void InitializeAllIRPs( USB_DEVICE_INSTANCE_STRUCT * usbDeviceThisInstance )
 {
+    int i;
+    for (i = 0; i < 16; i++)
+        uniqueEPPtrs[i] = NULL;
+    
     int maxIRP = 2 * DRV_USB_MAX_QUEUE_LENGTH * DRV_USB_ENDPOINTS_NUMBER;
  
     USB_DEVICE_IRP_LOCAL * irp = (USB_DEVICE_IRP_LOCAL * )usbDeviceThisInstance->irpEp0Tx;
-    int i;
     for (i = 0; i < maxIRP; i++, irp++)
     {
         irp->callback = &_USB_DEVICE_Ep0TransmitCompleteCallback;

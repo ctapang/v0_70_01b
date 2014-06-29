@@ -553,6 +553,10 @@ USB_ERROR DRIVER DRV_USB_DEVICE_IRPSubmit
     pBDT        = hDriver->pBDT + (endpoint * 4) + (2 * direction);
     endpointObj = hDriver->endpointTable + (2 * endpoint) + direction;
 
+    // remember our endpoint so we can easily move the queue head later
+    // note: this is a reassignment or override
+    inputIRP->endPoint = (uintptr_t)endpointObj;
+
     if((endpointObj->endpointState & DRV_USB_DEVICE_ENDPOINT_STATE_ENABLED) == 0)
     {
         /* This means the endpoint is disabled */        
