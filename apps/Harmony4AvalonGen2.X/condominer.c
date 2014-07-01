@@ -229,16 +229,17 @@ void ArrangeWords4TxSequence(WORKTASK * work, DWORD * buf)
 
 }
 
+WORKTASK taskCopy;
+
 void DeQueueNextWork(DWORD *out)
 {
     SYS_ASSERT((Status.WorkQC > 0), "No work queued");
 
-#ifdef USE_SHA256
-    pWork = &WorkQue[WorkNow];
-    sha256_precalc((uint8_t *)pWork->MidState, (uint8_t *)pWork->Merkle, 3, pWork->PrecalcHashes);
-#else
+    memcpy(&taskCopy, &WorkQue[WorkNow], sizeof(taskCopy));
+    sha256_precalc((uint8_t *)taskCopy.MidState, (uint8_t *)taskCopy.Merkle, 3, taskCopy.PrecalcHashes);
+
     AsicPreCalc(&WorkQue[WorkNow]);
-#endif
+
     Status.WorkID = WorkQue[WorkNow].WorkID;
     //SendAsicData(&WorkQue[WorkNow]);
     ArrangeWords4TxSequence(&WorkQue[WorkNow], out);

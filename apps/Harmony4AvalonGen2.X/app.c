@@ -585,7 +585,7 @@ void APP_Tasks ( void )
 
         case WaitingForCommand:
             // If USB has been reset, restart all Avalon chips and USB.
-            if (appObject.deviceIsConfigured == false || Status.State == 'D')
+            if (Status.State == 'D')
             {
                 //ReInitializeUSB();
                 
@@ -780,8 +780,8 @@ void APP_USBDeviceEventHandler(USB_DEVICE_EVENT event, USB_DEVICE_EVENT_DATA * e
             Status.WorkQC = 0;
             Status.State = 'D'; // dead
             Status.Noise = Status.ErrorCount = 0;
-
-            appObject.deviceIsConfigured = false;
+//
+//            appObject.deviceIsConfigured = false;
             break;
         case USB_DEVICE_EVENT_DECONFIGURED:
             // Turn OFF then ON the green LED to indicate reset/deconfigured state.

@@ -259,10 +259,10 @@ void ReInitializeUSB()
 {
     USB_DEVICE_Detach(appObject.usbDevHandle);
     
-    USB_DEVICE_Reinitialize(  USB_DEVICE_INDEX_0, (SYS_MODULE_INIT *)&usbDevInitData  );
+    USB_DEVICE_Reinitialize(  appDrvObject.usbDevObject, (SYS_MODULE_INIT *)&usbDevInitData  );
 
     /* open an instance of the device layer */
-    appObject.usbDevHandle = USB_DEVICE_Open( USB_DEVICE_INDEX_0, DRV_IO_INTENT_READWRITE );
+    appObject.usbDevHandle = USB_DEVICE_Open( appDrvObject.usbDevObject, DRV_IO_INTENT_READWRITE );
 
     /* Register a callback with device layer to get event notification (for end point 0) */
     USB_DEVICE_EventCallBackSet(appObject.usbDevHandle, &APP_USBDeviceEventHandler);

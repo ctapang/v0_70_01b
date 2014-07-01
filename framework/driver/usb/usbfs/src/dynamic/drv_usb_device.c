@@ -555,7 +555,7 @@ USB_ERROR DRIVER DRV_USB_DEVICE_IRPSubmit
 
     // remember our endpoint so we can easily move the queue head later
     // note: this is a reassignment or override
-    inputIRP->endPoint = (uintptr_t)endpointObj;
+    irp->endPoint = (uintptr_t)endpointObj;
 
     if((endpointObj->endpointState & DRV_USB_DEVICE_ENDPOINT_STATE_ENABLED) == 0)
     {
@@ -960,8 +960,6 @@ void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
     USB_PING_PONG_STATE         lastPingPong = 0;
     USB_BUFFER_DIRECTION        lastDirection = 0;
     DRV_USB_DEVICE_ENDPOINT_OBJ * lastEndpointObj;
-
-    bool queueWasEmpty = false;
    
 
     usbID = hDriver->usbID;
@@ -1252,12 +1250,7 @@ void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
              * callback. If so, then we should not call the 
              * _DRV_USB_DEVICE_EndpointBDTEntryArm() */
 
-            if(lastEndpointObj->irpQueue == NULL)
-            {
-                /* Queue was empty before the call back */
-                queueWasEmpty = true;
-            }
-            else
+            if(lastEndpointObj->irpQueue != NULL)
             {
                 lastEndpointObj->irpQueue->previous = NULL;
             }
@@ -1272,8 +1265,9 @@ void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
             // free the IRP just processed
             irp->status = USB_DEVICE_IRP_STATUS_FREE;
 
-            if((lastEndpointObj->irpQueue != NULL) &&
-                    (!(queueWasEmpty)))
+            //if((lastEndpointObj->irpQueue != NULL) &&
+            //        (!(queueWasEmpty)))
+            if (lastEndpointObj->irpQueue != NULL)
             {
                 /* This means we have something in the
                  * queue and this was not added in the 
