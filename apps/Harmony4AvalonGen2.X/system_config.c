@@ -83,7 +83,7 @@ const uint8_t configDescriptor1[]={
     1,                      // Number of interfaces in this cfg
     1,                      // Index value of this configuration
     0,                      // Configuration string index
-    USB_ATTRIBUTE_DEFAULT,  // | USB_ATTRIBUTE_SELF_POWERED,               // Attributes, see usb_device.h
+    USB_ATTRIBUTE_DEFAULT | USB_ATTRIBUTE_SELF_POWERED,               // Attributes, see usb_device.h
     50,                     // Max power consumption (2X mA)
 
     /* Interface Descriptor */

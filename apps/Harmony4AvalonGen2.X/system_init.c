@@ -121,28 +121,28 @@ uint8_t __attribute__((aligned(512))) endpointTable[USB_DEVICE_ENDPOINT_TABLE_SI
 USB_DEVICE_INIT usbDevInitData =
 {
     /* System module initialization */
-    {SYS_MODULE_POWER_RUN_FULL},
+    .moduleInit = {SYS_MODULE_POWER_RUN_FULL},
 
     /* USB device driver client index*/
-    USB_ID_1, //DRV_USB_INDEX_0,
+    .usbID = USB_ID_1, //DRV_USB_INDEX_0,
 
-    false, // never stop USB
+    .stopInIdle = false, // never stop USB
 
-    false, // never suspend USB
+    .suspendInSleep = false, // never suspend USB
 
-    INT_SOURCE_USB_1,  // interrupt source (specific to PIC32MX250F128B)
+    .interruptSource = INT_SOURCE_USB_1,  // interrupt source (specific to PIC32MX250F128B)
 
-    endpointTable,   // end point table
+    .endpointTable = endpointTable,   // end point table
 
-    1,    // registered func count
+    .registeredFuncCount = 1,    // registered func count
 
     /* Function driver table registered to this instance of the USB device layer*/
-    (USB_DEVICE_FUNC_REGISTRATION_TABLE*)funcRegistrationTable,
+    .registeredFunctions = (USB_DEVICE_FUNC_REGISTRATION_TABLE*)funcRegistrationTable,
 
     /* Pointer to USB Descriptor structure */
-    (USB_MASTER_DESCRIPTOR*)&usbMasterDescriptor,
+    .usbMasterDescriptor = (USB_MASTER_DESCRIPTOR*)&usbMasterDescriptor,
 
-    USB_SPEED_FULL
+    .deviceSpeed = USB_SPEED_FULL
 };
 
 

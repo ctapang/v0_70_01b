@@ -1,7 +1,7 @@
 #include "GenericTypeDefs.h"
 #include <xc.h>
-#include "condominer.h"
 #include "app.h"
+#include "condominer.h"
 
 
 DWORD DivisionOfLabor[10] = {
@@ -92,6 +92,8 @@ void SendCmdReply(char *cmd, BYTE *data, BYTE count)
     appObject.transmitDataBuffer[bufIndex] = cmd[0];
     //appObject.transmitDataBuffer[bufIndex + 1] = data[0]; // USB_ID_1
     memcpy(appObject.transmitDataBuffer + bufIndex + 1, data, count);
+    if (count < appObject.txBufSize)
+        memset(appObject.transmitDataBuffer + bufIndex + count + 1, (BYTE)0, appObject.txBufSize - count);
 
     /* Send the data to the host */
 
@@ -148,9 +150,9 @@ void ProcessCmd(char *cmd)
                 work->WorkID = cmd[2];
                 // cmd input is little-endian, and we are also little-endian
                 for (i = 0; i < 8; i++)
-                    work->MidState[i] = SwapBytesIfNecessary(cmd + 4*i + 3, false);
+                    work->MidState[i] = SwapBytesIfNecessary(cmd + 4*i + 3, true);
                 for (i = 0; i < 3; i++)
-                    work->Merkle[i] = SwapBytesIfNecessary(cmd + 4*i + 35, false);
+                    work->Merkle[i] = SwapBytesIfNecessary(cmd + 4*i + 35, true);
                 if(Status.State == 'R') {
                     Status.State = 'P'; // AssembleWorkForAsics(out);
                 }
@@ -167,7 +169,7 @@ void ProcessCmd(char *cmd)
             Reset_All_Avalon_Chips();
             break;
         case 'I': // return identity 
-            SendCmdReply(cmd, (char *)&ID, 13); // sizeof(ID));
+            SendCmdReply(cmd, (char *)&ID, 13);
             break;
         case 'S': // return status 
             SendCmdReply(cmd, (char *)&Status, 14); // sizeof(WORKSTATUS));
@@ -209,39 +211,57 @@ void ArrangeWords4TxSequence(WORKTASK * work, DWORD * buf)
     buf[0] = (DWORD)work->WorkID; // for clock, to be set later
     buf[1] = 0L; // for clock, to be set later
     // Merkle, PrecalHashes, and MidState are all big-endian, so we swap bytes
-    buf[2] = SwapBytesIfNecessary((BYTE*)&work->Merkle[0], true);
-    buf[3] = SwapBytesIfNecessary((BYTE*)&work->Merkle[1], true);
-    buf[4] = SwapBytesIfNecessary((BYTE*)&work->Merkle[2], true);
-    buf[5] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[1], true);
-    buf[6] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[2], true);
-    buf[7] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[3], true);
-    buf[8] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[4], true);
-    buf[9] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[5], true);
-    buf[10] = SwapBytesIfNecessary((BYTE*)&work->MidState[0], true);
-    buf[11] = SwapBytesIfNecessary((BYTE*)&work->MidState[1], true);
-    buf[12] = SwapBytesIfNecessary((BYTE*)&work->MidState[2], true);
-    buf[13] = SwapBytesIfNecessary((BYTE*)&work->MidState[3], true);
-    buf[14] = SwapBytesIfNecessary((BYTE*)&work->MidState[4], true);
-    buf[15] = SwapBytesIfNecessary((BYTE*)&work->MidState[5], true);
-    buf[16] = SwapBytesIfNecessary((BYTE*)&work->MidState[6], true);
-    buf[17] = SwapBytesIfNecessary((BYTE*)&work->MidState[7], true);
-    buf[18] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[0], true);
+    buf[2] = SwapBytesIfNecessary((BYTE*)&work->Merkle[0], false);
+    buf[3] = SwapBytesIfNecessary((BYTE*)&work->Merkle[1], false);
+    buf[4] = SwapBytesIfNecessary((BYTE*)&work->Merkle[2], false);
+    buf[5] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[1], false);
+    buf[6] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[2], false);
+    buf[7] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[3], false);
+    buf[8] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[4], false);
+    buf[9] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[5], false);
+    buf[10] = SwapBytesIfNecessary((BYTE*)&work->MidState[0], false);
+    buf[11] = SwapBytesIfNecessary((BYTE*)&work->MidState[1], false);
+    buf[12] = SwapBytesIfNecessary((BYTE*)&work->MidState[2], false);
+    buf[13] = SwapBytesIfNecessary((BYTE*)&work->MidState[3], false);
+    buf[14] = SwapBytesIfNecessary((BYTE*)&work->MidState[4], false);
+    buf[15] = SwapBytesIfNecessary((BYTE*)&work->MidState[5], false);
+    buf[16] = SwapBytesIfNecessary((BYTE*)&work->MidState[6], false);
+    buf[17] = SwapBytesIfNecessary((BYTE*)&work->MidState[7], false);
+    buf[18] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[0], false);
 
 }
 
 WORKTASK taskCopy;
 
+void AsicPrecalc_sha256_Compare(WORKTASK * pWork)
+{
+    int i;
+    DWORD swapped;
+    taskCopy.Device = pWork->Device;
+    taskCopy.WorkID = pWork->WorkID;
+    for(i = 0; i < 8; i++)
+        taskCopy.MidState[i] = SwapBytesIfNecessary((BYTE*)&pWork->MidState[i], false);
+    for(i = 0; i < 3; i++)
+        taskCopy.Merkle[i] = SwapBytesIfNecessary((BYTE*)&pWork->Merkle[i], true);
+    sha256_precalc(taskCopy.MidState, (BYTE*)taskCopy.Merkle, 12, taskCopy.PrecalcHashes);
+    // swap bytes in precalc hashes
+    for(i = 0; i < 6; i++)
+    {
+        swapped = SwapBytesIfNecessary((BYTE*)&taskCopy.PrecalcHashes[i], true);
+        SYS_ASSERT((swapped == pWork->PrecalcHashes[i]), "OOPS outputs don't match");
+    }
+}
+
 void DeQueueNextWork(DWORD *out)
 {
     SYS_ASSERT((Status.WorkQC > 0), "No work queued");
 
-    memcpy(&taskCopy, &WorkQue[WorkNow], sizeof(taskCopy));
-    sha256_precalc((uint8_t *)taskCopy.MidState, (uint8_t *)taskCopy.Merkle, 3, taskCopy.PrecalcHashes);
-
     AsicPreCalc(&WorkQue[WorkNow]);
+    AsicPrecalc_sha256_Compare(&WorkQue[WorkNow]);
 
     Status.WorkID = WorkQue[WorkNow].WorkID;
-    //SendAsicData(&WorkQue[WorkNow]);
+
+    //ArrangeWords4TxSequence(&taskCopy, out);
     ArrangeWords4TxSequence(&WorkQue[WorkNow], out);
     WorkNow = (WorkNow+1) & WORKMASK;
     Status.HashCount = 0;
@@ -271,7 +291,7 @@ int resultCount = 0;
 DWORD resultArray[10];
 DWORD resultWorkID[10];
 
-void ResultRx(BYTE *indata, DWORD wrkID)
+void ResultRx(BYTE *indata, DWORD wrkID, DWORD *workDone)
 {
     DWORD nonce = SwapBytesIfNecessary(indata, false);
     if (resultCount < 10)

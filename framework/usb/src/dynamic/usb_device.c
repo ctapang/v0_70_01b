@@ -127,14 +127,18 @@ void UnlinkIRP(USB_DEVICE_IRP_LOCAL * irp)
         irp->previous->next = irp->next;
 }
 
+uintptr_t uniqueEPPtrs[DRV_USB_ENDPOINTS_NUMBER];
+int occurrence[DRV_USB_ENDPOINTS_NUMBER];
+
 USB_DEVICE_IRP_LOCAL * SearchForFirstAvailable(USB_DEVICE_IRP_LOCAL * irpBase)
 {
     int maxIRP = 2 * DRV_USB_MAX_QUEUE_LENGTH * DRV_USB_ENDPOINTS_NUMBER;
     USB_DEVICE_IRP_LOCAL * irp = irpBase;
     USB_DEVICE_IRP_LOCAL * retIRP = NULL;
-    DRV_USB_DEVICE_ENDPOINT_OBJ * endpointObj;
 
     int i, j;
+    for (i = 0; i < DRV_USB_ENDPOINTS_NUMBER; i++)
+        occurrence[i] = 0;
     for (j = 0; j < maxIRP; j++, irp++)
     {
         if (irp->status == USB_DEVICE_IRP_STATUS_FREE)
@@ -144,11 +148,52 @@ USB_DEVICE_IRP_LOCAL * SearchForFirstAvailable(USB_DEVICE_IRP_LOCAL * irpBase)
             retIRP = irp;
             break;
         }
+        else
+        {
+            for (i = 0; i < DRV_USB_ENDPOINTS_NUMBER; i++)
+                if (uniqueEPPtrs[i] == irp->endPoint)
+                {
+                    occurrence[i]++;
+                    break;
+                }
+                else if (uniqueEPPtrs[i] == NULL)
+                {
+                    uniqueEPPtrs[i] = irp->endPoint;
+                    occurrence[i]++;
+                    break;
+                }
+        }
     }
-    SYS_ASSERT((retIRP != NULL), "ran out of IRPs");
     return retIRP;
 }
 
+USB_DEVICE_IRP_LOCAL * GetOldestIRP()
+{
+    DRV_USB_DEVICE_ENDPOINT_OBJ * endpointObj;
+    USB_DEVICE_IRP_LOCAL * irp;
+    
+    int maxCount = 0;
+    int i, j = -1;
+    for (i = 0; i < DRV_USB_ENDPOINTS_NUMBER; i++)
+        if (uniqueEPPtrs[i] == NULL)
+            break;
+        else if (maxCount < occurrence[i])
+        {
+            maxCount = occurrence[i];
+            j = i;
+        }
+
+    SYS_ASSERT((j != -1), "inconsistent");
+    endpointObj = (DRV_USB_DEVICE_ENDPOINT_OBJ *)uniqueEPPtrs[j];
+    irp = endpointObj->irpQueue;
+    SYS_ASSERT((irp != NULL), "illogical");
+    endpointObj->irpQueue = irp->next;
+    endpointObj->irpQueue->previous = NULL;
+    irp->status = USB_DEVICE_IRP_STATUS_FREE;
+    UnlinkIRP(irp);
+    InitIRP(irp);
+    return irp;
+}
 
 static void _USB_DEVICE_Ep0ReceiveCompleteCallback( USB_DEVICE_IRP * handle );
 static void _USB_DEVICE_Ep0TransmitCompleteCallback(USB_DEVICE_IRP * handle);
@@ -205,19 +250,35 @@ USB_DEVICE_IRP * USB_DEVICE_AllocateIRP
 
     int j;
     USB_DEVICE_IRP_LOCAL * irp = NULL;
+    irp = SearchForFirstAvailable((USB_DEVICE_IRP_LOCAL * )((direction == 'T') ?
+        device->irpEp0Tx : device->irpEp0Rx));
+    if (irp == NULL)
+    {
+        // Stall the endpoint.
+        // Stall the EP0 TX.
+        USB_DEVICE_ControlStatus( deviceHandle, USB_DEVICE_CONTROL_STATUS_ERROR);
+        irp = SearchForFirstAvailable((USB_DEVICE_IRP_LOCAL * )((direction == 'T') ?
+            device->irpEp0Tx : device->irpEp0Rx));
+    }
+    // one more time
+    if (irp == NULL)
+    {
+        irp = SearchForFirstAvailable((USB_DEVICE_IRP_LOCAL * )((direction == 'T') ?
+            device->irpEp0Tx : device->irpEp0Rx));
+    }
+    // if still no IRP available, take oldest
+    if (irp == NULL)
+    {
+        irp = GetOldestIRP();
+    }
+    SYS_ASSERT((irp != NULL), "ran out of IRPs");
     if (direction == 'T')
     {
-        irp = SearchForFirstAvailable((USB_DEVICE_IRP_LOCAL * )device->irpEp0Tx);
-        //SYS_ASSERT((irp != NULL), "Cannot allocate Tx IRP");
-        if (irp == NULL)
-            goto RETNULL;
         irp->callback = &_USB_DEVICE_Ep0TransmitCompleteCallback;
         irp->flags = USB_DEVICE_IRP_FLAG_DEVICE_TO_HOST;
     }
     else if (direction == 'R')
     {
-        irp = SearchForFirstAvailable((USB_DEVICE_IRP_LOCAL * )device->irpEp0Rx);
-        SYS_ASSERT((irp != NULL), "Cannot allocate Rx IRP");
         irp->data = device->ep0RxBuffer;
         irp->size = USB_DEVICE_EP0_BUFFER_SIZE;
         irp->callback = &_USB_DEVICE_Ep0ReceiveCompleteCallback;
@@ -928,6 +989,7 @@ static void _USB_DEVICE_Ep0TransmitCompleteCallback(USB_DEVICE_IRP * irpHandle)
             // Just completed transmitting ZLP.
             controlTransfer->inProgress = false;
         }
+        irpHandle->status = USB_DEVICE_IRP_STATUS_FREE;
     }
 }
 

@@ -486,11 +486,11 @@ extern WORKCFG Cfg;
 bool done = false;
 BYTE id = 0;
 int usbWaitCount = 0;
+DWORD sequencedBuffer[GEN2_INPUT_WORD_COUNT];
 
 void APP_Tasks ( void )
 {
     DRV_SPI_BUFFER_OBJECT *buf;
-    DWORD sequencedBuffer[GEN2_INPUT_WORD_COUNT];
     DWORD nonce;
     int count;
     
@@ -537,7 +537,7 @@ void APP_Tasks ( void )
             timer_handle = SYS_TMR_HANDLE_INVALID;
 
             // We should now be ready to accept commands from cgminer
-            Status.State = 'R';
+            //Status.State = 'R';
 
             appObject.appState = WaitingForUSBConfig;
 
@@ -585,7 +585,7 @@ void APP_Tasks ( void )
 
         case WaitingForCommand:
             // If USB has been reset, restart all Avalon chips and USB.
-            if (Status.State == 'D')
+            if (!appObject.deviceIsConfigured)
             {
                 //ReInitializeUSB();
                 
@@ -626,17 +626,6 @@ void APP_Tasks ( void )
             break;
 
         case WaitingForReport:
-            // When first receive buffer is filled, free the send buffer.
-            //SYS_ASSERT((timer_handle != SYS_TMR_HANDLE_INVALID), "timeout timer invalid when WaitingForReport");
-//            if (DRV_SPI_BufferStatus (appDrvObject.receiveBufHandle[0]) == DRV_SPI_BUFFER_EVENT_COMPLETE)
-//            {
-//                // If we are only interested in only one golden nonce, we disable the callback.
-//                SYS_TMR_RemoveCallback(timer_handle);
-//
-//                // If we are only interested in the first golden nonce from the Asics, move on to the next state.
-//                appObject.appState = ReadReport;
-//            }
-
             // When work is DONE (timeout occurred), get next work item.
             if (timer_handle == SYS_TMR_HANDLE_INVALID)
             {
@@ -653,11 +642,14 @@ void APP_Tasks ( void )
                 BYTE *noncePtr = Nonce[nonceSent++];
                 int32_t *wordPtr = (int32_t *)noncePtr;
                 *wordPtr = *wordPtr - 0xC0;  // Klondike cgminer Gen1 driver takes away 0xC0 also
-                ResultRx(noncePtr, currentWorkID);
+
+                SYS_ASSERT((sequencedBuffer[0] == currentWorkID), "work ID incorrect");
+                
+                ResultRx(noncePtr, currentWorkID, sequencedBuffer);
 
                 appObject.appState = WaitingForReport;
-                break;
             }
+            break;
 
         case Idle:
             SYS_ASSERT(false, "Invalid app state");
@@ -776,12 +768,7 @@ void APP_USBDeviceEventHandler(USB_DEVICE_EVENT event, USB_DEVICE_EVENT_DATA * e
         case USB_DEVICE_EVENT_RESET:
             p++;
 
-            // flush all work requests
-            Status.WorkQC = 0;
-            Status.State = 'D'; // dead
-            Status.Noise = Status.ErrorCount = 0;
-//
-//            appObject.deviceIsConfigured = false;
+            appObject.deviceIsConfigured = false;
             break;
         case USB_DEVICE_EVENT_DECONFIGURED:
             // Turn OFF then ON the green LED to indicate reset/deconfigured state.

@@ -46,14 +46,15 @@ typedef struct
     uint32 total[2];
     uint32 state[8];
     uint8 buffer[64];
+    bool precalc;
 }
 sha256_context;
 
 void flip4SPI(void *dest_p, const uint8_t *src_p, size_t len);
-void sha256_precalc(const uint8_t *h, const uint8_t *input, unsigned int count, uint8_t *state);
+void sha256_precalc(const uint32 *h, const uint8_t *input, unsigned int count, uint8_t *state);
 
-void sha256_starts( sha256_context *ctx, uint32 *midstate );
-void sha256_update( sha256_context *ctx, uint8 *input, uint32 length );
+void sha256_starts( sha256_context *ctx, const uint32 *midstate, bool precalc );
+void sha256_update( sha256_context *ctx, const uint8 *input, uint32 length );
 void sha256_finish( sha256_context *ctx, uint8 digest[32] , int par2 /* = 0 */);
 
 int sha256_test();

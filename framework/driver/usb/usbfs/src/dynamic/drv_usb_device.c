@@ -554,7 +554,6 @@ USB_ERROR DRIVER DRV_USB_DEVICE_IRPSubmit
     endpointObj = hDriver->endpointTable + (2 * endpoint) + direction;
 
     // remember our endpoint so we can easily move the queue head later
-    // note: this is a reassignment or override
     irp->endPoint = (uintptr_t)endpointObj;
 
     if((endpointObj->endpointState & DRV_USB_DEVICE_ENDPOINT_STATE_ENABLED) == 0)
@@ -954,6 +953,7 @@ void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
     USB_INTERRUPTS  clearUSBInterrupts = 0;
 
     USB_DEVICE_IRP_LOCAL        * irp;
+    USB_DEVICE_IRP_LOCAL        * irpNext = NULL;
     DRV_USB_BDT_ENTRY           * currentBDTEntry;
     DRV_USB_BDT_ENTRY           * lastBDTEntry;
     DRV_USB_CLIENT_OBJ          * hClient;
@@ -1242,17 +1242,11 @@ void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
         if(processNextIRP)
         {
             /* Check the queue and get the next IRP */
- 
-            lastEndpointObj->irpQueue = irp->next;
-
-            /* Check if the queue is empty. This will then allow
-             * us to track if a IRP was submitted after the  IRP 
-             * callback. If so, then we should not call the 
-             * _DRV_USB_DEVICE_EndpointBDTEntryArm() */
-
-            if(lastEndpointObj->irpQueue != NULL)
+            irpNext = irp->next;
+            lastEndpointObj->irpQueue = irpNext;
+            if (irpNext != NULL)
             {
-                lastEndpointObj->irpQueue->previous = NULL;
+                irpNext->previous = NULL;
             }
 
             /* Now do the IRP callback*/
@@ -1265,16 +1259,14 @@ void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
             // free the IRP just processed
             irp->status = USB_DEVICE_IRP_STATUS_FREE;
 
-            //if((lastEndpointObj->irpQueue != NULL) &&
-            //        (!(queueWasEmpty)))
-            if (lastEndpointObj->irpQueue != NULL)
+            if (irpNext != NULL)
             {
                 /* This means we have something in the
                  * queue and this was not added in the 
                  * IRP callback. We can arm the endpoint. */
-                lastEndpointObj->irpQueue->status = USB_DEVICE_IRP_STATUS_IN_PROGRESS;
+                irpNext->status = USB_DEVICE_IRP_STATUS_IN_PROGRESS;
                 _DRV_USB_DEVICE_EndpointBDTEntryArm( currentBDTEntry, lastEndpointObj,
-                        lastEndpointObj->irpQueue, lastDirection);
+                        irpNext, lastDirection);
             }
 
         }

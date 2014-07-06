@@ -1,6 +1,6 @@
 #define MAX_WORK_COUNT      4   // must be binary multiple and match driver
 #define WORKMASK            MAX_WORK_COUNT-1
-#define USB_RECORD_SIZE     15
+//#define USB_RECORD_SIZE     60
 
 //// set values for ASIC PLL, we use R=16 N=Freq in MHz
 #define WORK_TICKS          16384   // 2^32 total / 2^18 hashes per tick (bogus in this case)
@@ -46,6 +46,8 @@ typedef struct _workresult {
     BYTE Device;
     BYTE WorkID;
     DWORD Nonce;
+    DWORD MidState[8]; // for debugging
+    DWORD Merkle[3];   // for debugging
 } WORKRESULT;
 
 typedef struct _workcfg {
@@ -70,7 +72,7 @@ void DeQueueNextWork(DWORD *out);
 
 void PrepareWorkStatus(void);
 
-void ResultRx(BYTE *indata, DWORD wrkID);
+void ResultRx(BYTE *indata, DWORD wrkID, DWORD *workDone);
 //void WorkTick(void);
 
 //void InitTempSensor(void);
