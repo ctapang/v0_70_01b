@@ -260,12 +260,6 @@ USB_DEVICE_IRP * USB_DEVICE_AllocateIRP
         irp = SearchForFirstAvailable((USB_DEVICE_IRP_LOCAL * )((direction == 'T') ?
             device->irpEp0Tx : device->irpEp0Rx));
     }
-    // one more time
-    if (irp == NULL)
-    {
-        irp = SearchForFirstAvailable((USB_DEVICE_IRP_LOCAL * )((direction == 'T') ?
-            device->irpEp0Tx : device->irpEp0Rx));
-    }
     // if still no IRP available, take oldest
     if (irp == NULL)
     {
@@ -966,10 +960,10 @@ static void _USB_DEVICE_Ep0TransmitCompleteCallback(USB_DEVICE_IRP * irpHandle)
 
     SYS_ASSERT((irpHandle != NULL), "Invalid Control Tx IRP");
 
-    controlTransfer = &usbDeviceInstance->controlTransfer;
-
 
     usbDeviceThisInstance = (USB_DEVICE_INSTANCE_STRUCT *)irpHandle->userData;
+
+    controlTransfer = &usbDeviceThisInstance->controlTransfer;
 
     if(irpHandle->status == USB_DEVICE_IRP_STATUS_ABORTED)
     {
@@ -989,7 +983,6 @@ static void _USB_DEVICE_Ep0TransmitCompleteCallback(USB_DEVICE_IRP * irpHandle)
             // Just completed transmitting ZLP.
             controlTransfer->inProgress = false;
         }
-        irpHandle->status = USB_DEVICE_IRP_STATUS_FREE;
     }
 }
 

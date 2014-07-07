@@ -1259,7 +1259,7 @@ void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
             // free the IRP just processed
             irp->status = USB_DEVICE_IRP_STATUS_FREE;
 
-            if (irpNext != NULL)
+            if (irpNext != NULL && irpNext->status == USB_DEVICE_IRP_STATUS_PENDING)
             {
                 /* This means we have something in the
                  * queue and this was not added in the 

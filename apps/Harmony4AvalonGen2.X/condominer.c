@@ -291,6 +291,7 @@ int resultCount = 0;
 DWORD resultArray[10];
 DWORD resultWorkID[10];
 
+// Note: third param unused (needed only for debugging)
 void ResultRx(BYTE *indata, DWORD wrkID, DWORD *workDone)
 {
     DWORD nonce = SwapBytesIfNecessary(indata, false);
