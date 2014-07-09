@@ -46,7 +46,6 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 // *****************************************************************************
 
 #include "app.h"
-#include "byte_manipulation.h"
 #include "sha256.h"
 #include "GenericTypeDefs.h"
 #include "condominer.h"
@@ -82,7 +81,8 @@ APP_DATA appObject =
     .TimerObjectHandle = NULL,
     .usbDevHandle = USB_DEVICE_HANDLE_INVALID,
     .configValue = 0,
-    .deviceIsConfigured = false
+    .deviceIsConfigured = false,
+    .testMode = false
 };
 
 // *****************************************************************************
@@ -547,7 +547,9 @@ void APP_Tasks ( void )
             appObject.endpointRx = 0x01;
             appObject.endpointTx = 0x81;
 
-            if (appObject.deviceIsConfigured && appObject.configValue == 1)
+            if (appObject.testMode)
+                appObject.appState = WaitingForCommand; // wait for test commands
+            else if (appObject.deviceIsConfigured && appObject.configValue == 1)
             {
                 usbWaitCount = 0;
                 
@@ -573,7 +575,7 @@ void APP_Tasks ( void )
             else
             {
                 usbWaitCount++;
-                if (usbWaitCount > 10000)
+                if (usbWaitCount > 20000)
                 {
                     usbWaitCount = 0;
                     //ReInitializeUSB();

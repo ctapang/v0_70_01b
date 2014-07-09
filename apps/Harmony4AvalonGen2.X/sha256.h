@@ -11,27 +11,27 @@
 
 #include <stdint.h>
 
-#define SHA256_DIGEST_SIZE (256 / 8)
-#define SHA256_BLOCK_SIZE  (512 / 8)
-
-
-/* SHA256
- * Please read http://csrc.nist.gov/publications/fips/fips180-4/fips-180-4.pdf
- * Example here: http://csrc.nist.gov/groups/ST/toolkit/documents/Examples/SHA256.pdf
- * 1. Write the CMD_INIT
- * 2. Wait the CMD_DONE when write every 512bits data
- *    You may need pad the data to 512bits
- * 3. Wait teh CMD_DONE. read the result out
- */
-
-typedef struct pic_sha256 {
-	volatile unsigned int cmd;
-	volatile unsigned int din;
-	volatile unsigned int hash;
-	volatile unsigned int hi;
-	volatile unsigned int pre; /* Please read the A3255 datasheet */
-} pic32_sha256;
-
+//#define SHA256_DIGEST_SIZE (256 / 8)
+//#define SHA256_BLOCK_SIZE  (512 / 8)
+//
+//
+///* SHA256
+// * Please read http://csrc.nist.gov/publications/fips/fips180-4/fips-180-4.pdf
+// * Example here: http://csrc.nist.gov/groups/ST/toolkit/documents/Examples/SHA256.pdf
+// * 1. Write the CMD_INIT
+// * 2. Wait the CMD_DONE when write every 512bits data
+// *    You may need pad the data to 512bits
+// * 3. Wait teh CMD_DONE. read the result out
+// */
+//
+//typedef struct pic_sha256 {
+//	volatile unsigned int cmd;
+//	volatile unsigned int din;
+//	volatile unsigned int hash;
+//	volatile unsigned int hi;
+//	volatile unsigned int pre; /* Please read the A3255 datasheet */
+//} pic32_sha256;
+//
 
 #ifndef uint8
 #define uint8  unsigned char

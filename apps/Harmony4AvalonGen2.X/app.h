@@ -161,6 +161,8 @@ typedef struct
 
     USB_ENDPOINT endpointRx;
 
+    bool testMode;
+
 } APP_DATA;
 
 

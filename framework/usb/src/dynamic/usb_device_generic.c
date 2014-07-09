@@ -73,6 +73,9 @@ static void _USB_DEVICE_GENERIC_ControlTransferHandler(
                                         SYS_MODULE_INDEX iGEN,
                                         USB_DEVICE_CONTROL_TRANSFER_EVENT controlEvent,
                                         USB_DEVICE_CONTROL_TRANSFER_EVENT_DATA * pEventData );
+
+void _USB_DEVICE_GENERIC_Tasks(SYS_MODULE_INDEX iGen);
+
 // *****************************************************************************
 /* Generic USB device function driver structure
 
@@ -99,7 +102,7 @@ USB_DEVICE_FUNCTION_DRIVER genFuncDriver = {
     .controlTransferNotification = &_USB_DEVICE_GENERIC_ControlTransferHandler,
 
     /* Generic USB device driver tasks function */
-    .tasks = NULL
+    .tasks = _USB_DEVICE_GENERIC_Tasks // SYS_MODULE_INDEX
 
 };
 
@@ -139,6 +142,23 @@ typedef struct _USB_DEVICE_GENERIC_INSTANCE
  */
 
 static USB_DEVICE_GENERIC_INSTANCE gUsbDeviceGenInstance[USB_DEVICE_GENERIC_MAX_INSTANCES];
+
+// Function
+void _USB_DEVICE_GENERIC_Tasks(SYS_MODULE_INDEX iGen)
+{
+    USB_DEVICE_GENERIC_INSTANCE * genInstance = &gUsbDeviceGenInstance[iGen];
+    USB_ENDPOINT endPoint;
+    DRV_USB_CLIENT_OBJ * clientObj = (DRV_USB_CLIENT_OBJ *)genInstance->usbClientHandle;
+
+    int i;
+    if (clientObj != (DRV_USB_CLIENT_OBJ *) DRV_HANDLE_INVALID)
+    {
+        for(i = 0; i < genInstance->endpointCount; i++)
+        {
+            endPoint = genInstance->endpoints[i];
+        }
+    }
+}
 
 
 /******************************************************************************
@@ -564,6 +584,12 @@ USB_DEVICE_GENERIC_RESULT USB_DEVICE_GENERIC_EventHandlerSet( USB_DEVICE_GENERIC
     gUsbDeviceGenInstance[iGEN].userData = userData;
 
     return USB_DEVICE_GENERIC_RESULT_OK;
+}
+
+USB_ERROR USB_DEVICE_GENERIC_AppCallbackSet(const USB_DEVICE_CALLBACK callBackFunc)
+{
+    /* Register a callback with device layer to get event notification (for end point 0) */
+    return USB_DEVICE_EventCallBackSet(DRV_HANDLE_INVALID, callBackFunc);
 }
 
 /******************************************************************************

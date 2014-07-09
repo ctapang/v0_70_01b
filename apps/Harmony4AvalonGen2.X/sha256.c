@@ -9,7 +9,6 @@
 
 #include "peripheral/spi/plib_spi.h"
 #include "system/common/sys_common.h"
-#include "byte_manipulation.h"
 #include "sha256.h"
 
 //Initialize hash values:

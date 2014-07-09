@@ -84,6 +84,8 @@ void AsicPreCalc(WORKTASK *work)
 
 void SendCmdReply(char *cmd, BYTE *data, BYTE count)
 {
+    bool interruptWasEnabled = MutexOpen();
+
     appObject.bTransmitBufArea = !appObject.bTransmitBufArea;
     int bufIndex = appObject.bTransmitBufArea ? appObject.txBufSize : 0;
 
@@ -94,17 +96,20 @@ void SendCmdReply(char *cmd, BYTE *data, BYTE count)
     memcpy(appObject.transmitDataBuffer + bufIndex + 1, data, count);
     if (count < appObject.txBufSize)
         memset(appObject.transmitDataBuffer + bufIndex + count + 1, (BYTE)0, appObject.txBufSize - count);
-
+    
     /* Send the data to the host */
 
     appObject.epDataWritePending = true;
 
-    USB_DEVICE_GENERIC_EndpointWrite
-            ( USB_DEVICE_GENERIC_INDEX_0,
-            ( USB_DEVICE_GENERIC_TRANSFER_HANDLE *)&appObject.writeTranferHandle,
-            appObject.endpointTx, &appObject.transmitDataBuffer[bufIndex],
-            appObject.txBufSize,
-            USB_DEVICE_GENERIC_TRANSFER_FLAG_NONE );
+    if (!appObject.testMode)
+        USB_DEVICE_GENERIC_EndpointWrite
+                ( USB_DEVICE_GENERIC_INDEX_0,
+                ( USB_DEVICE_GENERIC_TRANSFER_HANDLE *)&appObject.writeTranferHandle,
+                appObject.endpointTx, &appObject.transmitDataBuffer[bufIndex],
+                appObject.txBufSize,
+                USB_DEVICE_GENERIC_TRANSFER_FLAG_NONE );
+
+    MutexClose(interruptWasEnabled);
 }
 
 char commandTrace[10];
@@ -211,23 +216,23 @@ void ArrangeWords4TxSequence(WORKTASK * work, DWORD * buf)
     buf[0] = (DWORD)work->WorkID; // for clock, to be set later
     buf[1] = 0L; // for clock, to be set later
     // Merkle, PrecalHashes, and MidState are all big-endian, so we swap bytes
-    buf[2] = SwapBytesIfNecessary((BYTE*)&work->Merkle[0], false);
-    buf[3] = SwapBytesIfNecessary((BYTE*)&work->Merkle[1], false);
-    buf[4] = SwapBytesIfNecessary((BYTE*)&work->Merkle[2], false);
-    buf[5] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[1], false);
-    buf[6] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[2], false);
-    buf[7] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[3], false);
-    buf[8] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[4], false);
-    buf[9] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[5], false);
-    buf[10] = SwapBytesIfNecessary((BYTE*)&work->MidState[0], false);
-    buf[11] = SwapBytesIfNecessary((BYTE*)&work->MidState[1], false);
-    buf[12] = SwapBytesIfNecessary((BYTE*)&work->MidState[2], false);
-    buf[13] = SwapBytesIfNecessary((BYTE*)&work->MidState[3], false);
-    buf[14] = SwapBytesIfNecessary((BYTE*)&work->MidState[4], false);
-    buf[15] = SwapBytesIfNecessary((BYTE*)&work->MidState[5], false);
-    buf[16] = SwapBytesIfNecessary((BYTE*)&work->MidState[6], false);
-    buf[17] = SwapBytesIfNecessary((BYTE*)&work->MidState[7], false);
-    buf[18] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[0], false);
+    buf[2] = SwapBytesIfNecessary((BYTE*)&work->Merkle[0], true);
+    buf[3] = SwapBytesIfNecessary((BYTE*)&work->Merkle[1], true);
+    buf[4] = SwapBytesIfNecessary((BYTE*)&work->Merkle[2], true);
+    buf[5] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[1], true);
+    buf[6] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[2], true);
+    buf[7] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[3], true);
+    buf[8] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[4], true);
+    buf[9] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[5], true);
+    buf[10] = SwapBytesIfNecessary((BYTE*)&work->MidState[0], true);
+    buf[11] = SwapBytesIfNecessary((BYTE*)&work->MidState[1], true);
+    buf[12] = SwapBytesIfNecessary((BYTE*)&work->MidState[2], true);
+    buf[13] = SwapBytesIfNecessary((BYTE*)&work->MidState[3], true);
+    buf[14] = SwapBytesIfNecessary((BYTE*)&work->MidState[4], true);
+    buf[15] = SwapBytesIfNecessary((BYTE*)&work->MidState[5], true);
+    buf[16] = SwapBytesIfNecessary((BYTE*)&work->MidState[6], true);
+    buf[17] = SwapBytesIfNecessary((BYTE*)&work->MidState[7], true);
+    buf[18] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[0], true);
 
 }
 

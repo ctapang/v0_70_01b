@@ -1083,7 +1083,7 @@ SYS_MODULE_OBJ USB_DEVICE_Initialize(const SYS_MODULE_INDEX index,
     // Save the internal client handle for function drivers.
     usbDeviceInstance[index].hClientInternalOperation = (USB_DEVICE_HANDLE)&usbDeviceClients[index][0];
 
-    //DRV_USB_DEVICE_Attach(usbDeviceThisInstance->usbCDHandle);
+    DRV_USB_DEVICE_Attach(usbDeviceThisInstance->usbCDHandle);
 
     return index;
 
@@ -1134,7 +1134,7 @@ CLIENT_HANDLE USB_DEVICE_Open(const SYS_MODULE_INDEX index, const DRV_IO_INTENT 
         return DRV_HANDLE_INVALID;
     }
    
-	for(i = 0; i < USB_DEVICE_MAX_CLIENTS + 1; i++)
+    for(i = 0; i < USB_DEVICE_MAX_CLIENTS + 1; i++)
     {
         // Copy this local client.
         usbDeviceThisClient = (USB_DEVICE_CLIENT_STRUCT *)&usbDeviceClients[index][i];
@@ -1308,9 +1308,14 @@ USB_ERROR USB_DEVICE_EventCallBackSet(CLIENT_HANDLE hHandle, const USB_DEVICE_CA
     
     USB_DEVICE_CLIENT_STRUCT* devClientHandle;    
     
-    SYS_ASSERT( ( DRV_HANDLE_INVALID != hHandle ), "USB Device Layer: Handle passed is invalid" );
-        
-    devClientHandle = (USB_DEVICE_CLIENT_STRUCT*)hHandle;    
+    if ( DRV_HANDLE_INVALID == hHandle )
+    {
+        devClientHandle = &usbDeviceClients[0][0];
+    }
+    else
+    {
+        devClientHandle = (USB_DEVICE_CLIENT_STRUCT*)hHandle;
+    }
        
     // Check if this handle is in a ready state.
     if(devClientHandle->clientState == DRV_CLIENT_STATUS_READY)
