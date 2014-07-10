@@ -88,7 +88,7 @@ void sha256_precalc(const uint32 *h, const uint8 *input, unsigned int count, uin
 
     sha256_starts( &ctx, h, true );
     sha256_update( &ctx, input, count );
-    sha256_finish( &ctx, temp, 8 );
+    sha256_finish( &ctx, temp, 32 );
     memcpy(state, temp, 12);
     memcpy(state + 12, temp + 16, 12);
 }
@@ -368,9 +368,9 @@ void sha256_finish( sha256_context *ctx, uint8 *digest , int outCount)
     sha256_update( ctx, sha256_padding_array, padn );
     sha256_update( ctx, msglen, 8 );
 
-    SYS_ASSERT((outCount <= 8), "output too large");
+    SYS_ASSERT((outCount <= 32), "output too large");
     int i;
-    for (i = 0; i < outCount; i++)
+    for (i = 0; i < outCount/4; i++)
     {
         PUT_UINT32( ctx->state[i], digest,  4 * i );
     }
@@ -431,7 +431,7 @@ int sha256_test()
             }
         }
 
-        sha256_finish( &ctx, sha256sum , 8);
+        sha256_finish( &ctx, sha256sum , 32);
 
         for( j = 0; j < 32; j++ )
         {
@@ -449,7 +449,7 @@ int sha256_test()
     sha256_update( &ctx, (uint8 *) msg[0],
                        strlen( msg[0] ) );
 
-    sha256_finish( &ctx, sha256sum , 8);
+    sha256_finish( &ctx, sha256sum , 32);
 
     for( j = 0; j < 32; j++ )
     {

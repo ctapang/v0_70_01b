@@ -63,7 +63,7 @@ typedef struct _worktask {
     DWORD MidState[8];
     DWORD Merkle[3];
     DWORD PrecalcHashes[6]; // not received from cgminer
-    BYTE Data[80]; // not received, used only in HashTest
+    BYTE Data[128]; // not received, used only in HashTest
     BYTE Hash[32]; // used only for testing (HashTest)
 } WORKTASK;
 

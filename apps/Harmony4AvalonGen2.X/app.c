@@ -82,7 +82,7 @@ APP_DATA appObject =
     .usbDevHandle = USB_DEVICE_HANDLE_INVALID,
     .configValue = 0,
     .deviceIsConfigured = false,
-    .testMode = false
+    .testMode = true
 };
 
 // *****************************************************************************
@@ -265,12 +265,6 @@ void Set_Clock_Rate(DWORD freqInMHz)
 // Section: Application Callback Routines
 // *****************************************************************************
 // *****************************************************************************
-
-// An Report has arrived from the Asics.
-void ASIC_wait_callback()
-{
-    appObject.appState = ReadReport;
-}
 
 
 // *****************************************************************************
@@ -467,7 +461,7 @@ void APP_SPIReceiveEventHandler( DRV_SPI_BUFFER_EVENT event,
         // Don't free this buffer here. Free them all at the same instant in DoneWaiting4Asics above.
         //DRV_SPI_FreeBuffer(appObject.spiReportDrvHandle, handle);
 
-        if (appObject.appState == WaitingForReport)
+        if (appObject.appState == WaitingForReport && nonceCount > 0)
             appObject.appState = ReadReport;
     }
     SYS_ASSERT((timer_handle != SYS_TMR_HANDLE_INVALID), "timeout timer invalid during buffer completion event (exit)");
@@ -522,6 +516,10 @@ void APP_Tasks ( void )
             DRV_SPI_BufferEventHandlerSet (appObject.spiReportDrvHandle, APP_SPIReceiveEventHandler, NULL );
             
             Status.State = 'D'; // initially condominer should be dead
+            appObject.bReceivedBufArea = false;
+            appObject.bTransmitBufArea = false;
+            appObject.rxBufSize = USB_DEVICE_EP1_BUF_SIZE;
+            appObject.txBufSize = USB_DEVICE_SEND_HOST_SIZE;
 
             appObject.appState = ResetAvalon;
 
@@ -531,8 +529,8 @@ void APP_Tasks ( void )
             // send message to chips just to set clock
             dataToSend = massage_for_send( (uint8_t *)testChips, 4 * GEN2_INPUT_WORD_COUNT, &count );
             appDrvObject.transmitBufHandle = DRV_SPI_BufferAddWrite(appObject.spiConfigDrvHandle, dataToSend, count);
-            state1[0] = 0; state1[1] = 0; state1[2] = 0; state1[3] = 0;
-            appDrvObject.receiveBufHandle[0] = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state1, sizeof(DWORD));
+            //state1[0] = 0; state1[1] = 0; state1[2] = 0; state1[3] = 0;
+            //appDrvObject.receiveBufHandle[0] = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state1, sizeof(DWORD));
 
             timer_handle = SYS_TMR_HANDLE_INVALID;
 
@@ -548,16 +546,15 @@ void APP_Tasks ( void )
             appObject.endpointTx = 0x81;
 
             if (appObject.testMode)
+            {
                 appObject.appState = WaitingForCommand; // wait for test commands
+                issue_test_command(); // see HashTest.c
+            }
             else if (appObject.deviceIsConfigured && appObject.configValue == 1)
             {
                 usbWaitCount = 0;
                 
                 appObject.epDataReadPending = true ;
-                appObject.bReceivedBufArea = false;
-                appObject.bTransmitBufArea = false;
-                appObject.rxBufSize = USB_DEVICE_EP1_BUF_SIZE;
-                appObject.txBufSize = USB_DEVICE_SEND_HOST_SIZE;
                 int bufIndex = appObject.bReceivedBufArea ? appObject.rxBufSize : 0;
 
                 /* Place a new read request. */
@@ -639,7 +636,7 @@ void APP_Tasks ( void )
             // send this result back to cgminer
             SYS_ASSERT((nonceSent < 4), "Too many nonces");
             SYS_ASSERT((nonceCount > 0), "No report");
-            if (nonceCount > nonceSent)
+            while (nonceCount > nonceSent)
             {
                 BYTE *noncePtr = Nonce[nonceSent++];
                 int32_t *wordPtr = (int32_t *)noncePtr;
@@ -648,9 +645,9 @@ void APP_Tasks ( void )
                 SYS_ASSERT((sequencedBuffer[0] == currentWorkID), "work ID incorrect");
                 
                 ResultRx(noncePtr, currentWorkID, sequencedBuffer);
-
-                appObject.appState = WaitingForReport;
             }
+
+            appObject.appState = WaitingForReport;
             break;
 
         case Idle:

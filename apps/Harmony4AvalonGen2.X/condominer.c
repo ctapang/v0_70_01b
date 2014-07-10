@@ -101,7 +101,9 @@ void SendCmdReply(char *cmd, BYTE *data, BYTE count)
 
     appObject.epDataWritePending = true;
 
-    if (!appObject.testMode)
+    if (appObject.testMode)
+        test_reply(&appObject.transmitDataBuffer[bufIndex]);
+    else
         USB_DEVICE_GENERIC_EndpointWrite
                 ( USB_DEVICE_GENERIC_INDEX_0,
                 ( USB_DEVICE_GENERIC_TRANSFER_HANDLE *)&appObject.writeTranferHandle,
