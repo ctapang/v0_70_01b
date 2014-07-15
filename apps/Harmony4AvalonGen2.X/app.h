@@ -53,7 +53,7 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #include <stdlib.h>
 #include "system_config.h"
 #include "bsp_config.h"
-#include "usb_device.h"
+//#include "usb_device.h"
 #include "usb_device_generic.h"
 
 
@@ -135,9 +135,6 @@ typedef struct
     bool bTransmitBufArea;
     int txBufSize;
     uint8_t  transmitDataBuffer[128];
-
-        /* Track device configuration */
-    bool deviceIsConfigured;
 
     /* Configuration value */
     uint8_t configValue;

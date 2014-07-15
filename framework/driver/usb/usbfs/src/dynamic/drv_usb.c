@@ -121,7 +121,7 @@ SYS_MODULE_OBJ DRIVER DRV_USB_Initialize
     drvObj->status  = SYS_STATUS_BUSY; 
     drvObj->usbID   = usbID;            
     drvObj->operationMode  = usbInit->operationMode; 
-    drvObj->pBDT    = (DRV_USB_BDT_ENTRY *)(usbInit->endpointTable);
+    drvObj->pBDT    = (DRV_USB_BDT_ENTRY *)(usbInit->endpointTableBuf);
 
     /* Assign the endpoint table */
     drvObj->endpointTable = &gDrvUSBGroup[drvIndex].gDrvUSBEndpoints[0];
@@ -217,14 +217,14 @@ void DRIVER DRV_USB_Deinitialize
         return ;
     }
 
-    if(gDrvUSBGroup[object].gDrvUSBObj.inUse == false)
-    {
-        /* Cannot deinitialize an object that is 
-         * not already in use. */
-
-        SYS_ASSERT(false, "Instance not in use");
-        return ;
-    }
+//    if(gDrvUSBGroup[object].gDrvUSBObj.inUse == false)
+//    {
+//        /* Cannot deinitialize an object that is
+//         * not already in use. */
+//
+//        SYS_ASSERT(false, "Instance not in use");
+//        return ;
+//    }
 
     drvObj = &gDrvUSBGroup[object].gDrvUSBObj;
     usbID  = drvObj->usbID;

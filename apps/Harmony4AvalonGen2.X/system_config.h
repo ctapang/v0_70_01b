@@ -82,14 +82,14 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 
 #define USB_DEVICE_MAX_INSTANCES    1
 
-#define USB_DEVICE_MAX_CLIENTS      1
+#define USB_DEVICE_MAX_CLIENTS      2
 
 #define USB_DEVICE_MAX_FUNCTION_DRIVER  1
 
 #define USB_DEVICE_EP0_BUFFER_SIZE  64
 #define USB_DEVICE_EP1_BUF_SIZE  USB_DEVICE_EP0_BUFFER_SIZE
 
-#define USB_DEVICE_SEND_HOST_SIZE   60 // match buf size in driver-klondike.c in cgminer
+#define USB_DEVICE_SEND_HOST_SIZE   15 // match buf size in driver-klondike.c in cgminer
 
 #define USB_DEVICE_CDC_INSTANCES_NUMBER  1
 
@@ -105,6 +105,9 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 // Section: Generic USB Function Driver Configuration
 // *****************************************************************************
 // *****************************************************************************
+
+/*Generic USB */
+#define GEN_USB_EP 		1   // Endpoint number
 
 #define USB_DEVICE_GENERIC_INDEX_0       0
 

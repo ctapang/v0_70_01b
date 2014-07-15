@@ -102,7 +102,7 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 // *****************************************************************************
 // *****************************************************************************
 
-uint8_t __attribute__((aligned(512))) endpointTable[USB_DEVICE_ENDPOINT_TABLE_SIZE];
+uint8_t __attribute__((aligned(512))) endpointBuffers[USB_DEVICE_ENDPOINT_TABLE_SIZE];
 
 
 // *****************************************************************************
@@ -132,7 +132,7 @@ USB_DEVICE_INIT usbDevInitData =
 
     .interruptSource = INT_SOURCE_USB_1,  // interrupt source (specific to PIC32MX250F128B)
 
-    .endpointTable = endpointTable,   // end point table
+    .endpointBuffer = endpointBuffers,   // end point table
 
     .registeredFuncCount = 1,    // registered func count
 
@@ -255,23 +255,23 @@ DRV_TMR_INIT   timerInit =
 bool TickInit();
 void TimerHandler();
 
-void ReInitializeUSB()
-{
-    USB_DEVICE_Detach(appObject.usbDevHandle);
-    
-    USB_DEVICE_Reinitialize(  appDrvObject.usbDevObject, (SYS_MODULE_INIT *)&usbDevInitData  );
-
-    /* open an instance of the device layer */
-    appObject.usbDevHandle = USB_DEVICE_Open( appDrvObject.usbDevObject, DRV_IO_INTENT_READWRITE );
-
-    /* Register a callback with device layer to get event notification (for end point 0) */
-    USB_DEVICE_EventCallBackSet(appObject.usbDevHandle, &APP_USBDeviceEventHandler);
-
-    USB_DEVICE_GENERIC_EventHandlerSet(USB_DEVICE_GENERIC_INDEX_0,
-            &APP_USBDeviceGenericEventHandler, (uintptr_t) NULL);
-
-    USB_DEVICE_Attach(appObject.usbDevHandle);
-}
+//void ReInitializeUSB()
+//{
+//    USB_DEVICE_Detach(appObject.usbDevHandle);
+//
+//    USB_DEVICE_Reinitialize(  appDrvObject.usbDevObject, (SYS_MODULE_INIT *)&usbDevInitData  );
+//
+//    /* open an instance of the device layer */
+//    appObject.usbDevHandle = USB_DEVICE_Open( appDrvObject.usbDevObject, DRV_IO_INTENT_READWRITE );
+//
+//    /* Register a callback with device layer to get event notification (for end point 0) */
+//    USB_DEVICE_EventCallBackSet(appObject.usbDevHandle, &APP_USBDeviceEventHandler);
+//
+//    USB_DEVICE_GENERIC_EventHandlerSet(USB_DEVICE_GENERIC_INDEX_0,
+//            &APP_USBDeviceGenericEventHandler, (uintptr_t) NULL);
+//
+//    USB_DEVICE_Attach(appObject.usbDevHandle);
+//}
 
 
 void USB_Init()
@@ -280,21 +280,22 @@ void USB_Init()
     SYS_INT_VectorSubprioritySet(INT_VECTOR_USB, INT_SUBPRIORITY_LEVEL2);
 
     //Initialize the USB device layer (this also calls DRV_USB_Initialize)
+    USB_DEVICE_Deinitialize( 0 );
     appDrvObject.usbDevObject = USB_DEVICE_Initialize(  0, (SYS_MODULE_INIT *)&usbDevInitData  );
 
     /* check if the object returned by the device layer is valid */
     SYS_ASSERT((SYS_MODULE_OBJ_INVALID != appDrvObject.usbDevObject), "Invalid USB DEVICE object");
 
     /* open an instance of the device layer */
-    appObject.usbDevHandle = USB_DEVICE_Open( USB_DEVICE_INDEX_0, DRV_IO_INTENT_READWRITE );
+    //appObject.usbDevHandle = USB_DEVICE_Open( USB_DEVICE_INDEX_0, DRV_IO_INTENT_READWRITE );
 
     /* Register a callback with device layer to get event notification (for end point 0) */
-    USB_DEVICE_EventCallBackSet(appObject.usbDevHandle, &APP_USBDeviceEventHandler);
+    //USB_DEVICE_EventCallBackSet(appObject.usbDevHandle, &APP_USBDeviceEventHandler);
 
     USB_DEVICE_GENERIC_EventHandlerSet(USB_DEVICE_GENERIC_INDEX_0,
             &APP_USBDeviceGenericEventHandler, (uintptr_t) NULL);
 
-    USB_DEVICE_Attach(appObject.usbDevHandle);
+    //USB_DEVICE_Attach(appObject.usbDevHandle);
 }
 
 void SYS_Initialize ( void* data )

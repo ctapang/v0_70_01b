@@ -67,8 +67,9 @@ typedef struct _worktask {
     BYTE Hash[32]; // used only for testing (HashTest)
 } WORKTASK;
 
+void SetCurrentCommand(char * usbData);
 
-void ProcessCmd(char *cmd);
+void ProcessCmd();
 
 void DeQueueNextWork(DWORD *out);
 

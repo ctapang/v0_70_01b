@@ -81,8 +81,7 @@ APP_DATA appObject =
     .TimerObjectHandle = NULL,
     .usbDevHandle = USB_DEVICE_HANDLE_INVALID,
     .configValue = 0,
-    .deviceIsConfigured = false,
-    .testMode = true
+    .testMode = false
 };
 
 // *****************************************************************************
@@ -469,6 +468,11 @@ void APP_SPIReceiveEventHandler( DRV_SPI_BUFFER_EVENT event,
 
 extern WORKCFG Cfg;
 
+bool USBConfigured()
+{
+    return USB_DEVICE_GENERIC_EndpointIsConfigured(0);
+}
+
 /******************************************************************************
   Function:
     void APP_Tasks ( void )
@@ -542,15 +546,16 @@ void APP_Tasks ( void )
             break;
 
         case WaitingForUSBConfig:
-            appObject.endpointRx = 0x01;
-            appObject.endpointTx = 0x81;
+            // "out" and "in" is with respect to host
+            appObject.endpointRx = GEN_USB_EP | USB_EP_DIRECTION_OUT; 
+            appObject.endpointTx = GEN_USB_EP | USB_EP_DIRECTION_IN;
 
             if (appObject.testMode)
             {
                 appObject.appState = WaitingForCommand; // wait for test commands
                 issue_test_command(); // see HashTest.c
             }
-            else if (appObject.deviceIsConfigured && appObject.configValue == 1)
+            else if (USBConfigured()) // && appObject.configValue == 1)
             {
                 usbWaitCount = 0;
                 
@@ -571,6 +576,13 @@ void APP_Tasks ( void )
             }
             else
             {
+                PLIB_PORTS_PinClear( PORTS_ID_0, PORT_CHANNEL_B, BSP_Red_LED);
+
+                if (USB_DEVICE_GENERIC_EndpointIsStalled(0, appObject.endpointRx))
+                    USB_DEVICE_GENERIC_EndpointStallClear(0, appObject.endpointRx);
+                if (USB_DEVICE_GENERIC_EndpointIsStalled(0, appObject.endpointTx))
+                    USB_DEVICE_GENERIC_EndpointStallClear(0, appObject.endpointTx);
+                
                 usbWaitCount++;
                 if (usbWaitCount > 20000)
                 {
@@ -583,8 +595,10 @@ void APP_Tasks ( void )
             break;
 
         case WaitingForCommand:
+            // check to see whether there is a comand from cgminer, process if there is
+            ProcessCmd();
             // If USB has been reset, restart all Avalon chips and USB.
-            if (!appObject.deviceIsConfigured)
+            if (!USBConfigured())
             {
                 //ReInitializeUSB();
                 
@@ -625,6 +639,8 @@ void APP_Tasks ( void )
             break;
 
         case WaitingForReport:
+            // check to see whether there is a comand from cgminer, process if there is
+            ProcessCmd();
             // When work is DONE (timeout occurred), get next work item.
             if (timer_handle == SYS_TMR_HANDLE_INVALID)
             {
@@ -687,7 +703,6 @@ void APP_Tasks ( void )
  */
 
 int x = 0, y = 0, z = 0;
-BYTE buf[100];
 
 extern int countAfter;
 int readCompletionTime = -1;
@@ -722,15 +737,17 @@ void APP_USBDeviceGenericEventHandler ( USB_DEVICE_GENERIC_INDEX iGEN,
             // be ready to receive next command
             appObject.epDataReadPending = true ;
 
-            if (x < 100)
-                buf[x++] = eventData->endpointReadComplete.data[0];
             y++;
             
-            // execute the command from cgminer
-            ProcessCmd(eventData->endpointReadComplete.data);
+            // if main loop is ready for it, execute the command from cgminer
+            SetCurrentCommand(eventData->endpointReadComplete.data);
             break;
 
         case USB_DEVICE_GENERIC_EVENT_CONTROL_TRANSFER_ABORTED:
+            break;
+
+        case USB_DEVICE_GENERIC_EVENT_CONTROL_TRANSFER_DATA_SENT:
+            appObject.configValue = 1;
             break;
 
         default:
@@ -766,9 +783,8 @@ void APP_USBDeviceEventHandler(USB_DEVICE_EVENT event, USB_DEVICE_EVENT_DATA * e
     {
         case USB_DEVICE_EVENT_RESET:
             p++;
-
-            appObject.deviceIsConfigured = false;
             break;
+            
         case USB_DEVICE_EVENT_DECONFIGURED:
             // Turn OFF then ON the green LED to indicate reset/deconfigured state.
             //Reset_All_Avalon_Chips();
@@ -777,14 +793,7 @@ void APP_USBDeviceEventHandler(USB_DEVICE_EVENT event, USB_DEVICE_EVENT_DATA * e
 
         case USB_DEVICE_EVENT_CONFIGURED:
             /* check the configuration */
-            if( eventData->eventConfigured.configurationValue == 1 )
-            {
-                /* Reset endpoint data send & receive flag  */
-                appObject.deviceIsConfigured = true;
-                appObject.configValue = 1;
-
-                //APP_Initialize();
-            }
+            appObject.configValue = eventData->eventConfigured.configurationValue;
             break;
 
         case USB_DEVICE_EVENT_SUSPENDED:

@@ -243,7 +243,7 @@ typedef struct
     INT_SOURCE          interruptSource;// Interrupt Source for USB module
     USB_SPEED           operationSpeed; // USB Operation speed
     USB_OPMODES         operationMode;  // USB module operating mode
-    void                *endpointTable; // Endpoint Descriptor Table buffer 
+    void                *endpointTableBuf; // Endpoint Descriptor Table buffer
 
 } DRV_USB_INIT;
 

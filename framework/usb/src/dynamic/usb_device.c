@@ -89,7 +89,7 @@ typedef struct __attribute__ ((packed))
     None.
 */
 
-static USB_DEVICE_INSTANCE_STRUCT usbDeviceInstance[USB_DEVICE_MAX_INSTANCES];
+USB_DEVICE_INSTANCE_STRUCT usbDeviceInstance[USB_DEVICE_MAX_INSTANCES];
 
 // *****************************************************************************
 /* Driver Client instance objects.
@@ -105,11 +105,11 @@ static USB_DEVICE_INSTANCE_STRUCT usbDeviceInstance[USB_DEVICE_MAX_INSTANCES];
     None.
 */
 
-static USB_DEVICE_CLIENT_STRUCT usbDeviceClients[USB_DEVICE_MAX_INSTANCES][USB_DEVICE_MAX_CLIENTS + 1];
+USB_DEVICE_CLIENT_STRUCT usbDeviceClients[USB_DEVICE_MAX_INSTANCES][USB_DEVICE_MAX_CLIENTS + 1];
 
 // IRP Allocation
 
-static bool firstAllocation = true;
+bool firstAllocation = true;
 
 void InitIRP(USB_DEVICE_IRP_LOCAL * irp)
 {
@@ -122,9 +122,15 @@ void InitIRP(USB_DEVICE_IRP_LOCAL * irp)
 void UnlinkIRP(USB_DEVICE_IRP_LOCAL * irp)
 {
     if (irp->next != NULL)
+    {
+        SYS_ASSERT((irp->next != irp), "linked list loop 1");
+        SYS_ASSERT((irp->next != irp->previous), "linked list loop 2");
         irp->next->previous = irp->previous;
+    }
     if (irp->previous != NULL)
         irp->previous->next = irp->next;
+    irp->next = NULL;
+    irp->previous = NULL;
 }
 
 uintptr_t uniqueEPPtrs[DRV_USB_ENDPOINTS_NUMBER];
@@ -135,12 +141,14 @@ USB_DEVICE_IRP_LOCAL * SearchForFirstAvailable(USB_DEVICE_IRP_LOCAL * irpBase)
     int maxIRP = 2 * DRV_USB_MAX_QUEUE_LENGTH * DRV_USB_ENDPOINTS_NUMBER;
     USB_DEVICE_IRP_LOCAL * irp = irpBase;
     USB_DEVICE_IRP_LOCAL * retIRP = NULL;
+    uintptr_t endpointobj;
 
     int i, j;
     for (i = 0; i < DRV_USB_ENDPOINTS_NUMBER; i++)
         occurrence[i] = 0;
     for (j = 0; j < maxIRP; j++, irp++)
     {
+        endpointobj = irp->endPoint;
         if (irp->status == USB_DEVICE_IRP_STATUS_FREE)
         {
             UnlinkIRP(irp);
@@ -151,23 +159,56 @@ USB_DEVICE_IRP_LOCAL * SearchForFirstAvailable(USB_DEVICE_IRP_LOCAL * irpBase)
         else
         {
             for (i = 0; i < DRV_USB_ENDPOINTS_NUMBER; i++)
-                if (uniqueEPPtrs[i] == irp->endPoint)
+            {
+                if (uniqueEPPtrs[i] == endpointobj)
                 {
                     occurrence[i]++;
                     break;
                 }
                 else if (uniqueEPPtrs[i] == NULL)
                 {
-                    uniqueEPPtrs[i] = irp->endPoint;
+                    uniqueEPPtrs[i] = endpointobj;
                     occurrence[i]++;
                     break;
                 }
+            }
+            SYS_ASSERT((i < DRV_USB_ENDPOINTS_NUMBER), "end point not found");
         }
     }
     return retIRP;
 }
 
-USB_DEVICE_IRP_LOCAL * GetOldestIRP()
+USB_DEVICE_IRP_LOCAL * SearchOrphanedHead(USB_DEVICE_IRP_LOCAL * irpBase, uintptr_t endpointObj)
+{
+    int maxIRP = 2 * DRV_USB_MAX_QUEUE_LENGTH * DRV_USB_ENDPOINTS_NUMBER;
+    USB_DEVICE_IRP_LOCAL * irp = irpBase;
+    USB_DEVICE_IRP_LOCAL * retIRP = NULL;
+
+    int j;
+    for (j = 0; j < maxIRP; j++, irp++)
+    {
+        if(irp->endPoint == endpointObj && irp->previous == NULL && irp->next != NULL)
+        {
+            retIRP = irp;
+            break;
+        }
+    }
+
+    while (irp != NULL)
+    {
+        if(irp->status != USB_DEVICE_IRP_STATUS_IN_PROGRESS)
+        {
+            retIRP = irp;
+            break;
+        }
+        irp = irp->next;
+    }
+
+    // if all IRPs in the linked-list are in progress, return the first one anyway
+    return retIRP;
+}
+
+USB_DEVICE_IRP_LOCAL * GetOldestIRP(USB_DEVICE_IRP_LOCAL * irpBase)
 {
     DRV_USB_DEVICE_ENDPOINT_OBJ * endpointObj;
     USB_DEVICE_IRP_LOCAL * irp;
@@ -186,13 +227,41 @@ USB_DEVICE_IRP_LOCAL * GetOldestIRP()
     SYS_ASSERT((j != -1), "inconsistent");
     endpointObj = (DRV_USB_DEVICE_ENDPOINT_OBJ *)uniqueEPPtrs[j];
     irp = endpointObj->irpQueue;
-    SYS_ASSERT((irp != NULL), "illogical");
-    endpointObj->irpQueue = irp->next;
-    endpointObj->irpQueue->previous = NULL;
+    if (irp == NULL)
+        irp = SearchOrphanedHead(irpBase, (uintptr_t)endpointObj);
+    SYS_ASSERT((irp != NULL), "doubly-linked list has no head");
     irp->status = USB_DEVICE_IRP_STATUS_FREE;
     UnlinkIRP(irp);
     InitIRP(irp);
     return irp;
+}
+
+// This function is called from the main program loop, and interrupts are not
+// disabled because it doesn't modify any IRP (read-only access).
+void USB_DEVICE_Check4HeadlessLists()
+{
+    DRV_USB_DEVICE_ENDPOINT_OBJ * endpointObj;
+    int maxIRP = 2 * DRV_USB_MAX_QUEUE_LENGTH * DRV_USB_ENDPOINTS_NUMBER;
+
+    int i;
+    for (i = 0; i < DRV_USB_ENDPOINTS_NUMBER; i++)
+    {
+        endpointObj = (DRV_USB_DEVICE_ENDPOINT_OBJ *)uniqueEPPtrs[i];
+        if (endpointObj == NULL)
+            break;
+        USB_DEVICE_IRP_LOCAL * irp = endpointObj->irpQueue;
+        if (irp != NULL)
+        {
+            int queueCount = 0;
+            // detect loop
+            while(irp != NULL)
+            {
+                queueCount++;
+                SYS_ASSERT((queueCount < maxIRP), "loop detected");
+                irp = irp->next;
+            }
+        }
+    }
 }
 
 static void _USB_DEVICE_Ep0ReceiveCompleteCallback( USB_DEVICE_IRP * handle );
@@ -252,18 +321,11 @@ USB_DEVICE_IRP * USB_DEVICE_AllocateIRP
     USB_DEVICE_IRP_LOCAL * irp = NULL;
     irp = SearchForFirstAvailable((USB_DEVICE_IRP_LOCAL * )((direction == 'T') ?
         device->irpEp0Tx : device->irpEp0Rx));
+    // if no IRP available, take oldest
     if (irp == NULL)
     {
-        // Stall the endpoint.
-        // Stall the EP0 TX.
-        USB_DEVICE_ControlStatus( deviceHandle, USB_DEVICE_CONTROL_STATUS_ERROR);
-        irp = SearchForFirstAvailable((USB_DEVICE_IRP_LOCAL * )((direction == 'T') ?
+        irp = GetOldestIRP((USB_DEVICE_IRP_LOCAL * )((direction == 'T') ?
             device->irpEp0Tx : device->irpEp0Rx));
-    }
-    // if still no IRP available, take oldest
-    if (irp == NULL)
-    {
-        irp = GetOldestIRP();
     }
     SYS_ASSERT((irp != NULL), "ran out of IRPs");
     if (direction == 'T')
@@ -620,7 +682,7 @@ void USB_DEVICE_Tasks( SYS_MODULE_OBJ devLayerObj )
     {
         if( (funcRegTable->speed & speed) && (funcRegTable->configurationValue == configValue))
         {
-            if(usbDeviceInstance->usbDeviceState == USB_DEVICE_STATE_CONFIGURED)
+            if(usbDeviceThisInstance->usbDeviceState == USB_DEVICE_STATE_CONFIGURED)
             {
                 if( funcRegTable->driver->tasks != NULL)
                 {
@@ -633,6 +695,19 @@ void USB_DEVICE_Tasks( SYS_MODULE_OBJ devLayerObj )
    
 }
 
+
+bool USB_DEVICE_IsConfigured( SYS_MODULE_OBJ devLayerObj )
+{
+    USB_DEVICE_INSTANCE_STRUCT* usbDeviceThisInstance;
+
+    // Assert object is valid.
+    SYS_ASSERT((devLayerObj != SYS_MODULE_OBJ_INVALID), "Invalid Module Obj");
+
+    // Get this instance of USB device layer.
+    usbDeviceThisInstance = &usbDeviceInstance[devLayerObj];
+
+    return usbDeviceThisInstance->usbDeviceState == USB_DEVICE_STATE_CONFIGURED;
+}
 
 // *****************************************************************************
 /* Function:
@@ -1054,7 +1129,7 @@ SYS_MODULE_OBJ USB_DEVICE_Initialize(const SYS_MODULE_INDEX index,
     drvUsbInit.suspendInSleep = deviceInit->suspendInSleep ;
     drvUsbInit.usbID = deviceInit->usbID ;
     drvUsbInit.operationSpeed = deviceInit->deviceSpeed ;
-    drvUsbInit.endpointTable = deviceInit->endpointTable;
+    drvUsbInit.endpointTableBuf = deviceInit->endpointBuffer;
  
 
     drvObj = DRV_USB_Initialize(index, (SYS_MODULE_INIT *)&drvUsbInit);
@@ -1081,7 +1156,7 @@ SYS_MODULE_OBJ USB_DEVICE_Initialize(const SYS_MODULE_INDEX index,
     usbDeviceClients[index][0].clientState = DRV_CLIENT_STATUS_READY;
     usbDeviceClients[index][0].usbDeviceInstance = usbDeviceThisInstance;
     // Save the internal client handle for function drivers.
-    usbDeviceInstance[index].hClientInternalOperation = (USB_DEVICE_HANDLE)&usbDeviceClients[index][0];
+    //usbDeviceInstance[index].hClientInternalOperation = (USB_DEVICE_HANDLE)&usbDeviceClients[index][0];
 
     DRV_USB_DEVICE_Attach(usbDeviceThisInstance->usbCDHandle);
 
@@ -1308,14 +1383,9 @@ USB_ERROR USB_DEVICE_EventCallBackSet(CLIENT_HANDLE hHandle, const USB_DEVICE_CA
     
     USB_DEVICE_CLIENT_STRUCT* devClientHandle;    
     
-    if ( DRV_HANDLE_INVALID == hHandle )
-    {
-        devClientHandle = &usbDeviceClients[0][0];
-    }
-    else
-    {
-        devClientHandle = (USB_DEVICE_CLIENT_STRUCT*)hHandle;
-    }
+    SYS_ASSERT(( DRV_HANDLE_INVALID != hHandle ), "invalid client handle");
+
+    devClientHandle = (USB_DEVICE_CLIENT_STRUCT*)hHandle;
        
     // Check if this handle is in a ready state.
     if(devClientHandle->clientState == DRV_CLIENT_STATUS_READY)
@@ -1592,6 +1662,11 @@ void _USB_DEVICE_EventHandler( uintptr_t referenceHandle,
                                                   USB_TRANSFER_TYPE_CONTROL,
                                                   USB_DEVICE_EP0_BUFFER_SIZE);
 
+            (void)DRV_USB_DEVICE_EndpointEnable( usbDeviceInstance->usbCDHandle,
+                                                  controlEndpointTx,
+                                                  USB_TRANSFER_TYPE_CONTROL,
+                                                  USB_DEVICE_EP0_BUFFER_SIZE);
+
             USB_DEVICE_IRP * irp = USB_DEVICE_AllocateIRP((USB_DEVICE_HANDLE)usbDeviceInstance, 'R');
             /* Submit IRP to endpoint 0 to receive the setup packet */
             (void)DRV_USB_DEVICE_IRPSubmit( usbDeviceInstance->usbCDHandle,
@@ -1762,6 +1837,9 @@ static void  _USB_DEVICE_ControlTransferHandler(
     
 */
 
+int errs1 = 0;
+int errs2 = 0;
+
 static void _USB_DEVICE_ProcessStandardGetRequests( USB_DEVICE_INSTANCE_STRUCT * usbDeviceInstance,
                                                     USB_SETUP_PACKET * setupPkt )
 {
@@ -1878,6 +1956,7 @@ static void _USB_DEVICE_ProcessStandardGetRequests( USB_DEVICE_INSTANCE_STRUCT *
         // STALL the transfer
         USB_DEVICE_ControlStatus(  (USB_DEVICE_HANDLE)usbDeviceInstance,
                                     USB_DEVICE_CONTROL_STATUS_ERROR );
+        errs1++;
     }
     else
     {
@@ -1989,7 +2068,7 @@ static void _USB_DEVICE_ConfigureDevice( USB_DEVICE_INSTANCE_STRUCT* usbDeviceTh
         if( pFunctionRegTable != NULL )
         {
             pFunctionRegTable->driver->initializeByDescriptor(pFunctionRegTable->funcDriverIndex,
-                                                  usbDeviceThisInstance->hClientInternalOperation,
+                                                  NULL, //usbDeviceThisInstance->hClientInternalOperation,
                                                   pFunctionRegTable->funcDriverInit,
                                                   interfaceNumber, alternateSetting,
                                                   descriptorType, pDescriptor);
@@ -2081,7 +2160,7 @@ static void _USB_DEVICE_ProcessStandardSetRequests( USB_DEVICE_INSTANCE_STRUCT *
                     _USB_DEVICE_ConfigureDevice(usbDeviceInstance);
                     
                     // Change the state to configured.
-                    usbDeviceInstance->usbDeviceState = USB_DEVICE_STATE_CONFIGURED;
+                    usbDeviceInstance->usbDeviceState = usbDeviceInstance->usbDevStatePriorSuspend = USB_DEVICE_STATE_CONFIGURED;
                     // Set an event, so that application and function drivers are informed
                     // about the same.
                     eventData.eventConfigured.configurationValue = (uint8_t)setupPkt->wValue;
@@ -2099,6 +2178,7 @@ static void _USB_DEVICE_ProcessStandardSetRequests( USB_DEVICE_INSTANCE_STRUCT *
              // Stall the EP0 TX.
             USB_DEVICE_ControlStatus( (USB_DEVICE_HANDLE) usbDeviceInstance,
                                       USB_DEVICE_CONTROL_STATUS_ERROR);
+            errs2++;
             break;
     }
 
@@ -2396,7 +2476,7 @@ static void _USB_DEVICE_BroadcastControlXferEventsToAppClients( USB_DEVICE_CONTR
 {
     uint8_t count;
     USB_DEVICE_CLIENT_STRUCT * client = &usbDeviceClients[handlerIndex][1];
-    for( count = 1; count < USB_DEVICE_MAX_CLIENTS; count++)
+    for( count = 1; count < USB_DEVICE_MAX_CLIENTS + 1; count++)
     {
         if( (client->clientState == DRV_CLIENT_STATUS_READY)
                 && (client->controlTransferEventCallback != NULL) )

@@ -52,9 +52,6 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #define MY_VID 0x04D8
 #define MY_PID 0xF60A  // Klondike Project
 
-/*Generic USB */
-#define GEN_USB_EP 		1   // Endpoint number
-
 /* Device Descriptor */
 const USB_DEVICE_DESCRIPTOR device_dsc=
 {

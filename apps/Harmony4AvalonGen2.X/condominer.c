@@ -81,11 +81,10 @@ void AsicPreCalc(WORKTASK *work)
     }
 }
 
+USB_ERROR usbResult;
 
 void SendCmdReply(char *cmd, BYTE *data, BYTE count)
 {
-    bool interruptWasEnabled = MutexOpen();
-
     appObject.bTransmitBufArea = !appObject.bTransmitBufArea;
     int bufIndex = appObject.bTransmitBufArea ? appObject.txBufSize : 0;
 
@@ -96,6 +95,9 @@ void SendCmdReply(char *cmd, BYTE *data, BYTE count)
     memcpy(appObject.transmitDataBuffer + bufIndex + 1, data, count);
     if (count < appObject.txBufSize)
         memset(appObject.transmitDataBuffer + bufIndex + count + 1, (BYTE)0, appObject.txBufSize - count);
+
+    // check for invalid cmd
+    SYS_ASSERT((appObject.transmitDataBuffer[bufIndex] != (BYTE)0), "bad command");
     
     /* Send the data to the host */
 
@@ -104,14 +106,16 @@ void SendCmdReply(char *cmd, BYTE *data, BYTE count)
     if (appObject.testMode)
         test_reply(&appObject.transmitDataBuffer[bufIndex]);
     else
-        USB_DEVICE_GENERIC_EndpointWrite
-                ( USB_DEVICE_GENERIC_INDEX_0,
+    {
+        usbResult = USB_DEVICE_GENERIC_EndpointWrite( USB_DEVICE_GENERIC_INDEX_0,
                 ( USB_DEVICE_GENERIC_TRANSFER_HANDLE *)&appObject.writeTranferHandle,
                 appObject.endpointTx, &appObject.transmitDataBuffer[bufIndex],
                 appObject.txBufSize,
                 USB_DEVICE_GENERIC_TRANSFER_FLAG_NONE );
 
-    MutexClose(interruptWasEnabled);
+        if(usbResult != USB_DEVICE_GENERIC_RESULT_OK)
+            return;  // debug point
+    }
 }
 
 char commandTrace[10];
@@ -143,62 +147,78 @@ DWORD SwapBytesIfNecessary(BYTE *psrc, bool necessary)
     return word;
 }
 
-void ProcessCmd(char *cmd)
+char * cmdFromCgminer = NULL;
+bool readyToProcess = true;
+
+void SetCurrentCommand(char * usbData)
 {
+    if (cmdFromCgminer == NULL)
+        cmdFromCgminer = usbData;
+}
+
+void ProcessCmd()
+{
+    char * ourPtr = cmdFromCgminer;
+
+    if (ourPtr == NULL)
+        return;  // do nothing
+    
+    cmdFromCgminer = NULL;
+    
     // cmd is one char, dest address 1 byte, data follows
     // we already know address is ours here
     if (cmdIndex < 10)
-        commandTrace[cmdIndex++] = cmd[0];
-    switch(cmd[0]) {
+        commandTrace[cmdIndex++] = ourPtr[0];
+    switch(ourPtr[0]) {
         case 'W': // queue new work
             if( Status.WorkQC < MAX_WORK_COUNT && Status.State != 'D' ) {
                 WORKTASK *work = &WorkQue[ (WorkNow + Status.WorkQC) & WORKMASK ];
-                work->Device = cmd[1];
-                work->WorkID = cmd[2];
+                work->Device = ourPtr[1];
+                work->WorkID = ourPtr[2];
                 // cmd input is little-endian, and we are also little-endian
                 for (i = 0; i < 8; i++)
-                    work->MidState[i] = SwapBytesIfNecessary(cmd + 4*i + 3, true);
+                    work->MidState[i] = SwapBytesIfNecessary(ourPtr + 4*i + 3, true);
                 for (i = 0; i < 3; i++)
-                    work->Merkle[i] = SwapBytesIfNecessary(cmd + 4*i + 35, true);
+                    work->Merkle[i] = SwapBytesIfNecessary(ourPtr + 4*i + 35, true);
                 if(Status.State == 'R') {
                     Status.State = 'P'; // AssembleWorkForAsics(out);
                 }
                 Status.WorkQC++;
             }
-            SendCmdReply(cmd, (char *)&Status, 14); // sizeof(Status));
+            SendCmdReply(ourPtr, (char *)&Status, 14); // sizeof(Status));
             Status.Noise = Status.ErrorCount = 0;
             break;
         case 'A': // abort work, reply status has hash completed count
             Status.WorkQC = 0;
             Status.State = 'R';
-            SendCmdReply(cmd, (char *)&Status, 14); // sizeof(Status));
+            SendCmdReply(ourPtr, (char *)&Status, 14); // sizeof(Status));
             Status.Noise = Status.ErrorCount = 0;
             Reset_All_Avalon_Chips();
             break;
         case 'I': // return identity 
-            SendCmdReply(cmd, (char *)&ID, 13);
+            SendCmdReply(ourPtr, (char *)&ID, 13);
             break;
         case 'S': // return status 
-            SendCmdReply(cmd, (char *)&Status, 14); // sizeof(WORKSTATUS));
+            SendCmdReply(ourPtr, (char *)&Status, 14); // sizeof(WORKSTATUS));
             Status.Noise = Status.ErrorCount = 0;
             break;
         case 'C': // set config values 
-            if( *(WORD *)&cmd[2] != 0 )
+            if( *(WORD *)&ourPtr[2] != 0 )
             {
                 //Cfg = *(WORKCFG *)(cmd+2);
-                Cfg.Device = cmd[1];
-                Cfg.HashClock = cmd[2];
-                Cfg.HashClock += ((WORD)cmd[3]) << 8;
-                Cfg.TempTarget = cmd[4];
-                Cfg.Future1 = cmd[5];
-                Cfg.Future2 = cmd[6];
-                Cfg.Future3 = cmd[7];
+                Cfg.Device = ourPtr[1];
+                Cfg.HashClock = ourPtr[2];
+                Cfg.HashClock += ((WORD)ourPtr[3]) << 8;
+                Cfg.TempTarget = ourPtr[4];
+                Cfg.Future1 = ourPtr[5];
+                Cfg.Future2 = ourPtr[6];
+                Cfg.Future3 = ourPtr[7];
             }
-            SendCmdReply(cmd, (char *)&Cfg, sizeof(Cfg));
+            SendCmdReply(ourPtr, (char *)&Cfg, sizeof(Cfg));
             break;
         case 'E': // enable/disable work
-            Status.State = (cmd[2] == '1') ? ((Status.WorkQC > 0) ? 'P' : 'R') : 'D';
-            SendCmdReply(cmd, (char *)&Status, 14); // sizeof(Status));
+            Status.State = (ourPtr[2] == '1') ? ((Status.WorkQC > 0) ? 'P' : 'R') : 'D';
+            SendCmdReply(ourPtr, (char *)&Status, 14); // sizeof(Status));
             Status.Noise = Status.ErrorCount = 0;
             break;
         //case 'F': // enter firmware update mode
@@ -209,8 +229,7 @@ void ProcessCmd(char *cmd)
         //    break;
         default:
             break;
-        }
-    //LED_On();
+    }
 }
 
 void ArrangeWords4TxSequence(WORKTASK * work, DWORD * buf)

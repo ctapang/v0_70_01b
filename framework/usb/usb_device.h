@@ -786,7 +786,7 @@ typedef struct
     INT_SOURCE          interruptSource;
       
     /* Endpoint Table Buffer */
-    void                *endpointTable;
+    void                *endpointBuffer;
 
     /* Number of function drivers registered to this instance of the 
     USB device layer */
@@ -2395,6 +2395,9 @@ void USB_DEVICE_ResumeStart( USB_DEVICE_HANDLE usbDeviceHandle );
 */
 
 void USB_DEVICE_ResumeStop ( USB_DEVICE_HANDLE usbDeviceHandle );
+
+// Task function called from generic driver
+void USB_DEVICE_Check4HeadlessLists();
 
 // *****************************************************************************
 // *****************************************************************************

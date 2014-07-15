@@ -687,6 +687,7 @@ void DRIVER _DRV_USB_DEVICE_IRPQueueFlush
 )
 {
     USB_DEVICE_IRP_LOCAL * iterator;
+    USB_DEVICE_IRP_LOCAL * temp;
     
     /* Check if any IRPs are assigned on this endpoint and 
      * abort them */
@@ -706,7 +707,9 @@ void DRIVER _DRV_USB_DEVICE_IRPQueueFlush
                 iterator->callback((USB_DEVICE_IRP *)iterator);
             }
             iterator->status = USB_DEVICE_IRP_STATUS_FREE;
+            temp = iterator;
             iterator = iterator->next;
+            UnlinkIRP(temp);
         }
     }
 
@@ -1256,10 +1259,10 @@ void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
                 irp->callback((USB_DEVICE_IRP *)irp);
             }
 
-            // free the IRP just processed
+            // free the IRP just processed, if it is still the same one
             irp->status = USB_DEVICE_IRP_STATUS_FREE;
 
-            if (irpNext != NULL && irpNext->status == USB_DEVICE_IRP_STATUS_PENDING)
+            if (irpNext != NULL && irpNext == lastEndpointObj->irpQueue)
             {
                 /* This means we have something in the
                  * queue and this was not added in the 

@@ -480,6 +480,9 @@ SYS_MODULE_OBJ DRV_SPI_Initialize ( const SYS_MODULE_INDEX   drvIndex,
     /* Set the current driver state */
     dObj->status = SYS_STATUS_READY;
 
+    /* current task should start with queue handling*/
+    dObj->task = DRV_SPI_TASK_PROCESS_QUEUE;
+
     /* Enable the SPI module */
     PLIB_SPI_Enable( _DRV_SPI_PERIPHERAL_ID_GET( spiId ) ) ;
 
@@ -1177,7 +1180,7 @@ DRV_SPI_BUFFER_HANDLE DRV_SPI_BufferAddRead ( DRV_HANDLE handle, void *rxBuffer,
         _DRV_SPI_InterruptSourceClear( _DRV_SPI_INT_SRC_GET ( dObj->rxInterruptSource ) ) ;
 
         _DRV_SPI_InterruptSourceEnable( _DRV_SPI_INT_SRC_GET( dObj->rxInterruptSource ) ) ;
-        //_DRV_SPI_InterruptSourceEnable( _DRV_SPI_INT_SRC_GET( dObj->txInterruptSource ) ) ;
+        _DRV_SPI_InterruptSourceEnable( _DRV_SPI_INT_SRC_GET( dObj->txInterruptSource ) ) ;
 
         return (DRV_SPI_BUFFER_HANDLE)spiDataObj;
     }
