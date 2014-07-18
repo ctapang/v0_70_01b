@@ -121,7 +121,7 @@ void AsyncSendUSB()
         bufIndex = appObject.pullPoint * (appObject.txBufSize + 1);
         
         // check for invalid cmd
-        SYS_ASSERT((appObject.transmitDataBuffer[bufIndex] != (BYTE)0), "bad command");
+        SYS_ASSERT((appObject.transmitDataBuffer[bufIndex] > '!'), "bad command");
 
         /* Send the data to the host */
 
