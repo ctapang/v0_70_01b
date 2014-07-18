@@ -436,7 +436,7 @@ void DRIVER _DRV_USB_DEVICE_EndpointBDTEntryArm
 
        SYS_ASSERT(((irp->flags & USB_DEVICE_IRP_FLAG_DEVICE_TO_HOST) != 0), "Wrong write IRP");
 
-        currentBDTEntry->byte[0] = 0x08;
+        currentBDTEntry->byte[0] = 0; // 0x08;
 
         /* Adjust buffer address for the number of
          * bytes sent */

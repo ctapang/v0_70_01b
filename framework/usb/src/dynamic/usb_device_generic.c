@@ -144,7 +144,7 @@ typedef struct _USB_DEVICE_GENERIC_INSTANCE
     This structure is private to  USB stack.
  */
 
-static USB_DEVICE_GENERIC_INSTANCE gUsbDeviceGenInstance[USB_DEVICE_GENERIC_MAX_INSTANCES];
+USB_DEVICE_GENERIC_INSTANCE gUsbDeviceGenInstance[USB_DEVICE_GENERIC_MAX_INSTANCES];
 
 int transmitCount = 0;
 

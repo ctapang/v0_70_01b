@@ -127,26 +127,21 @@ typedef struct
     DRV_HANDLE usbDevHandle;
 
     /* Recieve data buffer */
-    bool bReceivedBufArea;
+    int receivedBufArea;
     int rxBufSize;
-    uint8_t receivedDataBuffer[128];
+    uint8_t receivedDataBuffer[USB_DEVICE_EP1_TOTAL_BUF_SIZE];
 
     /* Transmit data buffer */
-    bool bTransmitBufArea;
+    int transmitBufArea;
+    int pullPoint;
     int txBufSize;
-    uint8_t  transmitDataBuffer[128];
+    uint8_t  transmitDataBuffer[USB_DEVICE_TX_TOTAL_SIZE];
 
     /* Configuration value */
     uint8_t configValue;
 
     /* speed */
     USB_SPEED speed;
-
-    /* ep data sent */
-    bool epDataWritePending;
-
-    /* ep data received */
-    bool epDataReadPending;
 
     /* Transfer handle */
     USB_DEVICE_GENERIC_TRANSFER_HANDLE writeTranferHandle;

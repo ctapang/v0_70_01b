@@ -88,4 +88,4 @@ void AsicPreCalc(WORKTASK *work);
 
 void SendCmdReply(char *cmd, BYTE *ReplyBuf, BYTE count);
 
-void InitializeWorkSystem(void);
+void InitializeCondominer(void);

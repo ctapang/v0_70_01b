@@ -99,15 +99,7 @@ void SYS_Tasks ( void )
 
     SYS_TMR_Tasks( appObject.TimerObjectHandle );
 
-	/* TODO For USB Stack. In the future releases, the tool would add required task API's appropriately.
-
-			USB_DEVICE_Tasks( );
-
-			USB_HOST_HUB_task();
-
-			USB_HOST_CDC_Tasks();
-	*/
-
+    AsyncSendUSB();
     
     /* Call the application's tasks routine */
     APP_Tasks ( );

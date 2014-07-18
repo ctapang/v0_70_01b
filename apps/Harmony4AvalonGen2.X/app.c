@@ -282,10 +282,7 @@ void Set_Clock_Rate(DWORD freqInMHz)
 
 void APP_Initialize ( void )
 {
-    InitializeWorkSystem();
-
-    appObject.epDataReadPending = false ;
-    appObject.epDataWritePending = false;
+    InitializeCondominer();
 }
 
 // private methods
@@ -473,6 +470,19 @@ bool USBConfigured()
     return USB_DEVICE_GENERIC_EndpointIsConfigured(0);
 }
 
+void AsyncReadUSB()
+{
+    int bufIndex = appObject.receivedBufArea * appObject.rxBufSize;
+
+    /* Place a new read request. */
+    USB_DEVICE_GENERIC_EndpointRead ( USB_DEVICE_GENERIC_INDEX_0,
+                                       &appObject.readTranferHandle,
+                                        appObject.endpointRx,
+                                        &appObject.receivedDataBuffer[bufIndex],
+                                        appObject.rxBufSize );
+
+    appObject.receivedBufArea = (appObject.receivedBufArea + 1) % USB_DEVICE_MSGBUF_COUNT;
+}
 /******************************************************************************
   Function:
     void APP_Tasks ( void )
@@ -520,10 +530,10 @@ void APP_Tasks ( void )
             DRV_SPI_BufferEventHandlerSet (appObject.spiReportDrvHandle, APP_SPIReceiveEventHandler, NULL );
             
             Status.State = 'D'; // initially condominer should be dead
-            appObject.bReceivedBufArea = false;
-            appObject.bTransmitBufArea = false;
             appObject.rxBufSize = USB_DEVICE_EP1_BUF_SIZE;
             appObject.txBufSize = USB_DEVICE_SEND_HOST_SIZE;
+
+            InitializeCondominer();
 
             appObject.appState = ResetAvalon;
 
@@ -559,18 +569,8 @@ void APP_Tasks ( void )
             {
                 usbWaitCount = 0;
                 
-                appObject.epDataReadPending = true ;
-                int bufIndex = appObject.bReceivedBufArea ? appObject.rxBufSize : 0;
-
-                /* Place a new read request. */
-                USB_DEVICE_GENERIC_EndpointRead ( USB_DEVICE_GENERIC_INDEX_0,
-                                                   &appObject.readTranferHandle,
-                                                    appObject.endpointRx,
-                                                    &appObject.receivedDataBuffer[bufIndex],
-                                                    1 ); // ask for the very minimum
-
-                appObject.epDataWritePending = false ;
-
+                AsyncReadUSB();
+                
                 // After initializing we set the state to "WaitingForCommand" and enable USB interrupts
                 appObject.appState = WaitingForCommand; // wait for interrupt from USB
             }
@@ -595,8 +595,6 @@ void APP_Tasks ( void )
             break;
 
         case WaitingForCommand:
-            // check to see whether there is a comand from cgminer, process if there is
-            ProcessCmd();
             // If USB has been reset, restart all Avalon chips and USB.
             if (!USBConfigured())
             {
@@ -639,8 +637,6 @@ void APP_Tasks ( void )
             break;
 
         case WaitingForReport:
-            // check to see whether there is a comand from cgminer, process if there is
-            ProcessCmd();
             // When work is DONE (timeout occurred), get next work item.
             if (timer_handle == SYS_TMR_HANDLE_INVALID)
             {
@@ -717,30 +713,17 @@ void APP_USBDeviceGenericEventHandler ( USB_DEVICE_GENERIC_INDEX iGEN,
     switch (event)
     {
         case USB_DEVICE_GENERIC_EVENT_ENDPOINT_WRITE_COMPLETE:
-            appObject.epDataWritePending = false;
             z++;
             break;
 
         case USB_DEVICE_GENERIC_EVENT_ENDPOINT_READ_COMPLETE:
             
-            appObject.epDataReadPending = false;
-            appObject.bReceivedBufArea = !appObject.bReceivedBufArea;
-            int bufIndex = appObject.bReceivedBufArea ? appObject.rxBufSize : 0;
-
-            /* Place a new read request. */
-            USB_DEVICE_GENERIC_EndpointRead ( USB_DEVICE_GENERIC_INDEX_0,
-                                               &appObject.readTranferHandle,
-                                                appObject.endpointRx,
-                                                &appObject.receivedDataBuffer[bufIndex],
-                                                appObject.rxBufSize );
-
-            // be ready to receive next command
-            appObject.epDataReadPending = true ;
-
+            AsyncReadUSB();
+            
             y++;
             
             // if main loop is ready for it, execute the command from cgminer
-            SetCurrentCommand(eventData->endpointReadComplete.data);
+            ProcessCmd(eventData->endpointReadComplete.data);
             break;
 
         case USB_DEVICE_GENERIC_EVENT_CONTROL_TRANSFER_ABORTED:

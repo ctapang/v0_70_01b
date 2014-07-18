@@ -85,37 +85,64 @@ USB_ERROR usbResult;
 
 void SendCmdReply(char *cmd, BYTE *data, BYTE count)
 {
-    appObject.bTransmitBufArea = !appObject.bTransmitBufArea;
-    int bufIndex = appObject.bTransmitBufArea ? appObject.txBufSize : 0;
+    int bufIndex;
+    bool intEnabled;
 
-    SYS_ASSERT(((count + 1) <= appObject.txBufSize), "size to transmit too large");
-
-    appObject.transmitDataBuffer[bufIndex] = cmd[0];
-    //appObject.transmitDataBuffer[bufIndex + 1] = data[0]; // USB_ID_1
-    memcpy(appObject.transmitDataBuffer + bufIndex + 1, data, count);
-    if (count < appObject.txBufSize)
-        memset(appObject.transmitDataBuffer + bufIndex + count + 1, (BYTE)0, appObject.txBufSize - count);
-
-    // check for invalid cmd
-    SYS_ASSERT((appObject.transmitDataBuffer[bufIndex] != (BYTE)0), "bad command");
-    
-    /* Send the data to the host */
-
-    appObject.epDataWritePending = true;
-
-    if (appObject.testMode)
-        test_reply(&appObject.transmitDataBuffer[bufIndex]);
-    else
+    if(appObject.transmitBufArea < USB_DEVICE_MSGBUF_COUNT)
     {
-        usbResult = USB_DEVICE_GENERIC_EndpointWrite( USB_DEVICE_GENERIC_INDEX_0,
-                ( USB_DEVICE_GENERIC_TRANSFER_HANDLE *)&appObject.writeTranferHandle,
-                appObject.endpointTx, &appObject.transmitDataBuffer[bufIndex],
-                appObject.txBufSize,
-                USB_DEVICE_GENERIC_TRANSFER_FLAG_NONE );
+        intEnabled = MutexOpen();
 
-        if(usbResult != USB_DEVICE_GENERIC_RESULT_OK)
-            return;  // debug point
+        bufIndex = (appObject.transmitBufArea + appObject.pullPoint) % USB_DEVICE_MSGBUF_COUNT;
+        bufIndex = bufIndex * (appObject.txBufSize + 1);
+
+        SYS_ASSERT(((count + 1) <= appObject.txBufSize), "size to transmit too large");
+
+        appObject.transmitDataBuffer[bufIndex] = cmd[0];
+        //appObject.transmitDataBuffer[bufIndex + 1] = data[0]; // USB_ID_1
+        memcpy(appObject.transmitDataBuffer + bufIndex + 1, data, count);
+        if (count < appObject.txBufSize)
+            memset(appObject.transmitDataBuffer + bufIndex + count + 1, (BYTE)0, appObject.txBufSize - count);
+
+        appObject.transmitBufArea++;
+
+        MutexClose(intEnabled);
     }
+}
+
+void AsyncSendUSB()
+{
+    int bufIndex;
+    bool intEnabled;
+
+    intEnabled = MutexOpen();
+
+    while(appObject.transmitBufArea > 0 && USBConfigured()) // while there is something to pull
+    {
+        bufIndex = appObject.pullPoint * (appObject.txBufSize + 1);
+        
+        // check for invalid cmd
+        SYS_ASSERT((appObject.transmitDataBuffer[bufIndex] != (BYTE)0), "bad command");
+
+        /* Send the data to the host */
+
+        if (appObject.testMode)
+            test_reply(&appObject.transmitDataBuffer[bufIndex]);
+        else
+        {
+            usbResult = USB_DEVICE_GENERIC_EndpointWrite( USB_DEVICE_GENERIC_INDEX_0,
+                    ( USB_DEVICE_GENERIC_TRANSFER_HANDLE *)&appObject.writeTranferHandle,
+                    appObject.endpointTx, &appObject.transmitDataBuffer[bufIndex],
+                    appObject.txBufSize,
+                    USB_DEVICE_GENERIC_TRANSFER_FLAG_NONE );
+
+            SYS_ASSERT((usbResult == USB_DEVICE_GENERIC_RESULT_OK), "bad result");
+        }
+
+        appObject.pullPoint = (appObject.pullPoint + 1) % USB_DEVICE_MSGBUF_COUNT;
+        appObject.transmitBufArea--;
+    }
+
+     MutexClose(intEnabled);
 }
 
 char commandTrace[10];
@@ -147,24 +174,10 @@ DWORD SwapBytesIfNecessary(BYTE *psrc, bool necessary)
     return word;
 }
 
-char * cmdFromCgminer = NULL;
-bool readyToProcess = true;
 
-void SetCurrentCommand(char * usbData)
+// This is always called in the context of USB interrupt
+void ProcessCmd(char * ourPtr)
 {
-    if (cmdFromCgminer == NULL)
-        cmdFromCgminer = usbData;
-}
-
-void ProcessCmd()
-{
-    char * ourPtr = cmdFromCgminer;
-
-    if (ourPtr == NULL)
-        return;  // do nothing
-    
-    cmdFromCgminer = NULL;
-    
     // cmd is one char, dest address 1 byte, data follows
     // we already know address is ours here
     if (cmdIndex < 10)
@@ -221,12 +234,6 @@ void ProcessCmd()
             SendCmdReply(ourPtr, (char *)&Status, 14); // sizeof(Status));
             Status.Noise = Status.ErrorCount = 0;
             break;
-        //case 'F': // enter firmware update mode
-        //    for(BYTE n = 0; n < sizeof(FwPwd); n++)
-	//	if(FwPwd[n] != cmd[2+n])
-        //            return;
-        //    UpdateFirmware();
-        //    break;
         default:
             break;
     }
@@ -283,7 +290,9 @@ void DeQueueNextWork(DWORD *out)
     SYS_ASSERT((Status.WorkQC > 0), "No work queued");
 
     AsicPreCalc(&WorkQue[WorkNow]);
-    AsicPrecalc_sha256_Compare(&WorkQue[WorkNow]);
+
+    if(appObject.testMode)
+        AsicPrecalc_sha256_Compare(&WorkQue[WorkNow]);
 
     Status.WorkID = WorkQue[WorkNow].WorkID;
 
@@ -345,18 +354,15 @@ void ResultRx(BYTE *indata, DWORD wrkID, DWORD *workDone)
 void InitResultRx(void)
 {
     ResultQC = 0;
+    WorkNow = 0;
+    appObject.transmitBufArea = 0;
+    appObject.pullPoint = 0;
 }
 
 
 
-void InitializeWorkSystem(void)
+void InitializeCondominer(void)
 {
-    // all pins digital mode, except RC2, which has a Thermistor on it
-    ANSELA = 0x00;
-    ANSELB = 0x00;
-    //ANSELC = 0x04;
-
-    
     //replaced UserInit() call with the following two lines:
     InitResultRx();
     PrepareWorkStatus();
