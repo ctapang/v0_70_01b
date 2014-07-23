@@ -635,6 +635,11 @@ void DRV_SPI_Tasks ( SYS_MODULE_OBJ object )
                 /* Update the task state as per the operation */
                 if ( lBufferObj->operation == DRV_SPI_OP_READ )
                 {
+                    if(lBufferObj->rxBuffer == NULL)
+                    {
+                        _DRV_SPI_InterruptSourceClear ( _DRV_SPI_INT_SRC_GET ( dObj->rxInterruptSource ) ) ;
+                        break;
+                    }
                     dObj->task = DRV_SPI_TASK_PROCESS_READ_ONLY;
                     SYS_ASSERT((lBufferObj->rxBuffer != NULL), "tx buf can't be null");
 //                    j = 0;

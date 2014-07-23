@@ -253,9 +253,9 @@ typedef struct
 // *****************************************************************************
 // *****************************************************************************
 
-bool MutexOpen();
+bool USBMutexOpen();
 
-void MutexClose(bool interruptWasEnabled);
+void USBMutexClose(bool interruptWasEnabled);
 
 
 /********************************************************************************

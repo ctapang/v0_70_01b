@@ -5,6 +5,11 @@
             <line>1158</line>
         </file>
         <file>
+            <url>file:/C:/microchip/harmony/v0_70_01b/framework/system/tmr/src/sys_tmr.c</url>
+            <line>201</line>
+            <line>704</line>
+        </file>
+        <file>
             <url>file:/C:/microchip/harmony/v0_70_01b/framework/usb/src/dynamic/usb_device_generic.c</url>
             <line>225</line>
         </file>
@@ -12,18 +17,18 @@
             <url>file:/C:/microchip/harmony/v0_70_01b/framework/driver/usb/usbfs/src/dynamic/drv_usb_device.c</url>
             <line>689</line>
             <line>979</line>
-            <line>1175</line>
-            <line>1243</line>
-            <line>1280</line>
+            <line>1184</line>
+            <line>1252</line>
+            <line>1289</line>
         </file>
         <file>
-            <url>file:/C:/microchip/harmony/v0_70_01b/framework/driver/usb/usbfs/src/dynamic/drv_usb.c</url>
-            <line>181</line>
+            <url>file:/C:/microchip/harmony/v0_70_01b/framework/driver/tmr/src/dynamic/drv_tmr_dynamic.c</url>
+            <line>632</line>
         </file>
         <file>
             <url>app.c</url>
             <line>292</line>
-            <line>339</line>
+            <line>343</line>
         </file>
     </editor-bookmarks>
 </project-private>

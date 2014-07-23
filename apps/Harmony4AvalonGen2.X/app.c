@@ -329,19 +329,31 @@ SPI_DATA_TYPE * massage_for_send( const uint8_t * rawBuf, int size, int *count)
     return outdata;
 }
 
+void DoneWaiting4Asics();
+
 BYTE Nonce[4][sizeof(DWORD)];
 int nonceCount = 0;
 int nonceSent = 0;
 
+SYS_TMR_HANDLE timer_handle = SYS_TMR_HANDLE_INVALID;
+
 void massage_asic_report( const uint8_t * state, int size )
 {
     SYS_ASSERT((nonceCount < 4), "Ran out of nonce buffer");
-    BYTE * aNonce = Nonce[nonceCount];
+    BYTE aNonce[4];
     flip4SPI( aNonce, state, size );
+    DWORD *wptr = (DWORD *)aNonce;
+    if(nonceCount > 0 && *wptr == *(DWORD*)&Nonce[nonceCount - 1]) // if this is the same as previous, stop
+    {
+//        if (timer_handle != SYS_TMR_HANDLE_INVALID)
+//            SYS_TMR_RemoveCallback(timer_handle);
+        DoneWaiting4Asics();
+        return;
+    }
+    memcpy(Nonce[nonceCount], aNonce, sizeof(DWORD));
     nonceCount++;
 }
 
-SYS_TMR_HANDLE timer_handle = NULL;
 SPI_DATA_TYPE *dataToSend;
 int asicBadOutputCount = 0;
 int tc = 0, to = 0, cc = 0;
@@ -350,7 +362,11 @@ int j = 0;
 void DoneWaiting4Asics()
 {
     tc++;
+    if (Status.State != 'W')
+        return;
+
     timer_handle = SYS_TMR_HANDLE_INVALID;
+    
     // Reset bufering mechanism. We have direct access to the actual buffers,
     // and so we don't access the actual buffers through the buffering mechanism.
     DRV_SPI_AbortCurrentReadAndResetBuffers(appObject.spiReportDrvHandle);
@@ -392,7 +408,7 @@ void APP_SPIReceiveEventHandler( DRV_SPI_BUFFER_EVENT event,
         DRV_SPI_BUFFER_HANDLE handle, uintptr_t context )
 {
     cc++;
-    if(timer_handle == SYS_TMR_HANDLE_INVALID || nonceCount > 3)
+    if(Status.State != 'W' || nonceCount > 3)
     {
         // debug/test
         //massage_data_in(state1, 4);
@@ -460,7 +476,8 @@ void APP_SPIReceiveEventHandler( DRV_SPI_BUFFER_EVENT event,
         if (appObject.appState == WaitingForReport && nonceCount > 0)
             appObject.appState = ReadReport;
     }
-    SYS_ASSERT((timer_handle != SYS_TMR_HANDLE_INVALID), "timeout timer invalid during buffer completion event (exit)");
+    // assert below is not valid because massage3_asic_report can potentially stop and nullify timer_handle
+    //SYS_ASSERT((timer_handle != SYS_TMR_HANDLE_INVALID), "timeout timer invalid during buffer completion event (exit)");
 }
 
 extern WORKCFG Cfg;
@@ -529,11 +546,9 @@ void APP_Tasks ( void )
 
             DRV_SPI_BufferEventHandlerSet (appObject.spiReportDrvHandle, APP_SPIReceiveEventHandler, NULL );
             
-            Status.State = 'D'; // initially condominer should be dead
+            Status.State = 'R'; // initially condominer should be ready
             appObject.rxBufSize = USB_DEVICE_EP1_BUF_SIZE;
             appObject.txBufSize = USB_DEVICE_SEND_HOST_SIZE;
-
-            InitializeCondominer();
 
             appObject.appState = ResetAvalon;
 
@@ -577,11 +592,6 @@ void APP_Tasks ( void )
             else
             {
                 PLIB_PORTS_PinClear( PORTS_ID_0, PORT_CHANNEL_B, BSP_Red_LED);
-
-                if (USB_DEVICE_GENERIC_EndpointIsStalled(0, appObject.endpointRx))
-                    USB_DEVICE_GENERIC_EndpointStallClear(0, appObject.endpointRx);
-                if (USB_DEVICE_GENERIC_EndpointIsStalled(0, appObject.endpointTx))
-                    USB_DEVICE_GENERIC_EndpointStallClear(0, appObject.endpointTx);
                 
                 usbWaitCount++;
                 if (usbWaitCount > 20000)
@@ -598,7 +608,10 @@ void APP_Tasks ( void )
             // If USB has been reset, restart all Avalon chips and USB.
             if (!USBConfigured())
             {
-                //ReInitializeUSB();
+                if (USB_DEVICE_GENERIC_EndpointIsStalled(0, appObject.endpointRx))
+                    USB_DEVICE_GENERIC_EndpointStallClear(0, appObject.endpointRx);
+                if (USB_DEVICE_GENERIC_EndpointIsStalled(0, appObject.endpointTx))
+                    USB_DEVICE_GENERIC_EndpointStallClear(0, appObject.endpointTx);
                 
                 appObject.appState = ResetAvalon;
             }
@@ -614,10 +627,10 @@ void APP_Tasks ( void )
                 appObject.appState = SendWorkToAsics;
                 nonceCount = nonceSent = 0;
 
-                // kill un-triggered timer
-                if (timer_handle != SYS_TMR_HANDLE_INVALID)
-                    SYS_TMR_CallbackStop(timer_handle);
-                timer_handle = SYS_TMR_HANDLE_INVALID;
+//                // kill un-triggered timer
+//                if (timer_handle != SYS_TMR_HANDLE_INVALID)
+//                    SYS_TMR_CallbackStop(timer_handle);
+//                timer_handle = SYS_TMR_HANDLE_INVALID;
             }
             
             break;
@@ -638,9 +651,14 @@ void APP_Tasks ( void )
 
         case WaitingForReport:
             // When work is DONE (timeout occurred), get next work item.
-            if (timer_handle == SYS_TMR_HANDLE_INVALID)
+            if (Status.State != 'W') //(timer_handle == SYS_TMR_HANDLE_INVALID)
             {
                 appObject.appState = WaitingForCommand;
+                if(timer_handle != SYS_TMR_HANDLE_INVALID && SYS_TMR_TimerActive(timer_handle))
+                {
+                    SYS_TMR_RemoveCallback(timer_handle);
+                }
+                timer_handle = SYS_TMR_HANDLE_INVALID;
                 nonceSent = 0;
             }
             break;
@@ -651,8 +669,6 @@ void APP_Tasks ( void )
             while (nonceCount > nonceSent)
             {
                 BYTE *noncePtr = Nonce[nonceSent++];
-                int32_t *wordPtr = (int32_t *)noncePtr;
-                *wordPtr = *wordPtr - 0xC0;  // Klondike cgminer Gen1 driver takes away 0xC0 also
 
                 SYS_ASSERT((sequencedBuffer[0] == currentWorkID), "work ID incorrect");
                 

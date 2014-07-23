@@ -1044,6 +1044,15 @@ void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
         /* Idle condition detected on bus 
          * no event data to send. */
         clearUSBInterrupts |= USB_INT_IDLE_DETECT;
+	unsigned int iEndpoint;
+        for ( iEndpoint = 0; iEndpoint <= DRV_USB_ENDPOINTS_NUMBER; iEndpoint++ )
+        {
+            if ( PLIB_USB_EPnIsStalled(usbID,iEndpoint) )
+            {
+                f++;
+                //PLIB_USB_EPnStallClear(usbID,iEndpoint);
+            }
+        }
         d++;
 
     }
@@ -1052,7 +1061,7 @@ void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
         /* Resume signalling observed on bus
          * no event data to send */
         clearUSBInterrupts |= USB_INT_RESUME;
-        f++;
+        //f++;
 
     }
 

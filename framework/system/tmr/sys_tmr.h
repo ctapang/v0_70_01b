@@ -111,7 +111,7 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
     None.
 */
 
-#define SYS_TMR_HANDLE_INVALID          ((int8_t)-1)
+#define SYS_TMR_HANDLE_INVALID          ((int)-1)
 
 
 // *****************************************************************************
@@ -681,6 +681,8 @@ uint32_t SYS_TMR_TickCountGet( void );
 */
 
 SYS_TMR_HANDLE SYS_TMR_CallbackSingle( unsigned int period, SYS_TMR_CALLBACK callback );
+
+bool SYS_TMR_TimerActive(int qIndex);
 
 
 // *****************************************************************************

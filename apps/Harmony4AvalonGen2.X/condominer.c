@@ -90,7 +90,7 @@ void SendCmdReply(char *cmd, BYTE *data, BYTE count)
 
     if(appObject.transmitBufArea < USB_DEVICE_MSGBUF_COUNT)
     {
-        intEnabled = MutexOpen();
+        intEnabled = USBMutexOpen();
 
         bufIndex = (appObject.transmitBufArea + appObject.pullPoint) % USB_DEVICE_MSGBUF_COUNT;
         bufIndex = bufIndex * (appObject.txBufSize + 1);
@@ -105,7 +105,7 @@ void SendCmdReply(char *cmd, BYTE *data, BYTE count)
 
         appObject.transmitBufArea++;
 
-        MutexClose(intEnabled);
+        USBMutexClose(intEnabled);
     }
 }
 
@@ -114,35 +114,38 @@ void AsyncSendUSB()
     int bufIndex;
     bool intEnabled;
 
-    intEnabled = MutexOpen();
-
-    while(appObject.transmitBufArea > 0 && USBConfigured()) // while there is something to pull
+    if(USBConfigured())
     {
-        bufIndex = appObject.pullPoint * (appObject.txBufSize + 1);
-        
-        // check for invalid cmd
-        SYS_ASSERT((appObject.transmitDataBuffer[bufIndex] > '!'), "bad command");
+        intEnabled = USBMutexOpen();
 
-        /* Send the data to the host */
-
-        if (appObject.testMode)
-            test_reply(&appObject.transmitDataBuffer[bufIndex]);
-        else
+        while(appObject.transmitBufArea > 0) // while there is something to pull
         {
-            usbResult = USB_DEVICE_GENERIC_EndpointWrite( USB_DEVICE_GENERIC_INDEX_0,
-                    ( USB_DEVICE_GENERIC_TRANSFER_HANDLE *)&appObject.writeTranferHandle,
-                    appObject.endpointTx, &appObject.transmitDataBuffer[bufIndex],
-                    appObject.txBufSize,
-                    USB_DEVICE_GENERIC_TRANSFER_FLAG_NONE );
+            bufIndex = appObject.pullPoint * (appObject.txBufSize + 1);
 
-            SYS_ASSERT((usbResult == USB_DEVICE_GENERIC_RESULT_OK), "bad result");
+            // check for invalid cmd
+            SYS_ASSERT((appObject.transmitDataBuffer[bufIndex] > '!'), "bad command");
+
+            /* Send the data to the host */
+
+            if (appObject.testMode)
+                test_reply(&appObject.transmitDataBuffer[bufIndex]);
+            else
+            {
+                usbResult = USB_DEVICE_GENERIC_EndpointWrite( USB_DEVICE_GENERIC_INDEX_0,
+                        ( USB_DEVICE_GENERIC_TRANSFER_HANDLE *)&appObject.writeTranferHandle,
+                        appObject.endpointTx, &appObject.transmitDataBuffer[bufIndex],
+                        appObject.txBufSize,
+                        USB_DEVICE_GENERIC_TRANSFER_FLAG_NONE );
+
+                SYS_ASSERT((usbResult == USB_DEVICE_GENERIC_RESULT_OK), "bad result");
+            }
+
+            appObject.pullPoint = (appObject.pullPoint + 1) % USB_DEVICE_MSGBUF_COUNT;
+            appObject.transmitBufArea--;
         }
 
-        appObject.pullPoint = (appObject.pullPoint + 1) % USB_DEVICE_MSGBUF_COUNT;
-        appObject.transmitBufArea--;
+         USBMutexClose(intEnabled);
     }
-
-     MutexClose(intEnabled);
 }
 
 char commandTrace[10];
@@ -337,15 +340,18 @@ void ResultRx(BYTE *indata, DWORD wrkID, DWORD *workDone)
     }
     resultCount++;
 
+    nonce -= 0xC0; // driver-klondike.c in cgminer also takes away 0xC0
+    BYTE *noncePtr = (BYTE *)&nonce;
+
     Status.HashCount++;
 
     ResultQue[0] = '=';
     ResultQue[1] = USB_ID_1;
     ResultQue[2] = (BYTE)wrkID;
-    ResultQue[3] = indata[0];
-    ResultQue[4] = indata[1];
-    ResultQue[5] = indata[2];
-    ResultQue[6] = indata[3];
+    ResultQue[3] = noncePtr[0];
+    ResultQue[4] = noncePtr[1];
+    ResultQue[5] = noncePtr[2];
+    ResultQue[6] = noncePtr[3];
 
     SendCmdReply((char *)ResultQue, (BYTE *)(ResultQue+1), sizeof(ResultQue)-1);
 }

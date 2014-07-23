@@ -54,7 +54,7 @@ SUBSTITUTE  GOODS,  TECHNOLOGY,  SERVICES,  OR  ANY  CLAIMS  BY  THIRD   PARTIES
 
 DRV_USB_GROUP gDrvUSBGroup[DRV_USB_INSTANCES_NUMBER];
 
-bool MutexOpen()
+bool USBMutexOpen()
 {
     DRV_USB_OBJ * drvObj = &gDrvUSBGroup[DRV_USB_INDEX_0].gDrvUSBObj; // this works bec there's only one USB hw module
     bool interruptWasEnabled = true;
@@ -67,7 +67,7 @@ bool MutexOpen()
     return interruptWasEnabled;
 }
 
-void MutexClose(bool interruptWasEnabled)
+void USBMutexClose(bool interruptWasEnabled)
 {
     DRV_USB_OBJ * drvObj = &gDrvUSBGroup[DRV_USB_INDEX_0].gDrvUSBObj; // this works bec there's only one USB hw module
     if(drvObj->isInInterruptContext == false)

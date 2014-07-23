@@ -88,7 +88,7 @@ typedef struct
     QUEUE_ELEMENT_OBJECT            *head;
 
     // The Tail queue element in the queue
-    QUEUE_ELEMENT_OBJECT            *tail;
+    //QUEUE_ELEMENT_OBJECT            *tail;
 
     // The number of objects in the queue.
     uint8_t                         numElements;
@@ -137,7 +137,7 @@ typedef struct
 
 */
 
-void QUEUE_Initialize(QUEUE_OBJECT *queue, uint8_t size, QUEUE_ELEMENT_OBJECT *qelementPool);
+void QUEUE_Initialize(QUEUE_OBJECT *queue, int size, QUEUE_ELEMENT_OBJECT *qelementPool);
 
 
 // *****************************************************************************
@@ -247,7 +247,11 @@ void QUEUE_Reset(QUEUE_OBJECT *queue);
 
 */
 
-void QUEUE_Pop(QUEUE_OBJECT *queue);
+QUEUE_ELEMENT_OBJECT * QUEUE_Pop(QUEUE_OBJECT *queue);
+
+bool QUEUE_ElementActive(QUEUE_OBJECT *queue, int qIndex);
+
+void QUEUE_RemoveElement(QUEUE_OBJECT *queue, QUEUE_ELEMENT_OBJECT * queueObject);
 
 // *****************************************************************************
 /*
@@ -285,7 +289,7 @@ void QUEUE_Pop(QUEUE_OBJECT *queue);
 
 */
 
-int8_t QUEUE_Push(QUEUE_OBJECT *queue, void *data);
+int QUEUE_Push(QUEUE_OBJECT *queue, void *data);
 
 
 // *****************************************************************************

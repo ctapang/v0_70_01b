@@ -153,6 +153,8 @@ typedef struct _DRV_TMR_OBJ_STRUCT
     /* OSAL mutex for client object allocation */
     OSAL_MUTEX_DECLARE(clientObjectMutex);
 
+    bool                                                    isInInterruptContext;
+
 } DRV_TMR_OBJ;
 
 

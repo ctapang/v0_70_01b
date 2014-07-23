@@ -304,7 +304,7 @@ USB_DEVICE_IRP * USB_DEVICE_AllocateIRP
 {
     USB_DEVICE_INSTANCE_STRUCT * device = (USB_DEVICE_INSTANCE_STRUCT *)deviceHandle;
 
-    bool interruptWasEnabled = MutexOpen();
+    bool interruptWasEnabled = USBMutexOpen();
     
     if (firstAllocation)
     {
@@ -351,7 +351,7 @@ USB_DEVICE_IRP * USB_DEVICE_AllocateIRP
         allocationHistory[hix++] = irp;
     else
         hix = 0;
-    MutexClose(interruptWasEnabled);
+    USBMutexClose(interruptWasEnabled);
 
     return (USB_DEVICE_IRP *)irp;
 }

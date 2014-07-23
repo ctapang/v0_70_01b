@@ -133,6 +133,30 @@ DRV_TMR_CLIENT_OBJ      gDrvTMRClientObj[DRV_TMR_CLIENTS_NUMBER] ;
 
 #define _DRV_TMR_ExternalClockSyncDisable(index)    PLIB_TMR_ClockSourceExternalSyncDisable(index)
 
+// Mutex
+
+bool TMRMutexOpen( SYS_MODULE_INDEX drvIndex )
+{
+    DRV_TMR_OBJ * drvObj = &gDrvTMRObj[drvIndex];
+    bool interruptWasEnabled = true;
+    if(drvObj->isInInterruptContext == false)
+    {
+        interruptWasEnabled = SYS_INT_SourceIsEnabled(drvObj->interruptSource);
+        _DRV_TMR_InterruptSourceDisable( _DRV_TMR_INT_SRC_GET( drvObj->interruptSource) );
+    }
+    return interruptWasEnabled;
+}
+
+void TMRMutexClose(bool interruptWasEnabled,  SYS_MODULE_INDEX drvIndex )
+{
+    DRV_TMR_OBJ * drvObj = &gDrvTMRObj[drvIndex];
+    if(drvObj->isInInterruptContext == false && interruptWasEnabled)
+    {
+        /* Enable the interrupt only if it was enabled */
+        _DRV_TMR_InterruptSourceEnable( _DRV_TMR_INT_SRC_GET( drvObj->interruptSource) );
+    }
+}
+
 
 // *****************************************************************************
 // *****************************************************************************
@@ -613,6 +637,8 @@ void DRV_TMR_Tasks( SYS_MODULE_OBJ object )
     /* Check for the valid driver object passed */
     SYS_ASSERT( dObj < DRV_TMR_INSTANCES_NUMBER, "Driver Object is invalid" );
 
+    gDrvTMRObj[dObj].isInInterruptContext = true;
+
     /* Check if the Timer Interrupt/Status is set */
     if ( true == _DRV_TMR_InterruptSourceStatusGet( _DRV_TMR_INT_SRC_GET( gDrvTMRObj[dObj].interruptSource ) ) )
     {
@@ -656,6 +682,8 @@ void DRV_TMR_Tasks( SYS_MODULE_OBJ object )
         /* Clear Timer Interrupt/Status Flag */
         _DRV_TMR_InterruptSourceClear( _DRV_TMR_INT_SRC_GET( gDrvTMRObj[dObj].interruptSource ) );
     }
+
+    gDrvTMRObj[dObj].isInInterruptContext = false;
 
 } /* DRV_TMR_Tasks */
 

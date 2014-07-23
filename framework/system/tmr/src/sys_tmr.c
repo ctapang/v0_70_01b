@@ -202,6 +202,7 @@ static void SYS_TMR_AlarmCallback ( void )
 static void SYS_TMR_CallbackDeregister (QUEUE_ELEMENT_OBJECT * queueObject)
 {
     SYS_TMR_CALLBACK_OBJECT * object;
+    QUEUE_ELEMENT_OBJECT * qHead;
 
     /* Point to event object */
     object = queueObject->data;
@@ -210,11 +211,17 @@ static void SYS_TMR_CallbackDeregister (QUEUE_ELEMENT_OBJECT * queueObject)
     object->status = SYS_TMR_CALLBACK_INACTIVE;
     object->callback = NULL;
 
-    /* Remove the item from the Queue */
-    queueObject->inUse = false;
-    queueObject->data = NULL;
+    //qHead = QUEUE_Pop(&sSysTmrObject.eventQ);
+
+    //SYS_ASSERT((qHead == queueObject), "bad param");
+    QUEUE_RemoveElement(&sSysTmrObject.eventQ, queueObject);
 
 } /* SYS_TMR_CallbackDeregister */
+
+bool SYS_TMR_TimerActive(int qIndex)
+{
+    return QUEUE_ElementActive(&sSysTmrObject.eventQ, qIndex);
+}
 
 
 // *****************************************************************************
@@ -605,7 +612,7 @@ uint32_t SYS_TMR_AlarmPeriodGet( void )
 SYS_TMR_HANDLE SYS_TMR_CallbackPeriodic (unsigned int period, SYS_TMR_CALLBACK callback)
 {
     /* Variable to hold the Queue elment index */
-    int8_t qElementIndex = SYS_TMR_HANDLE_INVALID;
+    int qElementIndex = SYS_TMR_HANDLE_INVALID;
 
     if (sIndex >= SYS_TMR_MAX_PERIODIC_EVENTS)
         return (SYS_TMR_HANDLE_INVALID);
@@ -694,8 +701,12 @@ void SYS_TMR_CallbackStop (SYS_TMR_HANDLE handle)
 
     queueObject = &sSysTMRQueueObjects[handle];
 
+    SYS_ASSERT((queueObject != NULL), "check array");
+
     /* Point to event object */
     object = queueObject->data;
+
+    SYS_ASSERT((object != NULL), "check data");
 
     /* Change the event status, to stop the event */
     object->status = SYS_TMR_CALLBACK_INACTIVE;
@@ -774,12 +785,15 @@ uint32_t SYS_TMR_TickCountGet (void)
 SYS_TMR_HANDLE SYS_TMR_CallbackSingle (unsigned int period, SYS_TMR_CALLBACK callback)
 {
     /* Variable to hold the Queue elment index */
-    int8_t qElementIndex = SYS_TMR_HANDLE_INVALID;
+    int qElementIndex = SYS_TMR_HANDLE_INVALID;
 
     // Re-use previous slot if it's not already active.
-    if (sCallbackObject[sIndex].status == SYS_TMR_CALLBACK_ACTIVE)
+    int cbIndex = 0;
+    while (sCallbackObject[cbIndex].status == SYS_TMR_CALLBACK_ACTIVE)
+        cbIndex++;
+    if (sCallbackObject[cbIndex].status != SYS_TMR_CALLBACK_ACTIVE)
     {
-        sIndex++;
+        sIndex = cbIndex;
 
         if (sIndex >= SYS_TMR_MAX_PERIODIC_EVENTS)
             return SYS_TMR_HANDLE_INVALID;
@@ -846,7 +860,7 @@ SYS_TMR_HANDLE SYS_TMR_CallbackSingle (unsigned int period, SYS_TMR_CALLBACK cal
 SYS_TMR_HANDLE SYS_TMR_DelayMS (unsigned int delay)
 {
     /* Variable to hold the Queue elment index */
-    int8_t qElementIndex = SYS_TMR_HANDLE_INVALID;
+    int qElementIndex = SYS_TMR_HANDLE_INVALID;
 
     if (SYS_TMR_CALLBACK_ACTIVE == sDelayObject.status)
         return (SYS_TMR_HANDLE_INVALID);
@@ -862,7 +876,7 @@ SYS_TMR_HANDLE SYS_TMR_DelayMS (unsigned int delay)
         sDelayObject.callback       = NULL;
 
         /* Register a event */
-        qElementIndex = (uint8_t) QUEUE_Push (&sSysTmrObject.eventQ, &sDelayObject);
+        qElementIndex = QUEUE_Push (&sSysTmrObject.eventQ, &sDelayObject);
     #else      //Primitive Blocking Mode
     if(delay)
     {

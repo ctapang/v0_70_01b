@@ -13,14 +13,14 @@ QUEUE_OBJECT *test;
     QUEUE_OBJECT *QUEUE_Create();
  *****************************************************************************/
 
-void QUEUE_Initialize(QUEUE_OBJECT *queue, uint8_t size, QUEUE_ELEMENT_OBJECT *qelementPool)
+void QUEUE_Initialize(QUEUE_OBJECT *queue, int size, QUEUE_ELEMENT_OBJECT *qelementPool)
 {
 
     //SYS_ASSERT((queue != (QUEUE_OBJECT *)NULL),"Queue is NULL ");
 
     {
         queue->head         = NULL;
-        queue->tail         = NULL;
+        //queue->tail         = NULL;
         queue->numElements  = 0;
         queue->size         = size;
         queue->qElementPool = qelementPool;
@@ -38,7 +38,7 @@ void QUEUE_Initialize(QUEUE_OBJECT *queue, uint8_t size, QUEUE_ELEMENT_OBJECT *q
 void QUEUE_Reset(QUEUE_OBJECT *queue)
 {
         queue->head         = NULL;
-        queue->tail         = NULL;
+        //queue->tail         = NULL;
         queue->numElements  = 0;
         queue->size         = 0;
 }
@@ -52,12 +52,14 @@ void QUEUE_Reset(QUEUE_OBJECT *queue)
 
  *****************************************************************************/
 
-int8_t QUEUE_Push(QUEUE_OBJECT *queue, void *data)
+int QUEUE_Push(QUEUE_OBJECT *queue, void *data)
 {
-int8_t i =0;
-int8_t elementIndex = 0;
-QUEUE_ELEMENT_OBJECT *tail = NULL;
+int i =0;
+int elementIndex = 0;
 QUEUE_ELEMENT_OBJECT *queue_element = NULL;
+bool isInInterruptContext;
+
+    isInInterruptContext = TMRMutexOpen(0);
 
     for(i = 0 ; i < queue->size ; i++)
     {
@@ -70,6 +72,8 @@ QUEUE_ELEMENT_OBJECT *queue_element = NULL;
         }
     }
 
+    SYS_ASSERT((queue_element != NULL), "bad allocation");
+
     //SYS_ASSERT((queue_element!= (QUEUE_ELEMENT_OBJECT *)NULL), "Unable to create queue elements ");
 
     queue_element->next = NULL;
@@ -78,22 +82,26 @@ QUEUE_ELEMENT_OBJECT *queue_element = NULL;
     /* OSAL Lock Mutex - TODO */
     if(queue->head == (QUEUE_ELEMENT_OBJECT *)NULL)
     {
-        queue->head = queue->tail = queue_element;
+        queue->head = queue_element;
     }
     else
     {
-        tail = queue->tail;
-        while(tail->next != NULL){tail = (QUEUE_ELEMENT_OBJECT *)tail->next;}
-        tail->next = (struct QUEUE_ELEMENT_OBJECT *)queue_element;
+        queue_element->next = (struct QUEUE_ELEMENT_OBJECT *)queue->head;
+        queue->head = queue_element;
     }
 
     queue->numElements++;
-    /* OSAL unlock Mutex - TODO */
+
+    TMRMutexClose( isInInterruptContext, 0 );
 
     return(elementIndex);
 
 }
 
+bool QUEUE_ElementActive(QUEUE_OBJECT *queue, int qIndex)
+{
+    return queue->qElementPool[qIndex].inUse;
+}
 
 
 // *****************************************************************************
@@ -104,11 +112,14 @@ QUEUE_ELEMENT_OBJECT *queue_element = NULL;
 
  *****************************************************************************/
 
-void QUEUE_Pop(QUEUE_OBJECT *queue)
+QUEUE_ELEMENT_OBJECT * QUEUE_Pop(QUEUE_OBJECT *queue)
 {
 QUEUE_ELEMENT_OBJECT *queue_element = NULL;
+bool isInInterruptContext;
 
-test = queue;
+    isInInterruptContext = TMRMutexOpen(0);
+
+    test = queue;
 
     queue_element = queue->head;
 
@@ -123,8 +134,44 @@ test = queue;
         queue->numElements--;
     }
 
-    /* OSAL unlock Mutex - TODO */
+    TMRMutexClose(isInInterruptContext, 0);
 
+    return queue_element;
+
+}
+
+void QUEUE_RemoveElement(QUEUE_OBJECT *queue, QUEUE_ELEMENT_OBJECT * queueObject)
+{
+    int i = 0;
+    QUEUE_ELEMENT_OBJECT *one_behind = queue->head;
+    QUEUE_ELEMENT_OBJECT *queue_element = (QUEUE_ELEMENT_OBJECT *)one_behind->next;
+
+    if (one_behind == queueObject)
+    {
+        queue->head = queue_element;
+        queue_element = one_behind;
+    }
+    while (queue_element != queueObject)
+    {
+        if (queue_element == NULL)
+            break;
+        if (i >= queue->numElements) // quard against loop
+            break;
+        one_behind = queue_element;
+        queue_element = (QUEUE_ELEMENT_OBJECT *)queue_element->next;
+        i++;
+    }
+    if (i < queue->numElements)
+    {
+        if (one_behind != queue_element)
+        {
+            one_behind->next = queue_element->next;
+        }
+        queue->numElements--;
+        queue_element->data = NULL;
+        queue_element->next = NULL;
+        queue_element->inUse = false;
+    }
 }
 
 /*******************************************************************************
