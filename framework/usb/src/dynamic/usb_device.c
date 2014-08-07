@@ -1619,6 +1619,7 @@ void _USB_DEVICE_DeInitializeAllFunctionDrivers(
  **************************************************/
 #define DRV_USB_DEVICE_EndpointDisableAll(x)  DRV_USB_DEVICE_EndpointDisable(x, _DRV_USB_DEVICE_ENDPOINT_ALL)
 
+int resetCount = 0;
 
 void _USB_DEVICE_EventHandler( uintptr_t referenceHandle,
             DRV_USB_EVENT eventType, void * eventData )
@@ -1642,6 +1643,8 @@ void _USB_DEVICE_EventHandler( uintptr_t referenceHandle,
     switch(eventType)
     {
 	case DRV_USB_EVENT_RESET_DETECT:
+
+            resetCount++;
 
             // Cancel any IRP already submitted in the RX direction.
             DRV_USB_DEVICE_IRPCancelAll( usbDeviceInstance->usbCDHandle,

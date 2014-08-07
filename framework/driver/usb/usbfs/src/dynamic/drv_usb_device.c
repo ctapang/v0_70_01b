@@ -942,6 +942,8 @@ USB_ERROR DRIVER DRV_USB_DEVICE_EndpointStallClear(DRV_HANDLE client,
 }
 
 int a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0, h = 0, s = 0, l = 0, r = 0, t = 0, u = 0;
+int aa = 0, bb = 0;
+bool IsAfterReset = false;
 
 void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
 {
@@ -963,12 +965,11 @@ void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
     USB_PING_PONG_STATE         lastPingPong = 0;
     USB_BUFFER_DIRECTION        lastDirection = 0;
     DRV_USB_DEVICE_ENDPOINT_OBJ * lastEndpointObj;
+    SFR_TYPE                    * U1IntFlags;
    
 
     usbID = hDriver->usbID;
     usbInterrupts = PLIB_USB_InterruptFlagAllGet(usbID);
-
-    a++;
 
     /* Check if an error has occurred */
     if ( usbInterrupts & USB_INT_ERROR )
@@ -993,6 +994,8 @@ void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
         /* Make sure that all BDs are returned 
          * back to the application */
         r++;
+
+        IsAfterReset = true;
 
         for(iEntry = 0; iEntry < DRV_USB_ENDPOINTS_NUMBER; iEntry++)
         {
@@ -1044,15 +1047,6 @@ void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
         /* Idle condition detected on bus 
          * no event data to send. */
         clearUSBInterrupts |= USB_INT_IDLE_DETECT;
-	unsigned int iEndpoint;
-        for ( iEndpoint = 0; iEndpoint <= DRV_USB_ENDPOINTS_NUMBER; iEndpoint++ )
-        {
-            if ( PLIB_USB_EPnIsStalled(usbID,iEndpoint) )
-            {
-                f++;
-                //PLIB_USB_EPnStallClear(usbID,iEndpoint);
-            }
-        }
         d++;
 
     }
@@ -1061,7 +1055,7 @@ void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
         /* Resume signalling observed on bus
          * no event data to send */
         clearUSBInterrupts |= USB_INT_RESUME;
-        //f++;
+        f++;
 
     }
 
@@ -1102,8 +1096,6 @@ void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
     {
         /* Get the details of the last transaction */
 
-        g++;
-
         PLIB_USB_LastTransactionDetailsGet(usbID, &lastDirection, 
                 &lastPingPong, &lastEndpoint); 
 
@@ -1116,9 +1108,19 @@ void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
 
         if (irp == NULL)
         {
+            if (!IsAfterReset)
+            {
+                if (lastDirection == 0)
+                    a++;
+                else
+                    g++;
+            }
+
             PLIB_USB_InterruptFlagClear(usbID,USB_INT_TOKEN_DONE);
             return; // stray token interrupt?
         }
+
+        IsAfterReset = false;
 
         /* Get the BDT entry for this direction. currentBDTEntry
          * points to the ping pong set. lastBDTEntry points to 
@@ -1271,8 +1273,11 @@ void DRIVER _DRV_USB_DEVICE_Tasks_ISR(DRV_USB_OBJ * hDriver)
             // free the IRP just processed, if it is still the same one
             irp->status = USB_DEVICE_IRP_STATUS_FREE;
 
+            aa++;
+
             if (irpNext != NULL && irpNext == lastEndpointObj->irpQueue)
             {
+                bb++;
                 /* This means we have something in the
                  * queue and this was not added in the 
                  * IRP callback. We can arm the endpoint. */

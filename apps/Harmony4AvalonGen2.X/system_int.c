@@ -52,6 +52,12 @@ Timer2Handler(void)
     DRV_TMR_Tasks(appObject.TimerObjectHandle);
 }
 
+void __attribute__((interrupt(ipl6), vector(_USB_1_VECTOR)))
+_InterruptHandler_USB_stub ( void )
+{
+    DRV_USB_Tasks_ISR((SYS_MODULE_OBJ)0);
+}
+
 void __attribute__((interrupt(ipl3), vector(_SPI_2_VECTOR)))
 SPI2_Transmit_Handler(void)
 {
@@ -63,7 +69,7 @@ SPI1_Receive_Handler(void)
 {
     //_DRV_SPI_InterruptSourceClear( INT_SOURCE_SPI_1_RECEIVE );
 
-        //SYS_INT_SourceStatusClear(INT_SOURCE_SPI_1_RECEIVE);
+    SYS_INT_SourceStatusClear(INT_SOURCE_SPI_1_RECEIVE);
     DRV_SPI_Tasks(appObject.spiReportModule);
  }
 
@@ -72,13 +78,12 @@ _DefaultInterrupt(void)
 {
         //SYS_INT_SourceStatusClear(INT_SOURCE_XXX);
 }
-
-
-void __attribute__((interrupt(ipl2), vector(_USB_1_VECTOR)))
-_InterruptHandler_USB_stub ( void )
-{
-    DRV_USB_Tasks_ISR((SYS_MODULE_OBJ)0);
-}
+//
+//void __attribute__((interrupt(ipl2), vector(_USB_1_VECTOR)))
+//_InterruptHandler_USB_stub ( void )
+//{
+//    DRV_USB_Tasks_ISR((SYS_MODULE_OBJ)0);
+//}
 
 
 /*******************************************************************************

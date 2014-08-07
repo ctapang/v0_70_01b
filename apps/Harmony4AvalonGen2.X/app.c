@@ -81,7 +81,7 @@ APP_DATA appObject =
     .TimerObjectHandle = NULL,
     .usbDevHandle = USB_DEVICE_HANDLE_INVALID,
     .configValue = 0,
-    .testMode = false
+    .testMode = true
 };
 
 // *****************************************************************************
@@ -552,6 +552,8 @@ void APP_Tasks ( void )
 
             appObject.appState = ResetAvalon;
 
+            break;
+
         case ResetAvalon:
             Reset_All_Avalon_Chips();
 
@@ -578,13 +580,16 @@ void APP_Tasks ( void )
             if (appObject.testMode)
             {
                 appObject.appState = WaitingForCommand; // wait for test commands
-                issue_test_command(); // see HashTest.c
+                issue_init_command(); // see HashTest.c
             }
             else if (USBConfigured()) // && appObject.configValue == 1)
             {
                 usbWaitCount = 0;
                 
                 AsyncReadUSB();
+                AsyncReadUSB(); // have more receive buffers ready
+                AsyncReadUSB(); // have more receive buffers ready
+                AsyncReadUSB(); // have more receive buffers ready
                 
                 // After initializing we set the state to "WaitingForCommand" and enable USB interrupts
                 appObject.appState = WaitingForCommand; // wait for interrupt from USB
@@ -616,6 +621,11 @@ void APP_Tasks ( void )
                 appObject.appState = ResetAvalon;
             }
 
+            if (appObject.testMode)
+            {
+                issue_test_command(); // see HashTest.c
+            }
+
             // Pick up next work, and
             // set appState to "SendWorkToAsics" if state switches from 'W' to 'P'
             // (If a packet came in from cgminer for the Asic chips, we get out of this state.)
@@ -636,6 +646,10 @@ void APP_Tasks ( void )
             break;
 
         case SendWorkToAsics:
+            SYS_ASSERT((timer_handle == SYS_TMR_HANDLE_INVALID), "Previous timeout was not triggered");
+            timer_handle = SYS_TMR_CallbackSingle (timeout_in_msec, DoneWaiting4Asics);
+            SYS_ASSERT((timer_handle != SYS_TMR_HANDLE_INVALID), "Cannot setup Asic wait timeout");
+
             dataToSend = massage_for_send( (uint8_t *)sequencedBuffer, 4 * GEN2_INPUT_WORD_COUNT, &count );
             //dataToSend = massage_for_send( (uint8_t *)testChips, 4 * GEN2_INPUT_WORD_COUNT, &count );
             
@@ -643,9 +657,6 @@ void APP_Tasks ( void )
             state1[0] = 0; state1[1] = 0; state1[2] = 0; state1[3] = 0;
             appDrvObject.receiveBufHandle[0] = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state1, sizeof(DWORD));
 
-            SYS_ASSERT((timer_handle == SYS_TMR_HANDLE_INVALID), "Previous timeout was not triggered");
-            timer_handle = SYS_TMR_CallbackSingle (timeout_in_msec, DoneWaiting4Asics);
-            SYS_ASSERT((timer_handle != SYS_TMR_HANDLE_INVALID), "Cannot setup Asic wait timeout");
             appObject.appState = WaitingForReport;
             break;
 

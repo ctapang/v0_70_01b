@@ -63,8 +63,8 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #pragma config FVBUSONIO = ON           // USB VBUS ON Selection (Controlled by USB Module)
 
 // DEVCFG2
-#pragma config FPLLIDIV = DIV_5         // PLL Input Divider (2x Divider)
-#pragma config FPLLMUL = MUL_16         // PLL Multiplier (20x Multiplier, with an overall result of 10x)
+#pragma config FPLLIDIV = DIV_6         // PLL Input Divider (6x Divider)
+#pragma config FPLLMUL = MUL_24         // PLL Multiplier (20x Multiplier, with an overall result of 10x)
 #pragma config FPLLODIV = DIV_2         // System PLL Output Clock Divider (PLL Divide by 2)
 
 // DEVCFG1
@@ -276,7 +276,7 @@ void TimerHandler();
 
 void USB_Init()
 {
-    SYS_INT_VectorPrioritySet(INT_VECTOR_USB, INT_PRIORITY_LEVEL2);
+    SYS_INT_VectorPrioritySet(INT_VECTOR_USB, INT_PRIORITY_LEVEL6);
     SYS_INT_VectorSubprioritySet(INT_VECTOR_USB, INT_SUBPRIORITY_LEVEL2);
 
     //Initialize the USB device layer (this also calls DRV_USB_Initialize)

@@ -18,13 +18,13 @@ DWORD DivisionOfLabor[10] = {
 };
 BYTE WorkNow, BankSize, ResultQC, SlowTick, TimeOut, TempTarget;
 //BYTE HashTime = 256 - ((WORD)TICK_TOTAL/DEFAULT_HASHCLOCK);
-volatile WORKSTATUS Status = {USB_ID_1,'I',0,0,0,0,0,0,0, (WORD)0, WORK_TICKS, 0 };
+volatile WORKSTATUS Status = {USB_ID_1,'I',0,1,0,0,0,0,0, (WORD)0, WORK_TICKS, 0 };
 volatile WORKRESULT WResult = {USB_ID_1, 0, 0L};
 WORKCFG Cfg = { USB_ID_1, 1500, 0, 0, 0, 0 };
 WORKTASK *pWork;
 WORKTASK alternatePreCalcCopy;
 WORKTASK WorkQue[MAX_WORK_COUNT];
-volatile BYTE ResultQue[8];
+volatile BYTE ResultQue[RESULT_SIZE];
 //DWORD ClockCfg[2] = { (((DWORD)DEFAULT_HASHCLOCK) << 18) | CLOCK_LOW_CHG, CLOCK_HIGH_CFG };
 INT16 Step, Error, LastError;
 
@@ -82,7 +82,10 @@ void AsicPreCalc(WORKTASK *work)
 }
 
 USB_ERROR usbResult;
+int disposedCount = 0;
 
+// This executes in the context of a USB interrupt (called from ProcessCmd()),
+// and also in the context of the main program loop (called from ResultTx()).
 void SendCmdReply(char *cmd, BYTE *data, BYTE count)
 {
     int bufIndex;
@@ -107,8 +110,32 @@ void SendCmdReply(char *cmd, BYTE *data, BYTE count)
 
         USBMutexClose(intEnabled);
     }
+    else
+    {
+        disposedCount++; // debug point
+    }
 }
 
+int tenMSecTimer = 0;
+
+void TraceTimer()
+{
+    tenMSecTimer++;
+}
+
+int recycleCount = 0;
+int pendingCountTrace[1000];
+int traceIndex = 0;
+
+void PutTraceEntry(int *pindex, int time, int pendCount)
+{
+    if (*pindex >= 1000)
+        return;
+
+    pendingCountTrace[(*pindex)++] = (time << 8) | (pendCount & 0xFF);
+}
+
+// This executes in the context of the main thread
 void AsyncSendUSB()
 {
     int bufIndex;
@@ -116,10 +143,12 @@ void AsyncSendUSB()
 
     if(USBConfigured())
     {
-        intEnabled = USBMutexOpen();
-
         while(appObject.transmitBufArea > 0) // while there is something to pull
         {
+            PutTraceEntry( &traceIndex, tenMSecTimer, appObject.transmitBufArea);
+
+            intEnabled = USBMutexOpen();
+
             bufIndex = appObject.pullPoint * (appObject.txBufSize + 1);
 
             // check for invalid cmd
@@ -142,13 +171,15 @@ void AsyncSendUSB()
 
             appObject.pullPoint = (appObject.pullPoint + 1) % USB_DEVICE_MSGBUF_COUNT;
             appObject.transmitBufArea--;
-        }
 
-         USBMutexClose(intEnabled);
+            USBMutexClose(intEnabled);
+        }
     }
+    else
+        PutTraceEntry( &traceIndex, 0, appObject.transmitBufArea);
 }
 
-char commandTrace[10];
+char commandTrace[100];
 int cmdIndex = 0;
 int i;
 
@@ -183,7 +214,7 @@ void ProcessCmd(char * ourPtr)
 {
     // cmd is one char, dest address 1 byte, data follows
     // we already know address is ours here
-    if (cmdIndex < 10)
+    if (cmdIndex < 100)
         commandTrace[cmdIndex++] = ourPtr[0];
     switch(ourPtr[0]) {
         case 'W': // queue new work
@@ -200,6 +231,10 @@ void ProcessCmd(char * ourPtr)
                     Status.State = 'P'; // AssembleWorkForAsics(out);
                 }
                 Status.WorkQC++;
+            }
+            else if (cmdIndex < 100)
+            {
+                commandTrace[cmdIndex++] = 'X';
             }
             SendCmdReply(ourPtr, (char *)&Status, 14); // sizeof(Status));
             Status.Noise = Status.ErrorCount = 0;
@@ -230,7 +265,7 @@ void ProcessCmd(char * ourPtr)
                 Cfg.Future2 = ourPtr[6];
                 Cfg.Future3 = ourPtr[7];
             }
-            SendCmdReply(ourPtr, (char *)&Cfg, sizeof(Cfg));
+            SendCmdReply(ourPtr, (char *)&Cfg, sizeof(WORKCFG));
             break;
         case 'E': // enable/disable work
             Status.State = (ourPtr[2] == '1') ? ((Status.WorkQC > 0) ? 'P' : 'R') : 'D';
@@ -311,6 +346,7 @@ void DeQueueNextWork(DWORD *out)
 void PrepareWorkStatus(void)
 {
     Status.ChipCount = ASIC_COUNT;
+    Status.SlaveCount = 0; // no slave
 
     // pre-calc nonce range values
     BankSize = ASIC_COUNT;
@@ -325,15 +361,55 @@ void PrepareWorkStatus(void)
     Status.HashCount = 0;
 }
 
+// we only remembrer the last four unique nonces
+int cacheIndex = 0;
+DWORD nonceCache[4];
+
+bool IsNew(DWORD nonce)
+{
+    int i;
+    for (i = 0; i < 4; i++)
+    {
+        if (nonce == nonceCache[i])
+            return false;
+    }
+    nonceCache[cacheIndex] = nonce;
+    cacheIndex = (cacheIndex + 1) % 4;
+}
+
 int resultCount = 0;
-DWORD resultArray[10];
-DWORD resultWorkID[10];
+DWORD firstNonce = 0;
+DWORD resultArray[30];
+DWORD resultWorkID[30];
+
+int unfilteredCount = 0;
+DWORD unfilteredNonces[40];
+DWORD unfilteredWrkIDs[40];
 
 // Note: third param unused (needed only for debugging)
 void ResultRx(BYTE *indata, DWORD wrkID, DWORD *workDone)
 {
     DWORD nonce = SwapBytesIfNecessary(indata, false);
-    if (resultCount < 10)
+
+    if (unfilteredCount < 40)
+    {
+        unfilteredNonces[unfilteredCount] = nonce;
+        unfilteredWrkIDs[unfilteredCount] = wrkID;
+    }
+    unfilteredCount++;
+
+    // filter out noise
+    if (firstNonce == 0)
+    {
+        firstNonce = nonce;
+        return; // reject very first nonce
+    }
+    if (!IsNew(nonce))
+    {
+        return;
+    }
+    
+    if (resultCount < 30)
     {
         resultArray[resultCount] = nonce;
         resultWorkID[resultCount] = wrkID;
@@ -353,7 +429,7 @@ void ResultRx(BYTE *indata, DWORD wrkID, DWORD *workDone)
     ResultQue[5] = noncePtr[2];
     ResultQue[6] = noncePtr[3];
 
-    SendCmdReply((char *)ResultQue, (BYTE *)(ResultQue+1), sizeof(ResultQue)-1);
+    SendCmdReply((char *)ResultQue, (BYTE *)(ResultQue+1), RESULT_SIZE-1);
 }
 
 
@@ -372,6 +448,8 @@ void InitializeCondominer(void)
     //replaced UserInit() call with the following two lines:
     InitResultRx();
     PrepareWorkStatus();
+
+    SYS_TMR_CallbackPeriodic(10, &TraceTimer);
 
 }//end InitializeSystem
 

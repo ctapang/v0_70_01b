@@ -21,6 +21,8 @@
 
 #define DATA_SPLIT  0x50
 
+#define RESULT_SIZE 8
+
 typedef struct _id {
     BYTE Device;
     BYTE version;

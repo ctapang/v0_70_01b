@@ -20,6 +20,9 @@
  	(uint64_t)bswap_32((uint32_t)((value) >> 32)))
 
 
+#define CB_SIZE   m0 - cb
+
+
 /* This assumes htobe32 is a macro in endian.h, and if it doesn't exist, then
  * htobe64 also won't exist */
 #ifndef htobe32
@@ -483,7 +486,7 @@ static void gen_stratum_work(WORKTASK *work)
 	uint64_t nonce2le;
         uint8_t *merkles[10];
 	int i;
-	uint8_t coinbase[sizeof(cb)];
+	uint8_t coinbase[(CB_SIZE)];
         //uint8_t header[sizeof(headerTemplate)];
 
 	int merkle_offset = 36;
@@ -507,7 +510,7 @@ static void gen_stratum_work(WORKTASK *work)
 	merkles[8] = m8;
 	merkles[9] = m9;
 
-        memcpy(coinbase, cb, sizeof(cb));
+        memcpy(coinbase, cb, CB_SIZE);
         // memcpy(header, headerTemplate, sizeof(headerTemplate));
 	/* Update coinbase. Always use an LE encoded nonce2 to fill in values
 	 * from left to right and prevent overflow errors with small n2sizes */
@@ -517,7 +520,7 @@ static void gen_stratum_work(WORKTASK *work)
 	//work->nonce2_len = pool->n2size;
 
 	/* Generate merkle root */
-	gen_hash(coinbase, merkle_root, sizeof(cb));
+	gen_hash(coinbase, merkle_root, (CB_SIZE));
 	memcpy(merkle_sha, merkle_root, 32);
 	for (i = 0; i < nmerkles; i++) {
 		memcpy(merkle_sha + 32, merkles[i], 32);
@@ -543,16 +546,21 @@ static void gen_stratum_work(WORKTASK *work)
 
 WORKTASK work;
 
-void issue_test_command()
+void issue_init_command()
 {
     BYTE cmd[64];
-    WORKTASK work;
     // abort and reset
     cmd[0] = 'A';
     ProcessCmd(cmd);
     // send identity command
     cmd[0] = 'I';
     ProcessCmd(cmd);
+}
+
+void issue_test_command()
+{
+    BYTE cmd[64];
+    WORKTASK work;
     // send work
     gen_stratum_work(&work);
     cmd[0] = 'W';
