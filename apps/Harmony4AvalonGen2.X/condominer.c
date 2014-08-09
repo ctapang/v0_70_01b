@@ -363,18 +363,18 @@ void PrepareWorkStatus(void)
 
 // we only remembrer the last four unique nonces
 int cacheIndex = 0;
-DWORD nonceCache[4];
+DWORD nonceCache[6];
 
 bool IsNew(DWORD nonce)
 {
     int i;
-    for (i = 0; i < 4; i++)
+    for (i = 0; i < 6; i++)
     {
         if (nonce == nonceCache[i])
             return false;
     }
     nonceCache[cacheIndex] = nonce;
-    cacheIndex = (cacheIndex + 1) % 4;
+    cacheIndex = (cacheIndex + 1) % 6;
 }
 
 int resultCount = 0;

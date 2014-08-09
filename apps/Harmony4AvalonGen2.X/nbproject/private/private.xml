@@ -5,11 +5,6 @@
             <line>1158</line>
         </file>
         <file>
-            <url>file:/C:/microchip/harmony/v0_70_01b/framework/system/tmr/src/sys_tmr.c</url>
-            <line>201</line>
-            <line>723</line>
-        </file>
-        <file>
             <url>file:/C:/microchip/harmony/v0_70_01b/framework/usb/src/dynamic/usb_device_generic.c</url>
             <line>225</line>
         </file>
@@ -29,6 +24,7 @@
             <url>app.c</url>
             <line>292</line>
             <line>343</line>
+            <line>395</line>
         </file>
     </editor-bookmarks>
 </project-private>

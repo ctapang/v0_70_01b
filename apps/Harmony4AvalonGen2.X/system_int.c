@@ -42,12 +42,13 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #include "app.h"
 
 int _intCounter = 0;
+int _spiRcvCounter = 0;
+int _spiTxCounter = 0;
+int _SPITBECount = 0;
 
 void __attribute__((interrupt(ipl5), vector(_TIMER_3_VECTOR)))
 Timer2Handler(void)
 {
-    _intCounter++;
-
     // call the driver tasks routine
     DRV_TMR_Tasks(appObject.TimerObjectHandle);
 }
@@ -61,23 +62,30 @@ _InterruptHandler_USB_stub ( void )
 void __attribute__((interrupt(ipl3), vector(_SPI_2_VECTOR)))
 SPI2_Transmit_Handler(void)
 {
+    _spiTxCounter++;
+
     DRV_SPI_Tasks(appObject.spiConfigModule);
 }
 
 void __attribute__((interrupt(ipl3), vector(_SPI_1_VECTOR)))
 SPI1_Receive_Handler(void)
 {
-    //_DRV_SPI_InterruptSourceClear( INT_SOURCE_SPI_1_RECEIVE );
+    _spiRcvCounter++;
 
-    SYS_INT_SourceStatusClear(INT_SOURCE_SPI_1_RECEIVE);
+    if ( PLIB_SPI_TransmitBufferIsEmpty ( _DRV_SPI_PERIPHERAL_ID_GET( appObject.spiReportModule ) ) )
+    {
+        PLIB_SPI_BufferWrite ( _DRV_SPI_PERIPHERAL_ID_GET (  appObject.spiReportModule  ), 0xaaaaaaaa );
+        _SPITBECount++;
+    }
+    //SYS_INT_SourceStatusClear(INT_SOURCE_SPI_1_RECEIVE);
     DRV_SPI_Tasks(appObject.spiReportModule);
  }
 
-void __attribute__((interrupt(ipl1)))
-_DefaultInterrupt(void)
-{
-        //SYS_INT_SourceStatusClear(INT_SOURCE_XXX);
-}
+//void __attribute__((interrupt(ipl1)))
+//_DefaultInterrupt(void)
+//{
+//        //SYS_INT_SourceStatusClear(INT_SOURCE_XXX);
+//}
 //
 //void __attribute__((interrupt(ipl2), vector(_USB_1_VECTOR)))
 //_InterruptHandler_USB_stub ( void )

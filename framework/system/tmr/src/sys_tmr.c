@@ -795,8 +795,10 @@ SYS_TMR_HANDLE SYS_TMR_CallbackSingle (unsigned int period, SYS_TMR_CALLBACK cal
     {
         sIndex = cbIndex;
 
-        if (sIndex >= SYS_TMR_MAX_PERIODIC_EVENTS)
-            return SYS_TMR_HANDLE_INVALID;
+        SYS_ASSERT((sIndex < SYS_TMR_MAX_PERIODIC_EVENTS), "not enough timer slots");
+
+        //if (sIndex >= SYS_TMR_MAX_PERIODIC_EVENTS)
+        //    return SYS_TMR_HANDLE_INVALID;
     }
 
     /* OSAL Mutex Lock */

@@ -81,7 +81,7 @@ APP_DATA appObject =
     .TimerObjectHandle = NULL,
     .usbDevHandle = USB_DEVICE_HANDLE_INVALID,
     .configValue = 0,
-    .testMode = true
+    .testMode = false
 };
 
 // *****************************************************************************
@@ -513,12 +513,32 @@ BYTE id = 0;
 int usbWaitCount = 0;
 DWORD sequencedBuffer[GEN2_INPUT_WORD_COUNT];
 
+// Diagnostics
+int mainLoopCount = 0;
+int changeStateCount = 0;
+int loopCountAtChange[1000];
+APP_STATES stateTrace[1000];
+
 void APP_Tasks ( void )
 {
     DRV_SPI_BUFFER_OBJECT *buf;
     DWORD nonce;
     int count;
-    
+
+    if (mainLoopCount == 0)
+    {
+        loopCountAtChange[0] = mainLoopCount;
+        stateTrace[0] = appObject.appState;
+    }
+    else if (stateTrace[changeStateCount] != appObject.appState)
+    {
+        changeStateCount++;
+        loopCountAtChange[changeStateCount] = mainLoopCount;
+        stateTrace[changeStateCount] = appObject.appState;
+    }
+
+    mainLoopCount++;
+
     /* check the application state*/
     switch (appObject.appState)
     {
@@ -579,10 +599,10 @@ void APP_Tasks ( void )
 
             if (appObject.testMode)
             {
-                appObject.appState = WaitingForCommand; // wait for test commands
+                //appObject.appState = WaitingForCommand; // wait for test commands
                 issue_init_command(); // see HashTest.c
             }
-            else if (USBConfigured()) // && appObject.configValue == 1)
+            if (USBConfigured()) // && appObject.configValue == 1)
             {
                 usbWaitCount = 0;
                 
@@ -611,6 +631,11 @@ void APP_Tasks ( void )
 
         case WaitingForCommand:
             // If USB has been reset, restart all Avalon chips and USB.
+            if (appObject.testMode)
+            {
+                issue_test_command(); // see HashTest.c
+            }
+
             if (!USBConfigured())
             {
                 if (USB_DEVICE_GENERIC_EndpointIsStalled(0, appObject.endpointRx))
@@ -621,10 +646,6 @@ void APP_Tasks ( void )
                 appObject.appState = ResetAvalon;
             }
 
-            if (appObject.testMode)
-            {
-                issue_test_command(); // see HashTest.c
-            }
 
             // Pick up next work, and
             // set appState to "SendWorkToAsics" if state switches from 'W' to 'P'
@@ -650,12 +671,13 @@ void APP_Tasks ( void )
             timer_handle = SYS_TMR_CallbackSingle (timeout_in_msec, DoneWaiting4Asics);
             SYS_ASSERT((timer_handle != SYS_TMR_HANDLE_INVALID), "Cannot setup Asic wait timeout");
 
+            state1[0] = 0; state1[1] = 0; state1[2] = 0; state1[3] = 0;
+            appDrvObject.receiveBufHandle[0] = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state1, sizeof(DWORD));
+
             dataToSend = massage_for_send( (uint8_t *)sequencedBuffer, 4 * GEN2_INPUT_WORD_COUNT, &count );
             //dataToSend = massage_for_send( (uint8_t *)testChips, 4 * GEN2_INPUT_WORD_COUNT, &count );
             
             appDrvObject.transmitBufHandle = DRV_SPI_BufferAddWrite(appObject.spiConfigDrvHandle, dataToSend, count);
-            state1[0] = 0; state1[1] = 0; state1[2] = 0; state1[3] = 0;
-            appDrvObject.receiveBufHandle[0] = DRV_SPI_BufferAddRead(appObject.spiReportDrvHandle, state1, sizeof(DWORD));
 
             appObject.appState = WaitingForReport;
             break;

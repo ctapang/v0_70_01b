@@ -599,6 +599,7 @@ SYS_STATUS DRV_SPI_Status ( SYS_MODULE_OBJ object )
 */
 
 int noiseCount;
+int ii = 0, kk = 0, mm = 0, pp = 0, rr = 0, ss = 0;
 
 __attribute__((section("driver")))
 void DRV_SPI_Tasks ( SYS_MODULE_OBJ object )
@@ -610,12 +611,11 @@ void DRV_SPI_Tasks ( SYS_MODULE_OBJ object )
     SPI_MODULE_ID           spiId           = dObj->spiId;
     DRV_SPI_CLIENT_OBJ      *lClientObj;
 
-    static int i = 0, j = 0, k = 0, m = 0, p = 0, r = 0, S = 0;
+    ii++;
 
     switch ( dObj->task )
     {
         case DRV_SPI_TASK_PROCESS_QUEUE:
-            i++;
             if (  dObj->queueHead != NULL ) //&& (( PLIB_SPI_TransmitBufferIsEmpty ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ) ) ) ||
                     //(PLIB_SPI_ReceiverBufferIsFull ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ) ))))
             {
@@ -641,7 +641,7 @@ void DRV_SPI_Tasks ( SYS_MODULE_OBJ object )
                         break;
                     }
                     dObj->task = DRV_SPI_TASK_PROCESS_READ_ONLY;
-                    SYS_ASSERT((lBufferObj->rxBuffer != NULL), "tx buf can't be null");
+                    SYS_ASSERT((lBufferObj->rxBuffer != NULL), "rx buf can't be null");
 //                    j = 0;
 //                    while ( PLIB_SPI_ReceiverBufferIsFull ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ) ) )
 //                    {
@@ -680,7 +680,7 @@ void DRV_SPI_Tasks ( SYS_MODULE_OBJ object )
                 {
                     *lBufferObj->rxBuffer++ = spiWord;
                     lBufferObj->transferSize--;
-                    S++;
+                    ss++;
                     noiseCount = 0;
 
                     /* Handle the overflow */
@@ -720,14 +720,18 @@ void DRV_SPI_Tasks ( SYS_MODULE_OBJ object )
                     break;
                 }
             }
+            else
+            {
+                pp++;
+            }
             break;
         case DRV_SPI_TASK_PROCESS_WRITE_ONLY:
-            k++;
+            kk++;
 
             /* Loop till the transmit size, do not block though */
             if ( lBufferObj->transferSize )
             {
-                m++;
+                mm++;
                 // pull the chip-select line low
                 lClientObj = (DRV_SPI_CLIENT_OBJ *)lBufferObj->clientHandle;
                 if ( true != _DRV_SPI_CLIENT_OBJ(lClientObj, chipSelectLogicLevel) )
@@ -759,7 +763,7 @@ void DRV_SPI_Tasks ( SYS_MODULE_OBJ object )
                     {
                         // Release chip select signal
                         while (PLIB_SPI_IsBusy( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ) ))
-                            r++;
+                            rr++;
                         if ( true != _DRV_SPI_CLIENT_OBJ(lClientObj, chipSelectLogicLevel) )
                         {
                             _DRV_SPI_CHIP_SELECT_SET(_DRV_SPI_CLIENT_OBJ(lClientObj, chipSelectPort),
@@ -793,7 +797,6 @@ void DRV_SPI_Tasks ( SYS_MODULE_OBJ object )
              }
             break;
         case DRV_SPI_TASK_PROCESS_WRITE_READ:
-            p++;
             if( lBufferObj->transferSize )
             {
                 if ( PLIB_SPI_ReceiverBufferIsFull ( _DRV_SPI_PERIPHERAL_ID_GET ( spiId ) ) )
@@ -1148,6 +1151,17 @@ DRV_SPI_BUFFER_HANDLE DRV_SPI_BufferAddRead ( DRV_HANDLE handle, void *rxBuffer,
     DRV_SPI_BUFFER_OBJECT   *spiDataObj;
     DRV_SPI_OBJ             *dObj = ((DRV_SPI_CLIENT_OBJ *) handle)->driverObject;
 
+    while ( PLIB_SPI_TransmitBufferIsEmpty ( _DRV_SPI_PERIPHERAL_ID_GET( dObj->spiId ) ) )
+    {
+        SPI_DATA_TYPE dummy = (SPI_DATA_TYPE)0xaaaaaaaa; // should work whatever SPI_DATA_TYPE is
+        PLIB_SPI_BufferWrite ( _DRV_SPI_PERIPHERAL_ID_GET ( dObj->spiId ), dummy );
+    }
+
+    while ( PLIB_SPI_ReceiverBufferIsFull ( _DRV_SPI_PERIPHERAL_ID_GET ( dObj->spiId ) ) )
+    {
+        PLIB_SPI_BufferRead ( _DRV_SPI_PERIPHERAL_ID_GET ( dObj->spiId ) ); // discard
+    }
+
     /* Get a slot in the queue */
     spiDataObj = _DRV_SPI_QueueSlotGet ( dObj );
 
@@ -1171,20 +1185,9 @@ DRV_SPI_BUFFER_HANDLE DRV_SPI_BufferAddRead ( DRV_HANDLE handle, void *rxBuffer,
         }
         dObj->taskLObj = spiDataObj;
 
-        while ( PLIB_SPI_TransmitBufferIsEmpty ( _DRV_SPI_PERIPHERAL_ID_GET( dObj->spiId ) ) )
-        {
-            SPI_DATA_TYPE dummy = (SPI_DATA_TYPE)0xaaaaaaaa; // should work whatever SPI_DATA_TYPE is
-            PLIB_SPI_BufferWrite ( _DRV_SPI_PERIPHERAL_ID_GET ( dObj->spiId ), dummy );
-        }
-
-        while ( PLIB_SPI_ReceiverBufferIsFull ( _DRV_SPI_PERIPHERAL_ID_GET ( dObj->spiId ) ) )
-        {
-            PLIB_SPI_BufferRead ( _DRV_SPI_PERIPHERAL_ID_GET ( dObj->spiId ) ); // discard
-        }
-
         _DRV_SPI_InterruptSourceClear( _DRV_SPI_INT_SRC_GET ( dObj->rxInterruptSource ) ) ;
-
         _DRV_SPI_InterruptSourceEnable( _DRV_SPI_INT_SRC_GET( dObj->rxInterruptSource ) ) ;
+        // enable transmit interrupt also
         _DRV_SPI_InterruptSourceEnable( _DRV_SPI_INT_SRC_GET( dObj->txInterruptSource ) ) ;
 
         return (DRV_SPI_BUFFER_HANDLE)spiDataObj;
