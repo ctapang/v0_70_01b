@@ -723,6 +723,9 @@ void DRV_SPI_Tasks ( SYS_MODULE_OBJ object )
             else
             {
                 pp++;
+                //SYS_INT_SourceStatusClear(INT_SOURCE_SPI_1_TRANSMIT);
+                _DRV_SPI_InterruptSourceClear( _DRV_SPI_INT_SRC_GET( dObj->txInterruptSource ) );
+                _DRV_SPI_InterruptSourceDisable ( _DRV_SPI_INT_SRC_GET ( dObj->txInterruptSource ) ) ;
             }
             break;
         case DRV_SPI_TASK_PROCESS_WRITE_ONLY:
@@ -1188,6 +1191,7 @@ DRV_SPI_BUFFER_HANDLE DRV_SPI_BufferAddRead ( DRV_HANDLE handle, void *rxBuffer,
         _DRV_SPI_InterruptSourceClear( _DRV_SPI_INT_SRC_GET ( dObj->rxInterruptSource ) ) ;
         _DRV_SPI_InterruptSourceEnable( _DRV_SPI_INT_SRC_GET( dObj->rxInterruptSource ) ) ;
         // disable transmit interrupt
+        _DRV_SPI_InterruptSourceClear( _DRV_SPI_INT_SRC_GET( dObj->txInterruptSource ) );
         _DRV_SPI_InterruptSourceDisable( _DRV_SPI_INT_SRC_GET( dObj->txInterruptSource ) ) ;
 
         return (DRV_SPI_BUFFER_HANDLE)spiDataObj;

@@ -512,6 +512,8 @@ bool done = false;
 BYTE id = 0;
 int usbWaitCount = 0;
 DWORD sequencedBuffer[GEN2_INPUT_WORD_COUNT];
+int badIDCount = 0;
+DWORD badWordIDs[20];
 
 // Diagnostics
 int mainLoopCount = 0;
@@ -529,12 +531,14 @@ void APP_Tasks ( void )
     {
         loopCountAtChange[0] = mainLoopCount;
         stateTrace[0] = appObject.appState;
+        changeStateCount = 1;
     }
-    else if (stateTrace[changeStateCount] != appObject.appState)
+    else if (stateTrace[changeStateCount - 1] != appObject.appState &&
+            changeStateCount < 1000)
     {
-        changeStateCount++;
         loopCountAtChange[changeStateCount] = mainLoopCount;
         stateTrace[changeStateCount] = appObject.appState;
+        changeStateCount++;
     }
 
     mainLoopCount++;
@@ -703,7 +707,11 @@ void APP_Tasks ( void )
             {
                 BYTE *noncePtr = Nonce[nonceSent++];
 
-                SYS_ASSERT((sequencedBuffer[0] == currentWorkID), "work ID incorrect");
+                if (sequencedBuffer[0] != currentWorkID && badIDCount < 19)
+                {
+                    badWordIDs[badIDCount++] = sequencedBuffer[0];
+                    badWordIDs[badIDCount++] = currentWorkID;
+                }
                 
                 ResultRx(noncePtr, currentWorkID, sequencedBuffer);
             }

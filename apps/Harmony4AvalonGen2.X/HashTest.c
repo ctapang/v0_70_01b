@@ -565,7 +565,7 @@ void issue_test_command()
     gen_stratum_work(&work);
     cmd[0] = 'W';
     cmd[1] = work.Device = 0;
-    cmd[2] = work.WorkID = 0;
+    cmd[2] = work.WorkID++;
     memcpy(cmd + 3, &work.MidState[0], 44);
     ProcessCmd(cmd);
 }
