@@ -72,11 +72,6 @@ SPI1_Receive_Handler(void)
 {
     _spiRcvCounter++;
 
-    if ( PLIB_SPI_TransmitBufferIsEmpty ( _DRV_SPI_PERIPHERAL_ID_GET( appObject.spiReportModule ) ) )
-    {
-        PLIB_SPI_BufferWrite ( _DRV_SPI_PERIPHERAL_ID_GET (  appObject.spiReportModule  ), 0xaaaaaaaa );
-        _SPITBECount++;
-    }
     //SYS_INT_SourceStatusClear(INT_SOURCE_SPI_1_RECEIVE);
     DRV_SPI_Tasks(appObject.spiReportModule);
  }

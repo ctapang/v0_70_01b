@@ -1187,8 +1187,8 @@ DRV_SPI_BUFFER_HANDLE DRV_SPI_BufferAddRead ( DRV_HANDLE handle, void *rxBuffer,
 
         _DRV_SPI_InterruptSourceClear( _DRV_SPI_INT_SRC_GET ( dObj->rxInterruptSource ) ) ;
         _DRV_SPI_InterruptSourceEnable( _DRV_SPI_INT_SRC_GET( dObj->rxInterruptSource ) ) ;
-        // enable transmit interrupt also
-        _DRV_SPI_InterruptSourceEnable( _DRV_SPI_INT_SRC_GET( dObj->txInterruptSource ) ) ;
+        // disable transmit interrupt
+        _DRV_SPI_InterruptSourceDisable( _DRV_SPI_INT_SRC_GET( dObj->txInterruptSource ) ) ;
 
         return (DRV_SPI_BUFFER_HANDLE)spiDataObj;
     }
