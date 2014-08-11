@@ -321,9 +321,6 @@ void SYS_Initialize ( void* data )
     //Interrupt initialize for multi-vectored ints
     SYS_INT_Initialize();
 
-    /* Enable all defined interrupts */
-    SYS_INT_Enable();
-
     USB_Init();
 
     // Disable interrrupts for now
@@ -331,6 +328,9 @@ void SYS_Initialize ( void* data )
 
     /* Initialize the Application */
     APP_Initialize ( );
+
+    /* Enable all defined interrupts */
+    SYS_INT_Enable();
 
     // Enable timer interrrupt
 

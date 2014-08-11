@@ -208,6 +208,7 @@ DWORD SwapBytesIfNecessary(BYTE *psrc, bool necessary)
     return word;
 }
 
+WORKCFG tempCfg;
 
 // This is always called in the context of USB interrupt
 void ProcessCmd(char * ourPtr)
@@ -265,7 +266,10 @@ void ProcessCmd(char * ourPtr)
                 Cfg.Future2 = ourPtr[6];
                 Cfg.Future3 = ourPtr[7];
             }
-            SendCmdReply(ourPtr, (char *)&Cfg, sizeof(WORKCFG));
+            memcpy(&tempCfg, &Cfg, sizeof(WORKCFG));
+            tempCfg.HashClock = Cfg.HashClock >> 8;
+            tempCfg.HashClock += (Cfg.HashClock & 0xFF) << 8;
+            SendCmdReply(ourPtr, (char *)&tempCfg, sizeof(WORKCFG));
             break;
         case 'E': // enable/disable work
             Status.State = (ourPtr[2] == '1') ? ((Status.WorkQC > 0) ? 'P' : 'R') : 'D';
