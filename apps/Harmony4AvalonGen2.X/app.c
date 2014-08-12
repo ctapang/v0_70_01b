@@ -81,7 +81,7 @@ APP_DATA appObject =
     .TimerObjectHandle = NULL,
     .usbDevHandle = USB_DEVICE_HANDLE_INVALID,
     .configValue = 0,
-    .testMode = false
+    .testMode = true
 };
 
 // *****************************************************************************

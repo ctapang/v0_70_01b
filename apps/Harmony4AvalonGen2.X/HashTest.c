@@ -20,7 +20,7 @@
  	(uint64_t)bswap_32((uint32_t)((value) >> 32)))
 
 
-#define CB_SIZE   m0 - cb
+#define CB_SIZE  1730
 
 
 /* This assumes htobe32 is a macro in endian.h, and if it doesn't exist, then
@@ -377,12 +377,14 @@ static void rebuild_nonce(WORKTASK *work, uint32_t nonce)
 	regen_hash(work);
 }
 
-/* For testing a nonce against diff 1 */
-bool test_nonce(WORKTASK *work, uint32_t nonce)
-{
-	uint32_t *hash_32 = (uint32_t *)(work->Hash + 28);
+int getNonce2GivenWorkID(BYTE wID);
 
-	rebuild_nonce(work, nonce);
+/* For testing a nonce against diff 1 */
+bool test_nonce(WORKTASK *pWork, uint32_t nonce)
+{
+	uint32_t *hash_32 = (uint32_t *)(pWork->Hash + 28);
+
+	rebuild_nonce(pWork, nonce);
 	return (*hash_32 == 0);
 }
 
@@ -479,7 +481,7 @@ static void gen_hash(unsigned char *data, unsigned char *hash, int len)
 /* Generates stratum based work based on the most recent notify information
  * from the pool. This will keep generating work while a pool is down so we use
  * other means to detect when the pool has died in stratum_thread */
-static void gen_stratum_work(WORKTASK *work)
+static void gen_stratum_work(WORKTASK *pWork, int nonce2)
 {
 	unsigned char merkle_root[32], merkle_sha[64];
 	uint32_t *data32, *swap32;
@@ -492,7 +494,6 @@ static void gen_stratum_work(WORKTASK *work)
 	int merkle_offset = 36;
 
 	int nonce2_size = 4;
-	int nonce2 = 0;
 
 	int nonce2_offset = 119;
 	int nmerkles = 10;
@@ -510,13 +511,12 @@ static void gen_stratum_work(WORKTASK *work)
 	merkles[8] = m8;
 	merkles[9] = m9;
 
-        memcpy(coinbase, cb, CB_SIZE);
+        memcpy(coinbase, cb, (CB_SIZE));
         // memcpy(header, headerTemplate, sizeof(headerTemplate));
 	/* Update coinbase. Always use an LE encoded nonce2 to fill in values
 	 * from left to right and prevent overflow errors with small n2sizes */
 	nonce2le = htole64(nonce2);
 	memcpy(coinbase + nonce2_offset, &nonce2le, nonce2_size);
-	nonce2++;
 	//work->nonce2_len = pool->n2size;
 
 	/* Generate merkle root */
@@ -532,19 +532,47 @@ static void gen_stratum_work(WORKTASK *work)
 	flip32(swap32, data32);
 
 	/* Copy the data template from header_bin */
-	memcpy(work->Data, headerTemplate, 128);
-	memcpy(work->Data + 36, merkle_root, 32);
+	memcpy(pWork->Data, headerTemplate, 128);
+	memcpy(pWork->Data + 36, merkle_root, 32);
 
 	/* Store the stratum work diff to check it still matches the pool's
 	 * stratum diff when submitting shares */
 	//work->sdiff = pool->sdiff;
 
-	calc_midstate(work);
+	calc_midstate(pWork);
 	//set_target(target, sdiff);
 	//calc_diff(work, sdiff);
 }
 
 WORKTASK work;
+WORKTASK tWork;
+
+// arrays for associating a work ID with a nonce2
+int nonce2 = 0;
+BYTE arrayWorkID[10]; // circular cache of 10
+int arrayNonce2[10];
+int workCount = 0;
+
+void putCache(BYTE wID, int lnonce)
+{
+    arrayWorkID[workCount] = wID;
+    arrayNonce2[workCount] = lnonce;
+    workCount = (workCount + 1) % 10;
+}
+
+int getNonce2GivenWorkID(BYTE wID)
+{
+    int i = 0;
+    while (i < 10)
+    {
+        if (arrayWorkID[i] == wID)
+        {
+            return arrayNonce2[i];
+        }
+        i++;
+    }
+    return -1;
+}
 
 void issue_init_command()
 {
@@ -561,8 +589,13 @@ void issue_test_command()
 {
     BYTE cmd[64];
     WORKTASK work;
+    // remember the work ID - nonce2 combination
+    putCache(work.WorkID, nonce2);
     // send work
-    gen_stratum_work(&work);
+    gen_stratum_work(&work, nonce2);
+    // take another nonce2 value:
+    nonce2++;
+    
     cmd[0] = 'W';
     cmd[1] = work.Device = 0;
     cmd[2] = work.WorkID++;
@@ -573,6 +606,7 @@ void issue_test_command()
 void test_reply(BYTE *buf)
 {
     uint32_t nonce;
+    int nonce2;
     switch(buf[0])
     {
         case 'A':
@@ -588,11 +622,13 @@ void test_reply(BYTE *buf)
         case 'W':
             break;
         case '=':
-            // both device ID and work ID should be zero
-            if(buf[1] == 0 && buf[2] == 0)
+            nonce2 = getNonce2GivenWorkID(buf[2]);
+            // device ID should be zero and nonce2 should not be -1
+            if(buf[1] == 0 && nonce2 != -1)
             {
+                gen_stratum_work(&tWork, nonce2);
                 memcpy((BYTE*)&nonce, &buf[3], 4);
-                test_nonce(&work, nonce);
+                test_nonce(&tWork, nonce);
             }
             else
                 SYS_ASSERT(false, "invalid device ID or work ID");
