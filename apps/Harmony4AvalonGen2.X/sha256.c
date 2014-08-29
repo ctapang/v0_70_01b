@@ -81,12 +81,13 @@ uint32 hInitial[] = {
 // input == merkle
 // count == 12 bytes (3 long words of merkle input)
 // state == precalc output
+// NOTE: output state[] is big-endian (sha256_finish ensures it is big-endian)
 void sha256_precalc(const uint32 *h, const uint8 *input, unsigned int count, uint8_t *state)
 {
     sha256_context ctx;
     uint8_t temp[32];
 
-    sha256_starts( &ctx, h, true );
+    sha256_starts( &ctx, h );
     sha256_update( &ctx, input, count );
     sha256_finish( &ctx, temp, 32 );
     memcpy(state, temp, 12);
@@ -134,26 +135,24 @@ void sha256_precalc(const uint32 *h, const uint8 *input, unsigned int count, uin
     (b)[(i) + 3] = (uint8) ( (n)       );       \
 }
 
-void sha256_starts( sha256_context *ctx, const uint32 *hInit, bool precalc )
+void sha256_starts( sha256_context *ctx, const uint32 *midstate)
 {
     ctx->total[0] = 0;
     ctx->total[1] = 0;
 
-    ctx->precalc = precalc;
-
     int i;
-    for (i = 0; i < 8; i++)
-        ctx->state[i] = hInit[i];
-
-//    ctx->state[0] = 0x6A09E667;
-//    ctx->state[1] = 0xBB67AE85;
-//    ctx->state[2] = 0x3C6EF372;
-//    ctx->state[3] = 0xA54FF53A;
-//    ctx->state[4] = 0x510E527F;
-//    ctx->state[5] = 0x9B05688C;
-//    ctx->state[6] = 0x1F83D9AB;
-//    ctx->state[7] = 0x5BE0CD19;
-
+    if (midstate != NULL)
+    {
+        ctx->precalc = true;
+        for (i = 0; i < 8; i++)
+            ctx->state[i] = midstate[i];
+    }
+    else
+    {
+        ctx->precalc = false;
+        for (i = 0; i < 8; i++)
+            ctx->state[i] = hInitial[i];
+    }
 }
 
 void sha256_process( sha256_context *ctx, const uint8 data[64] )
@@ -414,7 +413,7 @@ int sha256_test()
 
     for( i = 0; i < 3; i++ )
     {
-        sha256_starts( &ctx, hInitial, false );
+        sha256_starts( &ctx, NULL );
 
         if( i < 2 )
         {
@@ -444,7 +443,7 @@ int sha256_test()
         }
     }
 
-    sha256_starts( &ctx, hInitial, true );
+    sha256_starts( &ctx, hInitial );
 
     sha256_update( &ctx, (uint8 *) msg[0],
                        strlen( msg[0] ) );

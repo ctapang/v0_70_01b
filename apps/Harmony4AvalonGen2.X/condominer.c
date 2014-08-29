@@ -2,6 +2,7 @@
 #include <xc.h>
 #include "app.h"
 #include "condominer.h"
+#include "sha256.h"
 
 
 DWORD DivisionOfLabor[10] = {
@@ -225,9 +226,9 @@ void ProcessCmd(char * ourPtr)
                 work->WorkID = ourPtr[2];
                 // cmd input is little-endian, and we are also little-endian
                 for (i = 0; i < 8; i++)
-                    work->MidState[i] = SwapBytesIfNecessary(ourPtr + 4*i + 3, true);
+                    work->MidState[i] = SwapBytesIfNecessary(ourPtr + 4*i + 3, false);
                 for (i = 0; i < 3; i++)
-                    work->Merkle[i] = SwapBytesIfNecessary(ourPtr + 4*i + 35, true);
+                    work->Merkle[i] = SwapBytesIfNecessary(ourPtr + 4*i + 35, false);
                 if(Status.State == 'R') {
                     Status.State = 'P'; // AssembleWorkForAsics(out);
                 }
@@ -285,28 +286,36 @@ void ArrangeWords4TxSequence(WORKTASK * work, DWORD * buf)
 {
     buf[0] = (DWORD)work->WorkID; // for clock, to be set later
     buf[1] = 0L; // for clock, to be set later
-    // Merkle, PrecalHashes, and MidState are all big-endian, so we swap bytes
-    buf[2] = SwapBytesIfNecessary((BYTE*)&work->Merkle[0], true);
-    buf[3] = SwapBytesIfNecessary((BYTE*)&work->Merkle[1], true);
-    buf[4] = SwapBytesIfNecessary((BYTE*)&work->Merkle[2], true);
-    buf[5] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[1], true);
-    buf[6] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[2], true);
-    buf[7] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[3], true);
-    buf[8] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[4], true);
-    buf[9] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[5], true);
-    buf[10] = SwapBytesIfNecessary((BYTE*)&work->MidState[0], true);
-    buf[11] = SwapBytesIfNecessary((BYTE*)&work->MidState[1], true);
-    buf[12] = SwapBytesIfNecessary((BYTE*)&work->MidState[2], true);
-    buf[13] = SwapBytesIfNecessary((BYTE*)&work->MidState[3], true);
-    buf[14] = SwapBytesIfNecessary((BYTE*)&work->MidState[4], true);
-    buf[15] = SwapBytesIfNecessary((BYTE*)&work->MidState[5], true);
-    buf[16] = SwapBytesIfNecessary((BYTE*)&work->MidState[6], true);
-    buf[17] = SwapBytesIfNecessary((BYTE*)&work->MidState[7], true);
-    buf[18] = SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[0], true);
+    // Merkle, PrecalHashes, and MidState are all little-endian, so we transmit as is
+    buf[2] = work->Merkle[0]; //SwapBytesIfNecessary((BYTE*)&work->Merkle[0], true);
+    buf[3] = work->Merkle[1]; //SwapBytesIfNecessary((BYTE*)&work->Merkle[1], true);
+    buf[4] = work->Merkle[2]; //SwapBytesIfNecessary((BYTE*)&work->Merkle[2], true);
+    buf[5] = work->PrecalcHashes[1]; //SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[1], false);
+    buf[6] = work->PrecalcHashes[2]; //SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[2], false);
+    buf[7] = work->PrecalcHashes[3]; //SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[3], false);
+    buf[8] = work->PrecalcHashes[4]; //SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[4], false);
+    buf[9] = work->PrecalcHashes[5]; //SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[5], false);
+    buf[10] = work->MidState[0]; //SwapBytesIfNecessary((BYTE*)&work->MidState[0], true);
+    buf[11] = work->MidState[1]; //SwapBytesIfNecessary((BYTE*)&work->MidState[1], true);
+    buf[12] = work->MidState[2]; //SwapBytesIfNecessary((BYTE*)&work->MidState[2], true);
+    buf[13] = work->MidState[3]; //SwapBytesIfNecessary((BYTE*)&work->MidState[3], true);
+    buf[14] = work->MidState[4]; //SwapBytesIfNecessary((BYTE*)&work->MidState[4], true);
+    buf[15] = work->MidState[5]; //SwapBytesIfNecessary((BYTE*)&work->MidState[5], true);
+    buf[16] = work->MidState[6]; //SwapBytesIfNecessary((BYTE*)&work->MidState[6], true);
+    buf[17] = work->MidState[7]; //SwapBytesIfNecessary((BYTE*)&work->MidState[7], true);
+    buf[18] = work->PrecalcHashes[0]; //SwapBytesIfNecessary((BYTE*)&work->PrecalcHashes[0], false);
 
 }
 
 WORKTASK taskCopy;
+
+void FixEndianness(WORKTASK * pOutput, WORKTASK * pInput, bool klondike)
+{
+    for(i = 0; i < 8; i++)
+        pOutput->MidState[i] = SwapBytesIfNecessary((BYTE*)&pInput->MidState[i], false);
+    for(i = 0; i < 3; i++)
+        pOutput->Merkle[i] = SwapBytesIfNecessary((BYTE*)&pInput->Merkle[i], !klondike);
+}
 
 void AsicPrecalc_sha256_Compare(WORKTASK * pWork)
 {
@@ -314,15 +323,15 @@ void AsicPrecalc_sha256_Compare(WORKTASK * pWork)
     DWORD swapped;
     taskCopy.Device = pWork->Device;
     taskCopy.WorkID = pWork->WorkID;
-    for(i = 0; i < 8; i++)
-        taskCopy.MidState[i] = SwapBytesIfNecessary((BYTE*)&pWork->MidState[i], false);
-    for(i = 0; i < 3; i++)
-        taskCopy.Merkle[i] = SwapBytesIfNecessary((BYTE*)&pWork->Merkle[i], true);
-    sha256_precalc(taskCopy.MidState, (BYTE*)taskCopy.Merkle, 12, taskCopy.PrecalcHashes);
+    FixEndianness(&taskCopy, pWork, false);
+    // NOTE: SHA256 input and output should be big-endian (both Merkle input and PrecalcHashes output are big-endian);
+    // however, MidState is little-endian.
+    // So here's the endianness of inputs: LE, BE, na, BE
+    sha256_precalc((uint32*)taskCopy.MidState, (uint8_t*)taskCopy.Merkle, (unsigned int)12, (uint8_t*)taskCopy.PrecalcHashes);
     // swap bytes in precalc hashes
     for(i = 0; i < 6; i++)
     {
-        swapped = SwapBytesIfNecessary((BYTE*)&taskCopy.PrecalcHashes[i], true);
+        swapped = SwapBytesIfNecessary((BYTE*)&taskCopy.PrecalcHashes[i], true); // convert to little-endian
         SYS_ASSERT((swapped == pWork->PrecalcHashes[i]), "OOPS outputs don't match");
     }
 }
@@ -331,7 +340,12 @@ void DeQueueNextWork(DWORD *out)
 {
     SYS_ASSERT((Status.WorkQC > 0), "No work queued");
 
-    AsicPreCalc(&WorkQue[WorkNow]);
+    WORKTASK * pW = &WorkQue[WorkNow];
+    FixEndianness(pW, pW, true);
+    AsicPreCalc(pW);
+    // 8/28/2014 - CCT
+    // Now we know (finally) that all inputs and output of
+    // AsicPreCalc() are little-endian.
 
     if(appObject.testMode)
         AsicPrecalc_sha256_Compare(&WorkQue[WorkNow]);

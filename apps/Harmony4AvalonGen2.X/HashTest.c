@@ -7,6 +7,8 @@
 #include "GenericTypeDefs.h"
 #include "condominer.h"
 
+#define MERKLE_OFFSET  64
+
 #define	bswap_16(value)  \
  	((((value) & 0xff) << 8) | ((value) >> 8))
 
@@ -301,6 +303,7 @@ uint8_t m9[] = {
 	0xfb, 0x80, 0x93, 0xea, 0xf2, 0x6b, 0xb9, 0x2f, 0x72, 0xc5, 0xe8, 0x3d, 0x46, 0xdb, 0x75, 0x11,
 	0x42, 0xb5, 0xf2, 0x7b, 0x7b, 0xc1, 0x44, 0x13, 0xec, 0x6d, 0x66, 0xb1, 0x8c, 0x82, 0xe0, 0x28};
 
+// Assume that all header template data are big-endian.
 uint8_t headerTemplate[] = {
 	/* bbversion */
 	0x00, 0x00, 0x00, 0x02,
@@ -344,13 +347,12 @@ uint8_t headerTemplate[] = {
 */
 
 extern WORKSTATUS Status;
-extern uint32 hInitial[];
 
 void sha256(const unsigned char *message, unsigned int len, unsigned char *digest)
 {
     sha256_context ctx;
 
-    sha256_starts( &ctx, hInitial, false );
+    sha256_starts( &ctx, NULL );
     sha256_update( &ctx, message, len);
     sha256_finish( &ctx, digest, 32);
 }
@@ -362,7 +364,7 @@ static void regen_hash(WORKTASK *work)
     uint32_t *swap32 = (uint32_t *)swap;
     unsigned char hash1[32];
 
-    flip80(swap32, data32);
+    flip80(swap32, data32); // little-endian to big-endian
     sha256(swap, 80, hash1);
     sha256(hash1, 32, (unsigned char *)(work->Hash));
 }
@@ -383,9 +385,14 @@ int getNonce2GivenWorkID(BYTE wID);
 bool test_nonce(WORKTASK *pWork, uint32_t nonce)
 {
 	uint32_t *hash_32 = (uint32_t *)(pWork->Hash + 28);
-
 	rebuild_nonce(pWork, nonce);
-	return (*hash_32 == 0);
+        if(*hash_32 != 0) return false;
+
+        //int i;
+        //for (i = 0; i < 21; i++)
+        //    if(pWork->Hash[i] != 0) return false;
+
+	return true;
 }
 
 /* For testing a nonce against an arbitrary diff */
@@ -401,18 +408,23 @@ bool test_nonce_diff(WORKTASK *work, uint32_t nonce, double diff)
 }
 
 
+// Get hash of the first 64 bytes of header dfata.
+// The header has total 80 bytes, with the last four bytes being the locally provided nonce.
+// Bytes 64 through 75 (total of 12 bytes) are sent to the mining card "raw", meaning NOT
+// pre-processed. The "Merkle[3]" field in WORKTASK holds these 12 bytes.
 static void calc_midstate(WORKTASK *work)
 {
     unsigned char data[64];
     uint32_t *data32 = (uint32_t *)data;
     sha256_context ctx;
 
-    flip64(data32, work->Data);
-    sha256_starts( &ctx, hInitial, false );
-    sha256_update( &ctx, data, 64);
+    flip64(data32, work->Data); // little-endian to big-endian
+    sha256_starts( &ctx, NULL );
+    sha256_update( &ctx, data, 64); // computes as little-endian, outputs ctx.state as little-endian
 
-    memcpy(work->MidState, ctx.state, 32);
-    flip32(work->MidState, work->MidState);
+    memcpy(work->MidState, ctx.state, 32); // MidState is little endian
+    //flip32(work->MidState, work->MidState); // back to big-endian
+    // NOTE: now MidState is little-endian because it's internal to little-endian calcs.
 }
 
 
@@ -520,20 +532,42 @@ static void gen_stratum_work(WORKTASK *pWork, int nonce2)
 	//work->nonce2_len = pool->n2size;
 
 	/* Generate merkle root */
-	gen_hash(coinbase, merkle_root, (CB_SIZE));
+	gen_hash(coinbase, merkle_root, (CB_SIZE)); // resulting merkle_root is BIG ENDIAN
 	memcpy(merkle_sha, merkle_root, 32);
 	for (i = 0; i < nmerkles; i++) {
 		memcpy(merkle_sha + 32, merkles[i], 32);
-		gen_hash(merkle_sha, merkle_root, 64);
+		gen_hash(merkle_sha, merkle_root, 64); // both merkle_sha and merkle_root are BIG ENDIAN
 		memcpy(merkle_sha, merkle_root, 32);
 	}
 	data32 = (uint32_t *)merkle_sha;
 	swap32 = (uint32_t *)merkle_root;
-	flip32(swap32, data32);
+	flip32(swap32, data32);  // merkle_root is now LITTLE-ENDIAN!
+
+        // PIC32MX is little-endian, and the output (swap32) is little-endian, so we compare with data32?
+        if (pWork->WorkID == 0)
+        {
+            SYS_ASSERT((data32[0] == 0x75dc4969), "0"); // constant is a byte-by-byte enumeration of 4-byte memory
+            SYS_ASSERT((data32[1] == 0x79c26b13), "1"); // but because CPU is little-endian, bytes are in reversed order
+            SYS_ASSERT((data32[2] == 0xd1f15ad1), "2");
+            SYS_ASSERT((data32[3] == 0x6b8d1d98), "3");
+            SYS_ASSERT((data32[4] == 0xb25d229f), "4");
+            SYS_ASSERT((data32[5] == 0x39640513), "5");
+            SYS_ASSERT((data32[6] == 0xedf19952), "6");
+            SYS_ASSERT((data32[7] == 0x3194b5a3), "7");
+        }
 
 	/* Copy the data template from header_bin */
 	memcpy(pWork->Data, headerTemplate, 128);
-	memcpy(pWork->Data + 36, merkle_root, 32);
+        swap32 = (uint32_t *)&pWork->Data;
+        data32 = (uint32_t *)headerTemplate;
+        flip80(swap32, data32); // pWork->Data is now little endian
+	memcpy(pWork->Data + 36, merkle_root, 32); // little endian
+	//memcpy(pWork->Data + 36, merkle_sha, 32); // big endian
+
+        // Copy next 12 bytes of header data into WORKTASK.Merkle[3] (this field is a misnomer).
+        // Note: this means that Merkle[3] are little-endian!
+        memcpy(pWork->Merkle, pWork->Data + MERKLE_OFFSET, 12); // 12 bytes only == 3 DWORDs
+
 
 	/* Store the stratum work diff to check it still matches the pool's
 	 * stratum diff when submitting shares */
@@ -553,6 +587,7 @@ BYTE arrayWorkID[10]; // circular cache of 10
 int arrayNonce2[10];
 int workCount = 0;
 
+// remember the last 10 nonce2's
 void putCache(BYTE wID, int lnonce)
 {
     arrayWorkID[workCount] = wID;
@@ -588,20 +623,26 @@ void issue_init_command()
 void issue_test_command()
 {
     BYTE cmd[64];
-    WORKTASK work;
+
     // remember the work ID - nonce2 combination
     putCache(work.WorkID, nonce2);
     // send work
     gen_stratum_work(&work, nonce2);
-    // take another nonce2 value:
-    nonce2++;
     
     cmd[0] = 'W';
     cmd[1] = work.Device = 0;
-    cmd[2] = work.WorkID++;
+    cmd[2] = work.WorkID;
     memcpy(cmd + 3, &work.MidState[0], 44);
     ProcessCmd(cmd);
+
+    // take another nonce2 value and ID:
+    nonce2++;
+    work.WorkID++;
 }
+
+int filteredNonceCount = 0;
+int correctCount = 0;
+int lsbCount = 0;
 
 void test_reply(BYTE *buf)
 {
@@ -622,13 +663,19 @@ void test_reply(BYTE *buf)
         case 'W':
             break;
         case '=':
-            nonce2 = getNonce2GivenWorkID(buf[2]);
+            tWork.WorkID = buf[2];
+            nonce2 = getNonce2GivenWorkID( tWork.WorkID );
             // device ID should be zero and nonce2 should not be -1
             if(buf[1] == 0 && nonce2 != -1)
             {
                 gen_stratum_work(&tWork, nonce2);
                 memcpy((BYTE*)&nonce, &buf[3], 4);
-                test_nonce(&tWork, nonce);
+                nonce -= 0xC0; // condominer.c also takes away 0xC0
+                if(test_nonce(&tWork, nonce))
+                    correctCount++;
+                if(nonce & 1)
+                    lsbCount++;
+                filteredNonceCount++;
             }
             else
                 SYS_ASSERT(false, "invalid device ID or work ID");
